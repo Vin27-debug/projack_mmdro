@@ -1,0 +1,77 @@
+/* Driver sidebar styles - modern emergency dispatch theme */
+
+:root{
+  --sidebar-bg-1: #051428;
+  --sidebar-bg-2: #0b2940;
+  --accent: #2563eb;
+  --glass: rgba(255,255,255,0.04);
+}
+
+/* Layout */
+.app-shell{min-height:100vh;display:flex}
+.sidebar-driver{
+  width:280px;
+  min-width:280px;
+  background: linear-gradient(180deg,var(--sidebar-bg-1),var(--sidebar-bg-2));
+  color:#e6eef8;
+  position:fixed;
+  top:0;left:0;bottom:0;
+  display:flex;flex-direction:column;
+  box-shadow: 0 10px 40px rgba(2,6,23,0.6);
+  z-index:1020;
+}
+.content-area{margin-left:280px;min-height:100vh;background:#f6f8fb}
+
+/* Brand */
+.brand{display:flex;align-items:center;border-bottom:1px solid rgba(255,255,255,0.03)}
+.brand-icon{width:48px;height:48px;border-radius:10px;background:rgba(37,99,235,0.12);display:flex;align-items:center;justify-content:center}
+
+/* Profile card */
+.driver-profile{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);backdrop-filter: blur(6px);border-bottom:1px solid rgba(255,255,255,0.03)}
+.driver-avatar{width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#06b6d4);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:32px;position:relative;box-shadow:0 12px 30px rgba(3,10,34,0.45)}
+.status-dot{position:absolute;right:6px;bottom:6px;width:14px;height:14px;border-radius:999px;border:2px solid rgba(255,255,255,0.12)}
+.status-dot.online{background:#34d399}
+.status-dot.offline{background:#94a3b8}
+.driver-name{font-weight:700;margin-top:8px}
+.driver-meta{font-size:0.85rem;margin-top:6px}
+
+/* Navigation */
+.sidebar-nav{display:flex;flex-direction:column;gap:6px}
+.sidebar-link{display:flex;align-items:center;gap:14px;padding:12px;border-radius:12px;color:var(--text,#e6eef8);text-decoration:none;margin:6px 0;transition:all .16s ease-in-out}
+.sidebar-link i{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px}
+.sidebar-link .label{font-weight:600}
+.sidebar-link:hover{transform:translateX(6px);background:rgba(255,255,255,0.02)}
+.sidebar-link.active{background: linear-gradient(90deg, rgba(37,99,235,0.16), rgba(6,182,212,0.06));box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02)}
+
+/* Logout */
+.logout-btn{border-radius:999px;padding:10px 12px}
+
+/* Collapsed state */
+.sidebar-driver.collapsed{width:72px;min-width:72px}
+.content-area.collapsed{margin-left:72px}
+.sidebar-driver.collapsed .label{display:none}
+.sidebar-driver.collapsed .driver-meta{display:none}
+.sidebar-driver.collapsed .driver-name{display:none}
+
+/* Mobile */
+@media (max-width: 991.98px){
+  .sidebar-driver{position:fixed;left:0;top:0;height:100%;transform:translateX(-110%);transition:transform .28s ease-in-out}
+  .sidebar-driver.show{transform:translateX(0)}
+  .content-area{margin-left:0}
+}
+
+/* Utility spacing */
+.p-3{padding:1rem!important}
+
+/* Accessibility focus */
+.sidebar-link:focus{outline:2px solid rgba(37,99,235,0.18);outline-offset:2px}
+
+/* Large icons */
+.sidebar-link i{font-size:1.35rem}
+
+/* main content styling */
+.content-area .container-fluid{padding-top:8px}
+
+/* Smooth scroll and no overlap */
+html,body{height:100%;}
+body .content-area{overflow:auto}

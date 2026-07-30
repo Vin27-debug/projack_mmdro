@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --driver-bg: #071b2f;
+    --driver-accent: #2563eb;
+    --driver-accent-soft: rgba(37, 99, 235, 0.16);
+    --driver-card: #ffffff;
+    --driver-text: #e2e8f0;
+}
+
+body {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.sidebar-driver {
+    background: linear-gradient(180deg, var(--driver-bg), #102b43);
+    min-height: 100vh;
+    color: white;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.16);
+}
+
+.driver-brand {
+    padding: 24px 22px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brand-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: var(--driver-accent-soft);
+    color: #dbeafe;
+    font-size: 1.15rem;
+}
+
+.driver-profile {
+    padding: 20px 20px 10px;
+    text-align: center;
+}
+
+.driver-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--driver-accent), #38bdf8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+    font-size: 28px;
+    color: white;
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    margin: 4px 0;
+    color: var(--driver-text);
+    text-decoration: none;
+    border-radius: 12px;
+    transition: all 0.2s ease-in-out;
+}
+
+.sidebar-link i {
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+    transform: translateX(2px);
+}
+
+.sidebar-link.active {
+    background: var(--driver-accent-soft);
+    color: white;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 991.98px) {
+    .sidebar-driver {
+        position: relative;
+        min-height: auto;
+        width: 100%;
+    }
+
+    .main-content {
+        min-height: auto;
+    }
+
+    .sidebar-link {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+}
+
+.main-content {
+    background: #f5f7fb;
+    min-height: 100vh;
+}
+
+.card {
+    border: none;
+}
+
+.table thead th {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}

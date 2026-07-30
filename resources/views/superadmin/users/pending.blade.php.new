@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pending User Approvals</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f9; padding: 30px; }
+        .container { max-width: 1200px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background: #f8fafc; }
+        .btn { border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; color: white; }
+        .btn-success { background: #16a34a; }
+        .btn-danger { background: #dc2626; }
+        .success { background: #dcfce7; color: #166534; padding: 10px; margin-bottom: 15px; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pending User Approvals</h1>
+
+        @if(session('success'))
+            <div class="success">{{ session('success') }}</div>
+        @endif
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Badge ID</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($pendingUsers as $user)
+                        <tr>
+                            <td>{{ $user->id }}</td>
+                            <td>{{ $user->name }}</td>
+                            <td>{{ $user->email }}</td>
+                            <td>{{ $user->driver?->badge_id ?? $user->badge_id ?? 'Pending' }}</td>
+                            <td>{{ $user->status }}</td>
+                            <td>{{ $user->created_at }}</td>
+                            <td>
+                                <form action="{{ route('superadmin.users.approve', $user) }}" method="POST" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success">Approve</button>
+                                </form>
+
+                                <form action="{{ route('superadmin.users.reject', $user) }}" method="POST" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-danger">Reject</button>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7">No pending users found.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
