@@ -4,8 +4,8 @@
 <div class="container-fluid px-0">
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-4">
         <div>
-            <h2 class="h3 fw-bold mb-1">Emergency Reports Center</h2>
-            <p class="text-muted mb-0">Operational metrics, response analytics, and export-ready incident intelligence.</p>
+            <h2 class="section-heading mb-1">Emergency Reports Center</h2>
+            <p class="section-excerpt mb-0">Operational metrics, response analytics, and export-ready incident intelligence.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <a href="<?php echo e(route('admin.reports.center.export.pdf', $filters)); ?>" class="btn btn-outline-danger">
@@ -37,7 +37,7 @@
 
     <div class="row g-4 mb-4">
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100 bg-primary-subtle text-primary">
+            <div class="card border-0 shadow-sm h-100 admin-card">
                 <div class="card-body">
                     <div class="small text-uppercase fw-semibold">Total Incidents</div>
                     <div class="display-6 fw-bold mt-2"><?php echo e($summary['total_incidents']); ?></div>
@@ -45,7 +45,7 @@
             </div>
         </div>
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100 bg-success-subtle text-success">
+            <div class="card border-0 shadow-sm h-100 admin-card">
                 <div class="card-body">
                     <div class="small text-uppercase fw-semibold">Completed</div>
                     <div class="display-6 fw-bold mt-2"><?php echo e($summary['completed_incidents']); ?></div>
@@ -53,7 +53,7 @@
             </div>
         </div>
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100 bg-warning-subtle text-warning">
+            <div class="card border-0 shadow-sm h-100 admin-card">
                 <div class="card-body">
                     <div class="small text-uppercase fw-semibold">Pending</div>
                     <div class="display-6 fw-bold mt-2"><?php echo e($summary['pending_incidents']); ?></div>
@@ -61,7 +61,7 @@
             </div>
         </div>
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100 bg-danger-subtle text-danger">
+            <div class="card border-0 shadow-sm h-100 admin-card">
                 <div class="card-body">
                     <div class="small text-uppercase fw-semibold">Active</div>
                     <div class="display-6 fw-bold mt-2"><?php echo e($summary['active_incidents']); ?></div>
@@ -76,7 +76,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="fw-bold mb-0">Monthly Incident Trends</h5>
-                        <span class="badge bg-primary-subtle text-primary">Chart.js</span>
+                        <span class="badge bg-primary text-white">Chart.js</span>
                     </div>
                     <canvas id="incidentTrendChart" height="220"></canvas>
                 </div>

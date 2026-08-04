@@ -5,7 +5,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <p class="text-muted mb-1">Driver Portal</p>
-        <h2 class="fw-bold mb-0">My Current Assignment</h2>
+        <h2 class="fw-bold text-white mb-0">My Current Assignment</h2>
     </div>
 </div>
 
@@ -13,7 +13,7 @@
 
 <div class="card border-0 shadow-sm rounded-4">
     <div class="card-body text-center py-5">
-        <h4 class="fw-bold text-muted">
+        <h4 class="fw-bold text-white">
             No Active Assignment
         </h4>
         <p class="text-muted mb-0">

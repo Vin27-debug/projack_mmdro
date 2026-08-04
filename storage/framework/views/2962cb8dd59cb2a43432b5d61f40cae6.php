@@ -3,8 +3,8 @@
 <?php $__env->startSection('content'); ?>
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
     <div>
-        <h2 class="fw-bold mb-1 text-danger">Reports Center</h2>
-        <p class="text-muted mb-0">Review submitted incident reports and approve them for closure.</p>
+        <h2 class="section-heading mb-1 text-danger">Reports Center</h2>
+        <p class="section-excerpt mb-0">Review submitted incident reports and approve them for closure.</p>
     </div>
 </div>
 

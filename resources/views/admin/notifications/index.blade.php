@@ -10,8 +10,8 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="mb-1">Notifications</h2>
-            <p class="text-muted mb-0">You have {{ $unreadNotifications ?? 0 }} unread messages.</p>
+            <h2 class="section-heading mb-1">Notifications</h2>
+            <p class="section-excerpt mb-0">You have {{ $unreadNotifications ?? 0 }} unread messages.</p>
         </div>
 
         <form method="POST" action="{{ route('admin.notifications.read-all') }}" class="mb-0">
@@ -20,87 +20,87 @@
         </form>
     </div>
 
-    <div class="card">
+    <div class="card border-0 shadow-sm rounded-4 admin-card">
 
         <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
 
-            <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Message</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
 
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Message</th>
-                        <th>Status</th>
-                        <th>Date</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
+                    <tbody>
 
-                <tbody>
+                        @forelse($notifications as $notification)
 
-                    @forelse($notifications as $notification)
+                        <tr>
 
-                    <tr>
+                            <td>
+                                {{ $notification->title }}
+                            </td>
 
-                        <td>
-                            {{ $notification->title }}
-                        </td>
+                            <td>
+                                {{ $notification->message }}
+                            </td>
 
-                        <td>
-                            {{ $notification->message }}
-                        </td>
+                            <td>
 
-                        <td>
+                                @if($notification->is_read)
 
-                            @if($notification->is_read)
+                                <span class="badge bg-success">
+                                    Read
+                                </span>
 
-                            <span class="badge bg-success">
-                                Read
-                            </span>
+                                @else
 
-                            @else
+                                <span class="badge bg-danger">
+                                    Unread
+                                </span>
 
-                            <span class="badge bg-danger">
-                                Unread
-                            </span>
+                                @endif
 
-                            @endif
+                            </td>
 
-                        </td>
+                            <td>
+                                {{ $notification->created_at }}
+                            </td>
 
-                        <td>
-                            {{ $notification->created_at }}
-                        </td>
+                            <td>
+                                @if(!$notification->is_read)
+                                <form method="POST" action="{{ route('admin.notifications.read', $notification) }}">
+                                    @csrf
+                                    <button class="btn btn-sm btn-outline-primary">Mark Read</button>
+                                </form>
+                                @else
+                                <span class="text-muted">Done</span>
+                                @endif
+                            </td>
 
-                        <td>
-                            @if(!$notification->is_read)
-                            <form method="POST" action="{{ route('admin.notifications.read', $notification) }}">
-                                @csrf
-                                <button class="btn btn-sm btn-outline-primary">Mark Read</button>
-                            </form>
-                            @else
-                            <span class="text-muted">Done</span>
-                            @endif
-                        </td>
+                        </tr>
 
-                    </tr>
+                        @empty
 
-                    @empty
+                        <tr>
 
-                    <tr>
+                            <td colspan="5">
+                                No Notifications
+                            </td>
 
-                        <td colspan="5">
-                            No Notifications
-                        </td>
+                        </tr>
 
-                    </tr>
+                        @endforelse
 
-                    @endforelse
+                    </tbody>
 
-                </tbody>
-
-            </table>
-
+                </table>
+            </div>
         </div>
 
     </div>

@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+
+.card.bg-gradient {
+    background: linear-gradient(145deg, #22385f, #2f4f7a);
+    border-radius: 18px;
+    transition: .25s ease;
+}
+
+.card.bg-gradient:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, .25);
+}
+
+.card .text-secondary {
+    color: #c8d6f0 !important;
+}
+
+.display-6 {
+    font-weight: 700;
+}
+
 :root {
     --driver-bg: #071b2f;
     --driver-accent: #2563eb;

@@ -2,7 +2,16 @@
 
 <?php $__env->startSection('content'); ?>
 
-<h2>Database Backups</h2>
+<div class="page-header">
+    <div>
+        <div class="small text-uppercase text-white-50 mb-2">Data Protection</div>
+        <h1 class="page-title">Database Backups</h1>
+        <p class="page-subtitle mb-0">Create backups and review recent restore history.</p>
+    </div>
+    <a href="<?php echo e(route('superadmin.dashboard')); ?>" class="btn btn-outline-light page-back-button">
+        <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+    </a>
+</div>
 
 <?php if(session('success')): ?>
 <div class="alert alert-success">
@@ -11,100 +20,97 @@
 </div>
 <?php endif; ?>
 
-<form method="POST"
-    action="<?php echo e(route('backups.create')); ?>">
-    <?php echo csrf_field(); ?>
+<div class="card admin-card border-0 shadow-sm p-4 mb-4">
+    <form method="POST" action="<?php echo e(route('backups.create')); ?>">
+        <?php echo csrf_field(); ?>
+        <button class="btn btn-primary">Backup Now</button>
+    </form>
+</div>
 
-    <button
-        class="btn btn-primary">
-        Backup Now
-    </button>
-</form>
+<div class="card admin-card border-0 shadow-sm p-4 mb-4">
+    <h4 class="text-white mb-3">Backup History</h4>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Filename</th>
+                    <th>Status</th>
+                    <th>Message</th>
+                    <th>Created At</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php $__currentLoopData = $logs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $log): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <tr>
+                    <td><?php echo e($log->type); ?></td>
+                    <td><?php echo e($log->filename); ?></td>
+                    <td><?php echo e($log->status); ?></td>
+                    <td><?php echo e($log->message); ?></td>
+                    <td><?php echo e($log->created_at->format('Y-m-d H:i')); ?></td>
+                </tr>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </tbody>
+        </table>
 
-<hr>
+        <hr>
 
-<h4 class="mt-4">Backup History</h4>
-<table class="table table-sm">
-    <thead>
-        <tr>
-            <th>Type</th>
-            <th>Filename</th>
-            <th>Status</th>
-            <th>Message</th>
-            <th>Created At</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php $__currentLoopData = $logs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $log): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-        <tr>
-            <td><?php echo e($log->type); ?></td>
-            <td><?php echo e($log->filename); ?></td>
-            <td><?php echo e($log->status); ?></td>
-            <td><?php echo e($log->message); ?></td>
-            <td><?php echo e($log->created_at->format('Y-m-d H:i')); ?></td>
-        </tr>
-        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-    </tbody>
-</table>
+        <table class="table">
 
-<hr>
+            <thead>
+                <tr>
+                    <th>Backup File</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
 
-<table class="table">
+            <tbody>
 
-    <thead>
-        <tr>
-            <th>Backup File</th>
-            <th>Action</th>
-        </tr>
-    </thead>
+                <?php $__currentLoopData = $files; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $file): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
 
-    <tbody>
+                <tr>
 
-        <?php $__currentLoopData = $files; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $file): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <td>
+                        <?php echo e(basename($file)); ?>
 
-        <tr>
+                    </td>
 
-            <td>
-                <?php echo e(basename($file)); ?>
+                    <td>
 
-            </td>
+                        <a
+                            href="<?php echo e(route('backups.download', basename($file))); ?>"
+                            class="btn btn-success btn-sm">
+                            Download
+                        </a>
 
-            <td>
+                        <form
+                            method="POST"
+                            action="<?php echo e(route('backups.restore')); ?>"
+                            style="display:inline;">
 
-                <a
-                    href="<?php echo e(route('backups.download', basename($file))); ?>"
-                    class="btn btn-success btn-sm">
-                    Download
-                </a>
+                            <?php echo csrf_field(); ?>
 
-                <form
-                    method="POST"
-                    action="<?php echo e(route('backups.restore')); ?>"
-                    style="display:inline;">
+                            <input
+                                type="hidden"
+                                name="backup_file"
+                                value="<?php echo e(basename($file)); ?>">
 
-                    <?php echo csrf_field(); ?>
+                            <button
+                                class="btn btn-warning btn-sm">
+                                Restore
+                            </button>
 
-                    <input
-                        type="hidden"
-                        name="backup_file"
-                        value="<?php echo e(basename($file)); ?>">
+                        </form>
 
-                    <button
-                        class="btn btn-warning btn-sm">
-                        Restore
-                    </button>
+                    </td>
 
-                </form>
+                </tr>
 
-            </td>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
-        </tr>
+            </tbody>
 
-        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </table>
 
-    </tbody>
-
-</table>
-
-<?php $__env->stopSection(); ?>
+        <?php $__env->stopSection(); ?>
 <?php echo $__env->make('layouts.superadmin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\muniresq-project\resources\views/superadmin/backups/index.blade.php ENDPATH**/ ?>

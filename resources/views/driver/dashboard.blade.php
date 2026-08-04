@@ -17,7 +17,7 @@
                 <p class="mb-3 mb-lg-4 hero-copy">{{ $driver->user->name ?? 'Driver' }} — monitor active dispatches and coordinate ambulance response with precision.</p>
                 <div class="d-flex flex-wrap gap-2">
                     <button id="panicBtn" class="btn btn-danger btn-lg driver-action-btn">Panic</button>
-                    <button id="hijackBtn" class="btn btn-warning btn-lg driver-action-btn text-dark">Hijack</button>
+                    <button id="hijackBtn" class="btn btn-warning btn-lg driver-action-btn">Hijack</button>
                     @if($reportableDispatch)
 
                     <a href="{{ route('driver.report.create', $reportableDispatch->incident) }}"
@@ -27,7 +27,7 @@
 
                     @else
 
-                    <button class="btn btn-secondary btn-lg" disabled>
+                    <button class="btn btn-outline-light btn-lg" disabled>
                         No Report Available
                     </button>
 
@@ -150,7 +150,7 @@
                     <div class="map-shell">
                         <div id="map"></div>
                     </div>
-                    <div class="mb-3 p-3 rounded-3 bg-light">
+                    <div class="mb-3 p-3 rounded-3 bg-secondary bg-opacity-10">
                         <div class="small text-muted text-uppercase">Incident #</div>
                         <div class="fw-semibold">{{ $currentDispatch->incident->incident_number }}</div>
                     </div>
@@ -209,7 +209,7 @@
                     <div class="map-shell">
                         <div id="map"></div>
                     </div>
-                    <div class="mb-3 p-3 rounded-3 bg-light">
+                    <div class="mb-3 p-3 rounded-3 bg-secondary bg-opacity-10">
                         <div class="small text-muted text-uppercase">Incident #</div>
                         <div class="fw-semibold">{{ $reportableDispatch->incident->incident_number }}</div>
                     </div>
@@ -254,7 +254,7 @@
                                         <div class="small text-muted">{{ $incident->location }}</div>
                                     </td>
                                     <td>
-                                        <span class="badge bg-light text-dark">{{ str_replace('_',' ', ucfirst($incident->status)) }}</span>
+                                        <span class="badge bg-secondary text-white">{{ str_replace('_',' ', ucfirst($incident->status)) }}</span>
                                     </td>
                                 </tr>
                                 @endforeach

@@ -4,8 +4,8 @@
 <div class="container-fluid px-0">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="h3 fw-bold mb-1">Vehicle Maintenance</h2>
-            <p class="text-muted mb-0">Track vehicle upkeep, maintenance history, and availability.</p>
+            <h2 class="section-heading mb-1">Vehicle Maintenance</h2>
+            <p class="section-excerpt mb-0">Track vehicle upkeep, maintenance history, and availability.</p>
         </div>
         <a href="{{ route('admin.maintenance.create') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> New Maintenance Record
@@ -17,38 +17,51 @@
     @endif
 
     <div class="row g-4 mb-4">
+
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="card border-start border-4 border-primary shadow-sm h-100 admin-card">
                 <div class="card-body">
-                    <div class="text-muted small text-uppercase">Total Vehicles</div>
-                    <div class="display-6 fw-bold mt-2">{{ $stats['total_vehicles'] }}</div>
+                    <div class="text-uppercase small text-muted">Total Vehicles</div>
+                    <div class="display-6 fw-bold text-white mt-2">
+                        {{ $stats['total_vehicles'] }}
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="card border-start border-4 border-success shadow-sm h-100 admin-card">
                 <div class="card-body">
-                    <div class="text-muted small text-uppercase">Active Vehicles</div>
-                    <div class="display-6 fw-bold mt-2">{{ $stats['active_vehicles'] }}</div>
+                    <div class="text-uppercase small text-muted">Active Vehicles</div>
+                    <div class="display-6 fw-bold text-white mt-2">
+                        {{ $stats['active_vehicles'] }}
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="card border-start border-4 border-warning shadow-sm h-100 admin-card">
                 <div class="card-body">
-                    <div class="text-muted small text-uppercase">Vehicles Under Maintenance</div>
-                    <div class="display-6 fw-bold mt-2">{{ $stats['maintenance_vehicles'] }}</div>
+                    <div class="text-uppercase small text-muted">Vehicles Under Maintenance</div>
+                    <div class="display-6 fw-bold text-white mt-2">
+                        {{ $stats['maintenance_vehicles'] }}
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="card border-start border-4 border-info shadow-sm h-100 admin-card">
                 <div class="card-body">
-                    <div class="text-muted small text-uppercase">Available Vehicles</div>
-                    <div class="display-6 fw-bold mt-2">{{ $stats['available_vehicles'] }}</div>
+                    <div class="text-uppercase small text-muted">Available Vehicles</div>
+                    <div class="display-6 fw-bold text-white mt-2">
+                        {{ $stats['available_vehicles'] }}
+                    </div>
                 </div>
             </div>
         </div>
+
     </div>
 
     <div class="card border-0 shadow-sm">

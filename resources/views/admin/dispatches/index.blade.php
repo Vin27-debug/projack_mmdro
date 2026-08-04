@@ -3,8 +3,8 @@
 @section('content')
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
     <div>
-        <h2 class="fw-bold mb-1 text-danger">Dispatch Center</h2>
-        <p class="text-muted mb-0">Assign drivers and ambulances to active incidents with clarity and speed.</p>
+        <h2 class="section-heading mb-1">Dispatch Center</h2>
+        <p class="section-excerpt mb-0">Assign drivers and ambulances to active incidents with clarity and speed.</p>
     </div>
 </div>
 
@@ -15,11 +15,11 @@
 <div class="row g-4">
     @forelse($incidents as $incident)
     <div class="col-lg-6">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card border-0 shadow-sm rounded-4 h-100 admin-card">
             <div class="card-header bg-danger text-white border-0 rounded-top-4">
                 <div class="d-flex justify-content-between align-items-center">
                     <strong>{{ $incident->incident_number ?? 'Incident' }}</strong>
-                    <span class="badge bg-light text-danger">{{ ucfirst($incident->status) }}</span>
+                    <span class="badge bg-danger text-white">{{ ucfirst($incident->status) }}</span>
                 </div>
             </div>
             <div class="card-body">

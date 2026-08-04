@@ -4,8 +4,8 @@
 <div class="container-fluid px-0">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-4">
         <div>
-            <h2 class="h3 fw-bold mb-1">Driver Performance Analytics</h2>
-            <p class="text-muted mb-0">Track response efficiency, completion rates, and incident handling by driver.</p>
+            <h2 class="section-heading mb-1">Driver Performance Analytics</h2>
+            <p class="section-excerpt mb-0">Track response efficiency, completion rates, and incident handling by driver.</p>
         </div>
         <div class="d-flex gap-2">
             <a href="{{ route('admin.reports.driver-performance.pdf') }}" class="btn btn-outline-danger">

@@ -17,7 +17,7 @@
                 <p class="mb-3 mb-lg-4 hero-copy"><?php echo e($driver->user->name ?? 'Driver'); ?> — monitor active dispatches and coordinate ambulance response with precision.</p>
                 <div class="d-flex flex-wrap gap-2">
                     <button id="panicBtn" class="btn btn-danger btn-lg driver-action-btn">Panic</button>
-                    <button id="hijackBtn" class="btn btn-warning btn-lg driver-action-btn text-dark">Hijack</button>
+                    <button id="hijackBtn" class="btn btn-warning btn-lg driver-action-btn">Hijack</button>
                     <?php if($reportableDispatch): ?>
 
                     <a href="<?php echo e(route('driver.report.create', $reportableDispatch->incident)); ?>"
@@ -27,7 +27,7 @@
 
                     <?php else: ?>
 
-                    <button class="btn btn-secondary btn-lg" disabled>
+                    <button class="btn btn-outline-light btn-lg" disabled>
                         No Report Available
                     </button>
 
@@ -152,7 +152,7 @@
                     <div class="map-shell">
                         <div id="map"></div>
                     </div>
-                    <div class="mb-3 p-3 rounded-3 bg-light">
+                    <div class="mb-3 p-3 rounded-3 bg-secondary bg-opacity-10">
                         <div class="small text-muted text-uppercase">Incident #</div>
                         <div class="fw-semibold"><?php echo e($currentDispatch->incident->incident_number); ?></div>
                     </div>
@@ -211,7 +211,7 @@
                     <div class="map-shell">
                         <div id="map"></div>
                     </div>
-                    <div class="mb-3 p-3 rounded-3 bg-light">
+                    <div class="mb-3 p-3 rounded-3 bg-secondary bg-opacity-10">
                         <div class="small text-muted text-uppercase">Incident #</div>
                         <div class="fw-semibold"><?php echo e($reportableDispatch->incident->incident_number); ?></div>
                     </div>
@@ -256,7 +256,7 @@
                                         <div class="small text-muted"><?php echo e($incident->location); ?></div>
                                     </td>
                                     <td>
-                                        <span class="badge bg-light text-dark"><?php echo e(str_replace('_',' ', ucfirst($incident->status))); ?></span>
+                                        <span class="badge bg-secondary text-white"><?php echo e(str_replace('_',' ', ucfirst($incident->status))); ?></span>
                                     </td>
                                 </tr>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>

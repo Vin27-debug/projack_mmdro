@@ -4,8 +4,8 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="fw-bold text-danger mb-1">GPS Monitoring</h2>
-        <p class="text-muted mb-0">
+        <h2 class="section-heading mb-1">GPS Monitoring</h2>
+        <p class="section-excerpt mb-0">
             Track ambulances and assess route progress in real time.
         </p>
     </div>
@@ -14,7 +14,7 @@
 <div class="row g-4 mb-4">
 
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-4">
+        <div class="card border-0 shadow-sm rounded-4 admin-card">
             <div class="card-body">
                 <small class="text-muted">Driver Status</small>
                 <?php if($incident?->status == 'dispatched'): ?>
@@ -31,7 +31,7 @@
     </div>
 
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-4">
+        <div class="card border-0 shadow-sm rounded-4 admin-card">
             <div class="card-body">
                 <small class="text-muted">Vehicle Status</small>
                 <h4 class="fw-bold">
@@ -43,7 +43,7 @@
     </div>
 
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-4">
+        <div class="card border-0 shadow-sm rounded-4 admin-card">
             <div class="card-body">
                 <small class="text-muted">Incident Status</small>
                 <h4 class="fw-bold">
@@ -55,13 +55,13 @@
     </div>
 
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-4">
+        <div class="card border-0 shadow-sm rounded-4 admin-card">
             <div class="card-body">
                 <small class="text-muted">ETA</small>
                 <h4 class="fw-bold" id="eta">
                     Calculating...
                 </h4>
-                <small class="text-muted" id="distance">
+                <small class="text-white-50" id="distance">
                     Distance: Calculating...
                 </small>
             </div>
@@ -70,7 +70,7 @@
 
 </div>
 
-<div class="card border-0 shadow-sm rounded-4 mb-4">
+<div class="card border-0 shadow-sm rounded-4 mb-4 admin-card">
     <div class="card-body">
         <h5 class="fw-bold mb-3">Active Incident</h5>
 
@@ -100,7 +100,7 @@
                 <?php elseif($incident?->status == 'pending'): ?>
                 <span class="badge bg-secondary">Pending</span>
                 <?php else: ?>
-                <span class="badge bg-light text-dark">
+                <span class="badge bg-secondary text-white">
                     <?php echo e(ucfirst($incident?->status ?? 'N/A')); ?>
 
                 </span>
@@ -130,7 +130,7 @@
 </div>
 
 <link rel="stylesheet"
-href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+    href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 
 <link rel="stylesheet"
     href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />

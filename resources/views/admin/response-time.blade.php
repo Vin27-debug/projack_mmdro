@@ -4,14 +4,14 @@
 <div class="container-fluid px-0">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="h3 fw-bold mb-1">Response Time Analytics</h2>
-            <p class="text-muted mb-0">Monitor operational performance using dispatch arrival timing.</p>
+            <h2 class="section-heading mb-1">Response Time Analytics</h2>
+            <p class="section-excerpt mb-0">Monitor operational performance using dispatch arrival timing.</p>
         </div>
     </div>
 
     <div class="row g-4 mb-4">
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="card border-0 shadow-sm h-100 admin-card">
                 <div class="card-body">
                     <div class="text-muted small text-uppercase">Average Response Time</div>
                     <div class="display-6 fw-bold mt-2">{{ number_format($averageResponseTime, 2) }} min</div>
@@ -20,7 +20,7 @@
         </div>
 
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="card border-0 shadow-sm h-100 admin-card">
                 <div class="card-body">
                     <div class="text-muted small text-uppercase">Fastest Response</div>
                     <div class="display-6 fw-bold mt-2">{{ $fastestResponse }} min</div>
@@ -29,7 +29,7 @@
         </div>
 
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="card border-0 shadow-sm h-100 admin-card">
                 <div class="card-body">
                     <div class="text-muted small text-uppercase">Slowest Response</div>
                     <div class="display-6 fw-bold mt-2">{{ $slowestResponse }} min</div>
@@ -38,7 +38,7 @@
         </div>
 
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="card border-0 shadow-sm h-100 admin-card">
                 <div class="card-body">
                     <div class="text-muted small text-uppercase">Total Completed Responses</div>
                     <div class="display-6 fw-bold mt-2">{{ $completedResponses }}</div>
@@ -53,7 +53,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="fw-bold mb-0">Response Time Trend</h5>
-                        <span class="badge bg-primary-subtle text-primary">Monthly average</span>
+                        <span class="badge bg-primary text-white">Monthly average</span>
                     </div>
                     <canvas id="responseTimeChart" height="220"></canvas>
                 </div>

@@ -161,14 +161,14 @@ class IncidentController extends Controller
         }
 
         $driverStatus = match ($dispatchStatus) {
-            Dispatch::STATUS_ASSIGNED => Driver::STATUS_ASSIGNED,
+            Dispatch::STATUS_ASSIGNED => Driver::STATUS_AVAILABLE,
 
             Dispatch::STATUS_ACCEPTED,
             Dispatch::STATUS_EN_ROUTE => Driver::STATUS_EN_ROUTE,
 
             Dispatch::STATUS_ARRIVED => Driver::STATUS_ON_SCENE,
 
-            default => Driver::STATUS_ASSIGNED,
+            default => Driver::STATUS_AVAILABLE,
         };
 
         DB::transaction(function () use ($incident, $driverId, $vehicleId, $dispatchStatus, $driverStatus) {

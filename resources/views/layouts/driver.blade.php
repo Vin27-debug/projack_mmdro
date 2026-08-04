@@ -15,12 +15,14 @@
 
     <style>
         body {
-            background: #f4f7fb;
+            background: #071329;
+            color: #eef4ff;
         }
 
         .content-area {
             min-height: 100vh;
-            background: linear-gradient(180deg, #f8fafc 0%, #f2f5fa 100%);
+            background: radial-gradient(circle at top left, rgba(59, 105, 255, 0.12), transparent 28%),
+                linear-gradient(180deg, #071329 0%, #08172f 100%);
         }
 
         .sidebar-driver {
@@ -97,6 +99,92 @@
             border-radius: 999px;
         }
 
+        .card {
+            background: rgba(7, 18, 38, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.5rem;
+        }
+
+        .card-body,
+        .card-header,
+        .card-footer {
+            color: rgba(255, 255, 255, 0.92);
+        }
+
+        .card-header {
+            background: rgba(11, 26, 49, 0.92);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .text-muted {
+            color: rgba(255, 255, 255, 0.72) !important;
+        }
+
+        .table thead th,
+        .table tbody td,
+        .table tbody th {
+            background: rgba(255, 255, 255, 0.04) !important;
+            color: #eef4ff !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+
+        .btn-outline-secondary {
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-outline-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-outline-primary {
+            color: #ffffff;
+            border-color: rgba(13, 110, 253, 0.7);
+        }
+
+        .btn-outline-primary:hover {
+            background: rgba(13, 110, 253, 0.12);
+        }
+
+        .form-control,
+        .form-select,
+        .input-group-text,
+        .form-check-input {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.14);
+            color: #eef4ff;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(13, 110, 253, 0.9);
+            color: #eef4ff;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.2);
+        }
+
+        .form-control::placeholder,
+        .form-select {
+            color: rgba(255, 255, 255, 0.65);
+        }
+
+        .form-check-label,
+        .input-group-text,
+        label,
+        legend {
+            color: rgba(255, 255, 255, 0.88);
+        }
+
+        .bg-light {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            color: #eef4ff !important;
+        }
+
+        .bg-white {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            color: #eef4ff !important;
+        }
+
         @media (min-width: 992px) {
             .sidebar-driver {
                 display: flex;
@@ -111,6 +199,8 @@
 
 <body class="driver-layout">
     @php
+    use App\Models\Dispatch;
+
     $currentRoute = request()->route()?->getName() ?? '';
 
     $isActive = function(string $name) use ($currentRoute) {
@@ -180,9 +270,9 @@
         </aside>
 
         <div class="offcanvas offcanvas-start d-lg-none" tabindex="-1" id="driverOffcanvas" aria-labelledby="driverOffcanvasLabel">
-            <div class="offcanvas-header border-bottom border-light-subtle">
-                <h5 class="offcanvas-title text-dark" id="driverOffcanvasLabel">Driver Navigation</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            <div class="offcanvas-header border-bottom border-light-subtle bg-dark">
+                <h5 class="offcanvas-title text-white" id="driverOffcanvasLabel">Driver Navigation</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
             <div class="offcanvas-body p-0">
                 <div class="p-3 bg-dark text-white">
@@ -190,13 +280,13 @@
                     <div class="small text-white-50">{{ $driverStatusLabel }}</div>
                 </div>
                 <nav class="nav flex-column p-3">
-                    <a href="{{ route('driver.dashboard') }}" class="sidebar-link text-dark {{ $isActive('driver.dashboard') }}"><i class="bi bi-speedometer2 fs-4"></i><span class="label">Dashboard</span></a>
-                    <a href="{{ route('driver.navigation') }}" class="sidebar-link text-dark {{ $isActive('driver.navigation') }}"><i class="bi bi-geo-alt-fill fs-4"></i><span class="label">Navigation</span></a>
-                    <a href="{{ route('driver.assignment') }}" class="sidebar-link text-dark {{ $isActive('driver.assignment') }}"><i class="bi bi-list-check fs-4"></i><span class="label">My Assignment</span></a>
-                    <a href="{{ route('driver.report.create') }}" class="sidebar-link text-dark {{ $isActive('driver.report.create') }}"><i class="bi bi-file-earmark-medical fs-4"></i><span class="label">Reports</span></a>
-                    <a href="{{ route('driver.history') }}" class="sidebar-link text-dark {{ $isActive('driver.history') }}"><i class="bi bi-clock-history fs-4"></i><span class="label">Dispatch History</span></a>
-                    <a href="{{ route('driver.settings') }}" class="sidebar-link text-dark {{ $isActive('driver.settings') }}"><i class="bi bi-gear fs-4"></i><span class="label">Settings</span></a>
-                    <a href="{{ route('profile.edit') }}" class="sidebar-link text-dark {{ $isActive('profile.edit') }}"><i class="bi bi-person-circle fs-4"></i><span class="label">Profile</span></a>
+                    <a href="{{ route('driver.dashboard') }}" class="sidebar-link {{ $isActive('driver.dashboard') }}"><i class="bi bi-speedometer2 fs-4"></i><span class="label">Dashboard</span></a>
+                    <a href="{{ route('driver.navigation') }}" class="sidebar-link {{ $isActive('driver.navigation') }}"><i class="bi bi-geo-alt-fill fs-4"></i><span class="label">Navigation</span></a>
+                    <a href="{{ route('driver.assignment') }}" class="sidebar-link {{ $isActive('driver.assignment') }}"><i class="bi bi-list-check fs-4"></i><span class="label">My Assignment</span></a>
+                    <a href="{{ route('driver.report.create') }}" class="sidebar-link {{ $isActive('driver.report.create') }}"><i class="bi bi-file-earmark-medical fs-4"></i><span class="label">Reports</span></a>
+                    <a href="{{ route('driver.history') }}" class="sidebar-link {{ $isActive('driver.history') }}"><i class="bi bi-clock-history fs-4"></i><span class="label">Dispatch History</span></a>
+                    <a href="{{ route('driver.settings') }}" class="sidebar-link {{ $isActive('driver.settings') }}"><i class="bi bi-gear fs-4"></i><span class="label">Settings</span></a>
+                    <a href="{{ route('profile.edit') }}" class="sidebar-link {{ $isActive('profile.edit') }}"><i class="bi bi-person-circle fs-4"></i><span class="label">Profile</span></a>
                 </nav>
             </div>
         </div>

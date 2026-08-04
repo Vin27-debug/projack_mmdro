@@ -21,15 +21,17 @@
     }
 
     .eoc-card {
-        background-color: var(--gov-surface);
-        border: 1px solid var(--gov-border);
-        border-radius: 1.25rem;
-        box-shadow: 0 18px 35px rgba(0, 0, 0, 0.14);
+        background-color: rgba(13, 29, 57, 0.84);
+        border: 1px solid rgba(59, 105, 255, 0.18);
+        border-radius: 1.5rem;
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.22);
+        backdrop-filter: blur(18px);
     }
 
     .eoc-header-panel {
-        background-color: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: linear-gradient(135deg, rgba(12, 33, 70, 0.96), rgba(16, 44, 87, 0.88));
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
     }
 
     .eoc-seal {
@@ -83,15 +85,28 @@
     }
 
     .panel-surface {
-        background-color: rgba(255, 255, 255, 0.04);
+        background: linear-gradient(180deg, rgba(13, 29, 57, 0.92), rgba(11, 24, 53, 0.76));
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(12px);
     }
 
     .eoc-status-bar {
         border-radius: 1rem;
-        background-color: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         padding: 1rem 1.2rem;
+    }
+
+    .eoc-kpi-icon {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: rgba(59, 105, 255, 0.12);
+        color: #ffffff;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
     }
 
     .eoc-kpi-card {
@@ -100,6 +115,9 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         min-height: 130px;
         transition: transform 0.18s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
 
     .eoc-kpi-card:hover {
@@ -115,7 +133,7 @@
     }
 
     .eoc-kpi-value {
-        font-size: 2rem;
+        font-size: 2.1rem;
         font-weight: 800;
         color: #ffffff;
     }
@@ -148,10 +166,18 @@
         font-size: 0.82rem;
         color: rgba(255, 255, 255, 0.7);
         border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        position: sticky;
+        top: 0;
+        background: rgba(13, 33, 67, 0.95);
+        z-index: 1;
+    }
+
+    .eoc-table tbody tr:nth-child(odd) {
+        background-color: rgba(255, 255, 255, 0.02);
     }
 
     .eoc-table tbody tr:hover {
-        background-color: rgba(255, 255, 255, 0.03);
+        background-color: rgba(255, 255, 255, 0.05);
     }
 
     .severity-pill {
@@ -195,6 +221,11 @@
         text-transform: uppercase;
         letter-spacing: 0.08em;
         font-weight: 700;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+    }
+
+    .bg-gradient {
+        background-image: linear-gradient(90deg, rgba(199, 156, 66, 1), rgba(255, 235, 179, 1));
     }
 
     .badge-live {
@@ -218,11 +249,12 @@
     }
 
     .live-feed-item {
-        background-color: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(180deg, rgba(16, 36, 72, 0.9), rgba(10, 23, 45, 0.95));
+        border: 1px solid rgba(59, 105, 255, 0.16);
         border-radius: 1rem;
         padding: 1rem;
         margin-bottom: 1rem;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
     }
 
     .live-feed-title {
@@ -246,6 +278,9 @@
 
     .chart-card {
         min-height: 360px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(16px);
     }
 
     .no-data-placeholder {
@@ -322,10 +357,13 @@ $operations = $recentActivities ?? collect();
         </div>
         <div class="col-xl-4">
             <div class="card eoc-card p-4 h-100">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div>
-                        <h5 class="eoc-panel-title">Duty Officer</h5>
-                        <p class="eoc-panel-subtitle mb-0">{{ auth()->user()->name ?? 'Admin User' }}</p>
+                <div class="d-flex align-items-center justify-content-between mb-3 gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="eoc-kpi-icon text-info"><i class="bi bi-person-badge-fill fs-4"></i></div>
+                        <div>
+                            <h5 class="eoc-panel-title">Duty Officer</h5>
+                            <p class="eoc-panel-subtitle mb-0">{{ auth()->user()->name ?? 'Admin User' }}</p>
+                        </div>
                     </div>
                     <div class="text-end">
                         <span class="badge-status badge-ready">Ready</span>
@@ -366,43 +404,73 @@ $operations = $recentActivities ?? collect();
                 <div class="row g-3 row-cols-1 row-cols-md-6">
                     <div class="col">
                         <div class="eoc-kpi-card p-3 border-start border-4 border-danger h-100">
-                            <div class="eoc-kpi-title">Active Incidents</div>
-                            <div class="eoc-kpi-value" data-counter="activeIncidents">{{ $activeIncidents ?? 0 }}</div>
+                            <div class="d-flex align-items-start justify-content-between mb-3 gap-3">
+                                <div>
+                                    <div class="eoc-kpi-title">Active Incidents</div>
+                                    <div class="eoc-kpi-value" data-counter="activeIncidents">{{ $activeIncidents ?? 0 }}</div>
+                                </div>
+                                <div class="eoc-kpi-icon text-danger"><i class="bi bi-exclamation-triangle-fill fs-5"></i></div>
+                            </div>
                             <div class="eoc-kpi-note">Incident response pending</div>
                         </div>
                     </div>
                     <div class="col">
                         <div class="eoc-kpi-card p-3 border-start border-4 border-primary h-100">
-                            <div class="eoc-kpi-title">Active Dispatches</div>
-                            <div class="eoc-kpi-value" data-counter="activeDispatches">{{ $activeDispatches ?? 0 }}</div>
+                            <div class="d-flex align-items-start justify-content-between mb-3 gap-3">
+                                <div>
+                                    <div class="eoc-kpi-title">Active Dispatches</div>
+                                    <div class="eoc-kpi-value" data-counter="activeDispatches">{{ $activeDispatches ?? 0 }}</div>
+                                </div>
+                                <div class="eoc-kpi-icon text-primary"><i class="bi bi-broadcast-pin fs-5"></i></div>
+                            </div>
                             <div class="eoc-kpi-note">Units currently assigned</div>
                         </div>
                     </div>
                     <div class="col">
                         <div class="eoc-kpi-card p-3 border-start border-4 border-info h-100">
-                            <div class="eoc-kpi-title">Available Ambulances</div>
-                            <div class="eoc-kpi-value" data-counter="availableVehicles">{{ $availableVehicles ?? 0 }}</div>
+                            <div class="d-flex align-items-start justify-content-between mb-3 gap-3">
+                                <div>
+                                    <div class="eoc-kpi-title">Available Ambulances</div>
+                                    <div class="eoc-kpi-value" data-counter="availableVehicles">{{ $availableVehicles ?? 0 }}</div>
+                                </div>
+                                <div class="eoc-kpi-icon text-info"><i class="bi bi-truck fs-5"></i></div>
+                            </div>
                             <div class="eoc-kpi-note">Ready for emergency deployment</div>
                         </div>
                     </div>
                     <div class="col">
                         <div class="eoc-kpi-card p-3 border-start border-4 border-success h-100">
-                            <div class="eoc-kpi-title">Fleet Readiness</div>
-                            <div class="eoc-kpi-value">{{ $activeAmbulances }}</div>
+                            <div class="d-flex align-items-start justify-content-between mb-3 gap-3">
+                                <div>
+                                    <div class="eoc-kpi-title">Fleet Readiness</div>
+                                    <div class="eoc-kpi-value">{{ $activeAmbulances }}</div>
+                                </div>
+                                <div class="eoc-kpi-icon text-success"><i class="bi bi-speedometer2 fs-5"></i></div>
+                            </div>
                             <div class="eoc-kpi-note">Units currently active</div>
                         </div>
                     </div>
                     <div class="col">
                         <div class="eoc-kpi-card p-3 border-start border-4 border-warning h-100">
-                            <div class="eoc-kpi-title">Average Response</div>
-                            <div class="eoc-kpi-value">{{ $responseTime ?? 0 }}m</div>
+                            <div class="d-flex align-items-start justify-content-between mb-3 gap-3">
+                                <div>
+                                    <div class="eoc-kpi-title">Average Response</div>
+                                    <div class="eoc-kpi-value">{{ $responseTime ?? 0 }}m</div>
+                                </div>
+                                <div class="eoc-kpi-icon text-warning"><i class="bi bi-clock fs-5"></i></div>
+                            </div>
                             <div class="eoc-kpi-note">Minutes to arrival</div>
                         </div>
                     </div>
                     <div class="col">
                         <div class="eoc-kpi-card p-3 border-start border-4 border-secondary h-100">
-                            <div class="eoc-kpi-title">Open Notifications</div>
-                            <div class="eoc-kpi-value">{{ $unreadNotifications ?? 0 }}</div>
+                            <div class="d-flex align-items-start justify-content-between mb-3 gap-3">
+                                <div>
+                                    <div class="eoc-kpi-title">Open Notifications</div>
+                                    <div class="eoc-kpi-value">{{ $unreadNotifications ?? 0 }}</div>
+                                </div>
+                                <div class="eoc-kpi-icon text-secondary"><i class="bi bi-bell fs-5"></i></div>
+                            </div>
                             <div class="eoc-kpi-note">Unread command alerts</div>
                         </div>
                     </div>

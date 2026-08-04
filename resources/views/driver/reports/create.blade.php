@@ -76,7 +76,7 @@
                 <hr>
 
                 <div class="text-end">
-                    <a href="{{ route('driver.dashboard') }}" class="btn btn-secondary">Cancel</a>
+                    <a href="{{ route('driver.dashboard') }}" class="btn btn-outline-light">Cancel</a>
                     <button type="submit" class="btn btn-primary">Submit Report</button>
                 </div>
 

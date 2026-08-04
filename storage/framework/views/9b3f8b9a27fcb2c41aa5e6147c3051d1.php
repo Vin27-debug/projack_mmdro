@@ -104,7 +104,7 @@ unset($__errorArgs, $__bag); ?>
                 <hr>
 
                 <div class="text-end">
-                    <a href="<?php echo e(route('driver.dashboard')); ?>" class="btn btn-secondary">Cancel</a>
+                    <a href="<?php echo e(route('driver.dashboard')); ?>" class="btn btn-outline-light">Cancel</a>
                     <button type="submit" class="btn btn-primary">Submit Report</button>
                 </div>
 

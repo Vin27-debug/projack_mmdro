@@ -24,7 +24,7 @@ $user = $user ?? auth()->user();
                 </div>
             </div>
             <div class="col-lg-4">
-                <div class="card h-100 border-0 bg-light">
+                <div class="card h-100 border-0 bg-dark">
                     <div class="card-body">
                         <h5 class="card-title">Contact & Status</h5>
                         <p class="text-muted mb-2">Contact Number</p>
@@ -35,7 +35,7 @@ $user = $user ?? auth()->user();
                 </div>
             </div>
             <div class="col-lg-4">
-                <div class="card h-100 border-0 bg-light">
+                <div class="card h-100 border-0 bg-dark">
                     <div class="card-body">
                         <h5 class="card-title">Assigned Vehicle</h5>
                         <p class="fw-semibold">{{ $driver?->vehicle?->vehicle_name ?? 'Not assigned' }}</p>

@@ -10,10 +10,10 @@
     </div>
 
     <?php if(!$dispatch || !$dispatch->incident): ?>
-    <div class="card shadow-sm border-0 mb-3">
+    <div class="card border-0 shadow-sm rounded-4 mb-3">
         <div class="card-body text-center py-5">
             <i class="bi bi-exclamation-circle text-warning fs-1 mb-3"></i>
-            <h5 class="fw-semibold">No active assignment available</h5>
+            <h5 class="fw-semibold text-white">No active assignment available</h5>
             <p class="text-muted mb-3">You currently do not have an active dispatch with a mapped incident location.</p>
             <a href="<?php echo e(route('driver.dashboard')); ?>" class="btn btn-primary me-2">Back to Dashboard</a>
             <a href="<?php echo e(route('driver.history')); ?>" class="btn btn-outline-secondary">View Dispatch History</a>
@@ -32,25 +32,25 @@
 
     <div class="row mb-3">
 
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <small>Distance</small>
-                <h5 id="distance">Calculating...</h5>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <small>Distance</small>
+                    <h5 id="distance">Calculating...</h5>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <small>ETA</small>
-                <h5 id="eta">Calculating...</h5>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <small>ETA</small>
+                    <h5 id="eta">Calculating...</h5>
+                </div>
             </div>
         </div>
-    </div>
 
-</div>
+    </div>
 
     <div class="card shadow-sm border-0">
         <div class="card-body">
@@ -67,8 +67,16 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         <?php if($dispatch && $dispatch->incident): ?>
-        const incidentLat = <?php echo e($dispatch->incident->latitude ?? 15.5000); ?>;
-const incidentLng = <?php echo e($dispatch->incident->longitude ?? 120.8500); ?>;
+        const incidentLat = {
+            {
+                $dispatch->incident->latitude ?? 15.5000
+            }
+        };
+        const incidentLng = {
+            {
+                $dispatch->incident->longitude ?? 120.8500
+            }
+        };
 
         const map = L.map('map', {
             zoomControl: true,

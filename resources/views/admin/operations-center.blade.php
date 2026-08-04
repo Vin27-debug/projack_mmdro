@@ -4,41 +4,41 @@
 <div class="card shadow-sm border-0 rounded-4">
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-4">
         <div>
-            <h2 class="h3 fw-bold mb-1">Live Command Center</h2>
-            <p class="text-muted mb-0">Real-time emergency operations overview with live geospatial intelligence.</p>
+            <h2 class="section-heading mb-1">Live Command Center</h2>
+            <p class="section-excerpt mb-0">Real-time emergency operations overview with live geospatial intelligence.</p>
         </div>
-        <div class="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill">
+        <div class="badge bg-danger text-white px-3 py-2 rounded-pill">
             <i class="bi bi-arrow-repeat"></i> Auto-refresh every 10 seconds
         </div>
     </div>
 
     <div class="row g-3 mb-4">
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm bg-danger-subtle text-danger h-100">
+            <div class="card admin-stat-card border-0 shadow-sm h-100 admin-card">
                 <div class="card-body">
                     <div class="small text-uppercase fw-semibold">Live Incidents</div>
                     <div class="display-6 fw-bold mt-2">{{ $stats['live_incidents'] }}</div>
                 </div>
             </div>
         </div>
-        <div class="row g-3 mb-4">
-            <div class="card border-0 shadow-sm bg-primary-subtle text-primary h-100">
+        <div class="col-xl-3 col-md-6">
+            <div class="card admin-stat-card border-0 shadow-sm h-100 admin-card">
                 <div class="card-body">
                     <div class="small text-uppercase fw-semibold">Active Ambulances</div>
                     <div class="display-6 fw-bold mt-2">{{ $stats['active_ambulances'] }}</div>
                 </div>
             </div>
         </div>
-        <div class="row g-3 mb-4">
-            <div class="card border-0 shadow-sm bg-warning-subtle text-warning h-100">
+        <div class="col-xl-3 col-md-6">
+            <div class="card admin-stat-card border-0 shadow-sm h-100 admin-card">
                 <div class="card-body">
                     <div class="small text-uppercase fw-semibold">Panic Alerts</div>
                     <div class="display-6 fw-bold mt-2">{{ $stats['panic_alerts'] }}</div>
                 </div>
             </div>
         </div>
-        <div class="row g-3 mb-4">
-            <div class="card border-0 shadow-sm bg-dark-subtle text-dark h-100">
+        <div class="col-xl-3 col-md-6">
+            <div class="card admin-stat-card border-0 shadow-sm h-100 admin-card">
                 <div class="card-body">
                     <div class="small text-uppercase fw-semibold">Hijack Alerts</div>
                     <div class="display-6 fw-bold mt-2">{{ $stats['hijack_alerts'] }}</div>

@@ -4,7 +4,7 @@
 <div class="container-fluid px-0">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold text-dark mb-1">Dispatch History</h2>
+            <h2 class="fw-bold text-white mb-1">Dispatch History</h2>
             <p class="text-muted mb-0">Search, filter and review past dispatches with timeline and response metrics.</p>
         </div>
         <div class="d-flex gap-2 align-items-center">
@@ -64,8 +64,8 @@
                     </div>
                     @else
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0" id="dispatchTable">
-                            <thead class="table-light">
+                        <table class="table table-dark table-hover align-middle mb-0" id="dispatchTable">
+                            <thead class="table-dark">
                                 <tr>
                                     <th style="width:18%">Incident</th>
                                     <th style="width:18%">Vehicle</th>
@@ -100,7 +100,7 @@
                                 'arrived'=> 'bg-success text-white',
                                 'completed'=> 'bg-dark text-white',
                                 'cancelled'=> 'bg-secondary text-white',
-                                default => 'bg-light text-dark'
+                                default => 'bg-secondary text-white'
                                 };
                                 @endphp
                                 <tr class="dispatch-row" data-incident="{{ $incident?->incident_number ?? '' }}" data-vehicle="{{ $vehicleName }}" data-status="{{ $status }}" data-assigned="{{ $assignedIso }}">
@@ -170,7 +170,7 @@
                                 <div class="small text-muted">{{ $timeLabel }}</div>
                             </div>
                             <div class="mt-1">
-                                <span class="badge bg-light text-dark">{{ str_replace('_',' ', ucfirst($status)) }}</span>
+                                <span class="badge bg-secondary text-white">{{ str_replace('_',' ', ucfirst($status)) }}</span>
                                 @if($accepted && $assigned)
                                 <span class="ms-2 small text-muted">Response: {{ $accepted->diffInMinutes($assigned) }} min</span>
                                 @endif

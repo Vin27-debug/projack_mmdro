@@ -3,8 +3,8 @@
 @section('content')
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
     <div>
-        <h2 class="fw-bold mb-1 text-danger">Incident Command</h2>
-        <p class="text-muted mb-0">Track active incidents and dispatch the nearest ambulance resources.</p>
+        <h2 class="section-heading mb-1 text-danger">Incident Command</h2>
+        <p class="section-excerpt mb-0">Track active incidents and dispatch the nearest ambulance resources.</p>
     </div>
     <a href="{{ route('admin.incidents.create') }}" class="btn btn-danger">Create Incident</a>
 </div>
