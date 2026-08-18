@@ -11,6 +11,7 @@ use App\Models\Notification;
 use App\Models\VehicleDriverAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 use App\Services\DispatchRecommendationService;
 
@@ -50,6 +51,38 @@ class IncidentController extends Controller
             'priority' => 'required|in:Low,Medium,High,Critical',
         ]);
 
+        $latitude = $request->input('latitude');
+        $longitude = $request->input('longitude');
+
+        if (
+            $request->filled('location') &&
+            (!$request->filled('latitude') || !$request->filled('longitude'))
+        ) {
+
+            $response = Http::withHeaders([
+                'User-Agent' => 'MuniResQ/1.0'
+            ])->get(
+                'https://nominatim.openstreetmap.org/search',
+                [
+                    'q' => $request->input('location'),
+                    'format' => 'jsonv2',
+                    'limit' => 1,
+                    'countrycodes' => 'ph',
+                ]
+            );
+
+            if ($response->successful()) {
+
+                $results = $response->json();
+
+                if (!empty($results)) {
+
+                    $latitude = $results[0]['lat'];
+                    $longitude = $results[0]['lon'];
+                }
+            }
+        }
+
         $incident = Incident::create([
 
             'incident_number' =>
@@ -75,11 +108,9 @@ class IncidentController extends Controller
             'description' =>
             $request->description,
 
-            'latitude' =>
-            $request->filled('latitude') ? $request->latitude : null,
+            'latitude' => $latitude,
 
-            'longitude' =>
-            $request->filled('longitude') ? $request->longitude : null,
+            'longitude' => $longitude,
 
             'priority' =>
             $request->priority,

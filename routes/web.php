@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\GeocodingController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 
@@ -25,6 +26,7 @@ use App\Http\Controllers\Admin\PanicAlertController as AdminPanicAlertController
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\IncidentHistoryController;
+use App\Http\Controllers\Admin\AmbulanceController as adminAmbulanceController;
 
 use App\Http\Controllers\Driver\DashboardController as DriverDashboardController;
 use App\Http\Controllers\Driver\DriverRegistrationController;
@@ -38,11 +40,13 @@ use App\Http\Controllers\Driver\NavigationController;
 use App\Http\Controllers\Driver\DriverHistoryController;
 use App\Http\Controllers\Driver\DriverSettingsController;
 
+use App\Http\Controllers\SuperAdmin\UserApprovalController;
 use App\Http\Controllers\SuperAdmin\BackupController;
 use App\Http\Controllers\SuperAdmin\AmbulanceController;
 use App\Http\Controllers\SuperAdmin\AssignmentController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
-use App\Http\Controllers\SuperAdmin\UserApprovalController;
+use App\Http\Controllers\SuperAdmin\DriverController;
+
 use App\Http\Controllers\SuperAdmin\SystemSettingsController;
 
 /*
@@ -114,6 +118,8 @@ Route::middleware([
     'approved',
     'role:driver'
 ])->group(function () {
+
+
     Route::post('/driver/panic', [PanicController::class, 'trigger'])
         ->name('driver.panic.trigger');
 
@@ -168,6 +174,16 @@ Route::middleware([
     'approved',
     'role:admin|super-admin'
 ])->group(function () {
+
+    //geoloc
+
+    Route::get('/geocode', [GeocodingController::class, 'search'])
+        ->name('geocode.search');
+
+    Route::resource('ambulances', AmbulanceController::class)
+        ->except(['show'])
+        ->names('admin.ambulances');
+
     Route::get('/admin/reports/pdf', [PdfReportController::class, 'downloadReport'])
         ->name('admin.reports.pdf');
     Route::get('/admin/reports/pdf/view', [PdfReportController::class, 'viewReport'])
@@ -346,6 +362,25 @@ Route::middleware([
     'approved',
     'role:super-admin'
 ])->group(function () {
+
+    Route::get(
+        '/superadmin/drivers/{driver}/assign',
+        [UserApprovalController::class, 'assignForm']
+    )->name('superadmin.drivers.assign');
+
+    Route::post(
+        '/superadmin/drivers/{driver}/assign',
+        [UserApprovalController::class, 'assignVehicle']
+    )->name('superadmin.drivers.assign.store');
+
+    Route::get('/superadmin/drivers/create', [DriverController::class, 'create'])
+        ->name('superadmin.drivers.create');
+
+    Route::post('/superadmin/drivers', [DriverController::class, 'store'])
+        ->name('superadmin.drivers.store');
+
+    Route::post('/superadmin/drivers', [DriverController::class, 'store'])
+        ->name('superadmin.drivers.store');
     Route::get('/backups', [BackupController::class, 'index'])
         ->name('backups.index');
 

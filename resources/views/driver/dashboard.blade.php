@@ -90,7 +90,15 @@
                     <div class="stat-icon bg-info text-white"><i class="bi bi-truck"></i></div>
                     <div>
                         <div class="small text-muted">Vehicle</div>
-                        <div class="fw-bold">{{ $currentDispatch?->vehicle?->vehicle_name ?? $currentDispatch?->ambulance?->vehicle_name ?? 'Not Assigned' }}</div>
+                        @php
+                        $activeVehicle = $currentDispatch?->vehicle ?? $currentDispatch?->ambulance ?? $driver->activeVehicleAssignment?->ambulance;
+                        $vehicleLabel = $activeVehicle?->vehicle_name ?? 'Not Assigned';
+                        $vehiclePlate = $activeVehicle?->plate_number ?? null;
+                        @endphp
+                        <div class="fw-bold">{{ $vehicleLabel }}</div>
+                        @if($vehiclePlate)
+                        <div class="small text-muted">{{ $vehiclePlate }}</div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -146,6 +154,14 @@
                         <span class="badge rounded-pill bg-danger-subtle text-danger align-self-start">Live Tracking</span>
                     </div>
 
+                    @php
+                    $mapVehicleName = $currentDispatch?->vehicle?->vehicle_name
+                    ?? $currentDispatch?->ambulance?->vehicle_name
+                    ?? $driver->activeVehicleAssignment?->ambulance?->vehicle_name;
+                    $assignedVehicle = $driver->activeVehicleAssignment?->ambulance;
+                    $assignedVehicleLabel = $assignedVehicle ? trim(($assignedVehicle->vehicle_name ?? '') . ($assignedVehicle->plate_number ? ' • ' . $assignedVehicle->plate_number : '')) : null;
+                    @endphp
+
                     @if($currentDispatch && $currentDispatch->incident)
                     <div class="map-shell">
                         <div id="map"></div>
@@ -160,7 +176,9 @@
                     </div>
                     <div class="mb-3">
                         <div class="small text-muted text-uppercase">Vehicle</div>
-                        <div class="fw-semibold">{{ $currentDispatch->vehicle?->vehicle_name ?? $currentDispatch->ambulance?->vehicle_name ?? 'Not assigned' }}</div>
+                        <div class="fw-semibold">
+                            {{ $currentDispatch->vehicle?->vehicle_name ?? $currentDispatch->ambulance?->vehicle_name ?? $assignedVehicleLabel ?? 'Not assigned' }}
+                        </div>
                     </div>
                     <div class="mb-3">
                         <div class="small text-muted text-uppercase">Status</div>
@@ -219,7 +237,7 @@
                     </div>
                     <div class="mb-3">
                         <div class="small text-muted text-uppercase">Vehicle</div>
-                        <div class="fw-semibold">{{ $reportableDispatch->vehicle?->vehicle_name ?? $reportableDispatch->ambulance?->vehicle_name ?? 'Not assigned' }}</div>
+                        <div class="fw-semibold">{{ $reportableDispatch->vehicle?->vehicle_name ?? $reportableDispatch->ambulance?->vehicle_name ?? $assignedVehicle?->vehicle_name ?? 'Not assigned' }}</div>
                     </div>
                     <div class="mb-3">
                         <div class="small text-muted text-uppercase">Status</div>
@@ -229,7 +247,17 @@
                         <a href="{{ route('driver.report.create', $reportableDispatch->incident) }}" class="btn btn-outline-primary btn-lg driver-action-btn flex-fill">Submit Report</a>
                     </div>
                     @else
-                    <div class="text-muted py-3">No active assignment.</div>
+                    <div class="map-shell">
+                        <div id="map"></div>
+                    </div>
+                    <div class="mb-3 p-3 rounded-3 bg-secondary bg-opacity-10">
+                        <div class="small text-muted text-uppercase">Vehicle</div>
+                        <div class="fw-semibold">{{ $assignedVehicleLabel ?? 'Not assigned' }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="small text-muted text-uppercase">Status</div>
+                        <div class="mt-1"><span class="badge bg-secondary">No Active Dispatch</span></div>
+                    </div>
                     @endif
                 </div>
             </div>
@@ -491,23 +519,31 @@
             }).addTo(map);
 
         navigator.geolocation.getCurrentPosition(function(position) {
-            const driverLat = position.coords.latitude;
-            const driverLng = position.coords.longitude;
+            const driverLat = Number(position.coords.latitude);
+            const driverLng = Number(position.coords.longitude);
 
-            const ambulanceIcon = L.icon({
-                iconUrl: '/images/ambulance.png',
-                iconSize: [40, 40],
-                iconAnchor: [20, 40]
+            const driverMapIcon = L.divIcon({
+                className: 'driver-map-pin',
+                html: '<div style="background:#0d6efd;border:2px solid #fff;border-radius:50%;width:16px;height:16px;box-shadow:0 2px 10px rgba(0,0,0,0.35);"></div>',
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
             });
 
-            const driverMarker = L.marker([driverLat, driverLng], {
-                icon: ambulanceIcon
-            }).addTo(map);
+            const assignedVehicle = @json($driver->activeVehicleAssignment?->ambulance);
+            const assignedVehicleName = assignedVehicle ? (assignedVehicle.vehicle_name || 'Assigned Vehicle') : 'Assigned Vehicle';
+            const plateNumber = assignedVehicle ? (assignedVehicle.plate_number || '') : '';
 
+            const driverMarker = L.marker([driverLat, driverLng], {
+                icon: driverMapIcon
+            }).addTo(map).bindPopup(
+                '<strong>Driver</strong><br>' +
+                '{{ $driver->user->name ?? "Driver" }}' +
+                (plateNumber ? '<br>' + plateNumber : '')
+            );
 
             if (activeDispatchLocation && activeDispatchLocation.latitude && activeDispatchLocation.longitude) {
-                const incidentLat = activeDispatchLocation.latitude;
-                const incidentLng = activeDispatchLocation.longitude;
+                const incidentLat = Number(activeDispatchLocation.latitude);
+                const incidentLng = Number(activeDispatchLocation.longitude);
 
                 const incidentMarker = L.marker([incidentLat, incidentLng])
                     .addTo(map)
@@ -533,6 +569,19 @@
                 });
             } else {
                 map.setView([driverLat, driverLng], 15);
+            }
+
+            if (assignedVehicle && Number.isFinite(driverLat) && Number.isFinite(driverLng)) {
+                const vehicleMarker = L.marker([driverLat, driverLng], {
+                    title: assignedVehicleName
+                }).addTo(map).bindPopup(
+                    '<strong>' + assignedVehicleName + '</strong>' +
+                    (plateNumber ? '<br>' + plateNumber : '')
+                );
+
+                if (activeDispatchLocation && activeDispatchLocation.latitude && activeDispatchLocation.longitude) {
+                    vehicleMarker.setLatLng([driverLat, driverLng]);
+                }
             }
         }, function() {
             map.setView([15.4866, 120.9675], 13);

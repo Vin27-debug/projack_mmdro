@@ -111,13 +111,62 @@ class UserApprovalController extends Controller
 
     public function drivers()
     {
-        $drivers = Driver::with('user')
+        $drivers = Driver::with([
+            'user',
+            'activeVehicleAssignment.ambulance'
+        ])
             ->orderBy('id', 'desc')
             ->get();
+
 
         return view(
             'superadmin.drivers.index',
             compact('drivers')
         );
+    }
+    public function assignForm(Driver $driver)
+    {
+        $vehicles = Ambulance::whereIn('status', [
+            Ambulance::STATUS_AVAILABLE,
+            Ambulance::STATUS_ON_DUTY,
+        ])
+            ->orderBy('vehicle_type')
+            ->orderBy('vehicle_name')
+            ->get();
+
+        $currentAssignment = $driver->activeVehicleAssignment()
+            ->with('ambulance')
+            ->first();
+
+        return view(
+            'superadmin.drivers.assign',
+            compact(
+                'driver',
+                'vehicles',
+                'currentAssignment'
+            )
+        );
+    }
+    public function assignVehicle(Request $request, Driver $driver)
+    {
+        $request->validate([
+            'ambulance_id' => 'required|exists:ambulances,id',
+        ]);
+
+        $ambulance = Ambulance::findOrFail(
+            $request->ambulance_id
+        );
+
+        VehicleDriverAssignment::assignDriverToAmbulance(
+            $driver,
+            $ambulance
+        );
+
+        return redirect()
+            ->route('superadmin.drivers')
+            ->with(
+                'success',
+                'Vehicle assigned to driver successfully.'
+            );
     }
 }

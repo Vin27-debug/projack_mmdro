@@ -15,17 +15,17 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $driver = Auth::user()?->driver;
+        $driver = Auth::user()?->driver()->with([
+            'activeVehicleAssignment.ambulance',
+            'activeDispatch.incident',
+            'activeDispatch.ambulance',
+        ])->first();
 
         if (!$driver) {
             abort(403, 'Driver profile not found.');
         }
 
-        $currentDispatch = Dispatch::with(['incident', 'vehicle'])
-            ->where('driver_id', $driver->id)
-            ->inProgress()
-            ->latest('assigned_at')
-            ->first();
+        $currentDispatch = $driver->activeDispatch()->with(['incident', 'vehicle', 'ambulance'])->first();
 
         $reportableDispatch = Dispatch::with('incident')
             ->where('driver_id', $driver->id)
@@ -89,51 +89,108 @@ class DashboardController extends Controller
             );
         }
     }
-
     public function declineDispatch(Dispatch $dispatch): RedirectResponse
     {
-
-
-
         $driver = Auth::user()?->driver;
 
-        if (!$driver || $dispatch->driver_id !== $driver->id) {
-            abort(403);
+        if (!$driver) {
+            abort(403, 'Driver profile not found.');
         }
 
-        if (in_array($dispatch->status, [Dispatch::STATUS_CANCELLED, Dispatch::STATUS_CLOSED], true)) {
-            return back()->with('error', 'This dispatch is already closed.');
+        // Make sure this dispatch belongs to the logged-in driver
+        if ((int) $dispatch->driver_id !== (int) $driver->id) {
+            abort(403, 'You are not authorized to decline this dispatch.');
+        }
+
+        // Don't allow declining an already finished dispatch
+        if (in_array($dispatch->status, [
+            Dispatch::STATUS_COMPLETED,
+            Dispatch::STATUS_CLOSED,
+            Dispatch::STATUS_CANCELLED,
+        ], true)) {
+            return back()->with(
+                'error',
+                'This dispatch is already closed.'
+            );
         }
 
         DB::transaction(function () use ($dispatch, $driver) {
+
+            /*
+        |--------------------------------------------------------------------------
+        | 1. Cancel the dispatch only
+        |--------------------------------------------------------------------------
+        */
+
             $dispatch->update([
                 'status' => Dispatch::STATUS_CANCELLED,
             ]);
 
-            $dispatch->incident?->update([
-                'status' => Incident::STATUS_CANCELLED,
-            ]);
 
-            $dispatch->vehicle?->update([
-                'status' => Ambulance::STATUS_AVAILABLE,
-            ]);
+            /*
+        |--------------------------------------------------------------------------
+        | 2. Return incident to pending
+        |--------------------------------------------------------------------------
+        |
+        | The incident is NOT cancelled.
+        | It can still be assigned to another driver.
+        |
+        */
 
-            if (! Dispatch::where('driver_id', $driver->id)
+            if ($dispatch->incident) {
+
+                $dispatch->incident->update([
+                    'status' => Incident::STATUS_PENDING,
+                    'driver_id' => null,
+                    'ambulance_id' => null,
+                ]);
+            }
+
+
+            /*
+        |--------------------------------------------------------------------------
+        | 3. Make ambulance available
+        |--------------------------------------------------------------------------
+        */
+
+            if ($dispatch->vehicle) {
+
+                $dispatch->vehicle->update([
+                    'status' => Ambulance::STATUS_AVAILABLE,
+                ]);
+            }
+
+
+            /*
+        |--------------------------------------------------------------------------
+        | 4. Make driver available
+        |--------------------------------------------------------------------------
+        */
+
+            $hasActiveDispatch = Dispatch::where(
+                'driver_id',
+                $driver->id
+            )
                 ->whereNotIn('status', [
                     Dispatch::STATUS_COMPLETED,
                     Dispatch::STATUS_CLOSED,
                     Dispatch::STATUS_CANCELLED,
                 ])
-                ->exists()) {
+                ->exists();
+
+
+            if (!$hasActiveDispatch) {
+
                 $driver->update([
                     'status' => Driver::STATUS_AVAILABLE,
                 ]);
             }
         });
 
+
         return back()->with(
             'success',
-            'Assignment declined.'
+            'Assignment declined. The incident is now available for reassignment.'
         );
     }
 

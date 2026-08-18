@@ -7,9 +7,6 @@
         <h1 class="page-title">Driver Performance</h1>
         <p class="page-subtitle mb-0">A quick overview of dispatch and incident report counts per driver.</p>
     </div>
-    <a href="{{ route('superadmin.dashboard') }}" class="btn btn-outline-light page-back-button">
-        <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
-    </a>
 </div>
 
 <div class="card admin-card border-0 shadow-sm p-4">

@@ -8,9 +8,6 @@
         <h1 class="page-title">Database Backups</h1>
         <p class="page-subtitle mb-0">Create backups and review recent restore history.</p>
     </div>
-    <a href="{{ route('superadmin.dashboard') }}" class="btn btn-outline-light page-back-button">
-        <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
-    </a>
 </div>
 
 @if(session('success'))

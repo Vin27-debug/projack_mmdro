@@ -6,6 +6,7 @@ use App\Models\Ambulance;
 use App\Models\Driver;
 use App\Models\Incident;
 use App\Models\User;
+use App\Models\VehicleDriverAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -105,5 +106,66 @@ class DashboardAccessTest extends TestCase
         $response->assertOk();
         $response->assertSee('Assigned Incidents');
         $response->assertSee($incident->incident_number);
+    }
+
+    public function test_driver_dashboard_uses_active_vehicle_assignment_when_no_dispatch_exists(): void
+    {
+        $role = Role::firstOrCreate(['name' => 'driver']);
+        $user = User::factory()->create(['status' => 'approved']);
+        $user->assignRole($role);
+
+        $driver = Driver::create([
+            'user_id' => $user->id,
+            'badge_id' => 'AMB-003',
+            'contact_number' => '09123456791',
+            'license_number' => 'LIC-003',
+            'license_expiry' => '2030-01-01',
+            'status' => 'available',
+        ]);
+
+        $ambulance = Ambulance::create([
+            'plate_number' => 'FIRE-001',
+            'vehicle_name' => 'Firetruck 01',
+            'vehicle_type' => 'fire_truck',
+            'status' => 'available',
+        ]);
+
+        VehicleDriverAssignment::create([
+            'driver_id' => $driver->id,
+            'ambulance_id' => $ambulance->id,
+            'status' => 'active',
+            'assigned_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->get('/driver/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('Firetruck 01');
+        $response->assertSee('FIRE-001');
+        $response->assertDontSee('Not Assigned');
+    }
+
+    public function test_driver_gps_update_requires_valid_coordinates(): void
+    {
+        $role = Role::firstOrCreate(['name' => 'driver']);
+        $user = User::factory()->create(['status' => 'approved']);
+        $user->assignRole($role);
+
+        Driver::create([
+            'user_id' => $user->id,
+            'badge_id' => 'AMB-004',
+            'contact_number' => '09123456792',
+            'license_number' => 'LIC-004',
+            'license_expiry' => '2030-01-01',
+            'status' => 'available',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->json('POST', '/driver/gps/update', [
+                'latitude' => 'latitude',
+                'longitude' => 'longitude',
+            ]);
+
+        $response->assertStatus(422);
     }
 }

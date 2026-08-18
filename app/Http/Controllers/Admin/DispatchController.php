@@ -7,61 +7,252 @@ use App\Models\Incident;
 use App\Models\Dispatch;
 use App\Models\Driver;
 use App\Models\Ambulance;
-use App\Models\VehicleDriverAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
-use App\Services\AuditService;
 
 class DispatchController extends Controller
 {
+    /**
+     * Dispatch Center
+     */
     public function index()
     {
-        $incidents = Incident::latest()->get();
-        $drivers = Driver::all();
-        $ambulances = Ambulance::all();
+        /*
+        |--------------------------------------------------------------------------
+        | Only show incidents that still need dispatch
+        |--------------------------------------------------------------------------
+        |
+        | Completed, closed, and cancelled incidents must NEVER appear here.
+        |
+        */
+
+        $incidents = Incident::whereIn('status', [
+            Incident::STATUS_PENDING,
+        ])
+            ->latest()
+            ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Only available drivers
+        |--------------------------------------------------------------------------
+        */
+
+        $drivers = Driver::where(
+            'status',
+            Driver::STATUS_AVAILABLE
+        )
+            ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Only available ambulances
+        |--------------------------------------------------------------------------
+        */
+
+        $ambulances = Ambulance::where(
+            'status',
+            Ambulance::STATUS_AVAILABLE
+        )
+            ->get();
+
 
         return view(
             'admin.dispatches.index',
-            compact('incidents', 'drivers', 'ambulances')
+            compact(
+                'incidents',
+                'drivers',
+                'ambulances'
+            )
         );
     }
 
-    public function assign(Request $request, Incident $incident)
-    {
+
+    /**
+     * Assign incident to driver and ambulance
+     */
+    public function assign(
+        Request $request,
+        Incident $incident
+    ) {
+        /*
+        |--------------------------------------------------------------------------
+        | SECURITY CHECK
+        |--------------------------------------------------------------------------
+        |
+        | A completed / closed / cancelled incident
+        | must NEVER be dispatchable again.
+        |
+        */
+
+        if (in_array($incident->status, [
+            Incident::STATUS_COMPLETED,
+            Incident::STATUS_CLOSED,
+            Incident::STATUS_CANCELLED,
+        ], true)) {
+
+            return back()->with(
+                'error',
+                'This incident is already finished and cannot be dispatched again.'
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate request
+        |--------------------------------------------------------------------------
+        */
+
         $request->validate([
-            'driver_id' => 'required|exists:drivers,id',
-            'ambulance_id' => 'required_without:vehicle_id|exists:ambulances,id',
-            'vehicle_id' => 'required_without:ambulance_id|exists:ambulances,id',
+            'driver_id' => [
+                'required',
+                'exists:drivers,id',
+            ],
+
+            'ambulance_id' => [
+                'required_without:vehicle_id',
+                'exists:ambulances,id',
+            ],
+
+            'vehicle_id' => [
+                'required_without:ambulance_id',
+                'exists:ambulances,id',
+            ],
         ]);
 
-        $ambulanceId = $request->input('ambulance_id') ?? $request->input('vehicle_id');
-        $driverId = (int) $request->driver_id;
 
-        if (Dispatch::active()->where('driver_id', $driverId)->exists()) {
-            return back()->with('error', 'This driver already has an active dispatch.');
-        }
+        $ambulanceId =
+            $request->input('ambulance_id')
+            ?? $request->input('vehicle_id');
 
-        if (Dispatch::active()->where('vehicle_id', $ambulanceId)->exists()) {
-            return back()->with('error', 'This ambulance already has an active dispatch.');
-        }
+        $driverId =
+            (int) $request->driver_id;
 
-        if (Dispatch::active()->where('incident_id', $incident->id)->exists()) {
-            return back()->with('error', 'This incident already has an active dispatch.');
-        }
 
-        DB::transaction(function () use ($incident, $driverId, $ambulanceId) {
-            Dispatch::updateOrCreate(
-                [
-                    'incident_id' => $incident->id,
-                    'driver_id' => $driverId,
-                    'vehicle_id' => $ambulanceId,
-                    'status' => Dispatch::STATUS_ASSIGNED,
-                ],
-                [
-                    'assigned_at' => now(),
-                ]
+        /*
+        |--------------------------------------------------------------------------
+        | Check driver
+        |--------------------------------------------------------------------------
+        */
+
+        $driver = Driver::findOrFail($driverId);
+
+        if (
+            $driver->status !== Driver::STATUS_AVAILABLE
+        ) {
+
+            return back()->with(
+                'error',
+                'This driver is currently not available.'
             );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Check ambulance
+        |--------------------------------------------------------------------------
+        */
+
+        $ambulance = Ambulance::findOrFail(
+            $ambulanceId
+        );
+
+        if (
+            $ambulance->status !== Ambulance::STATUS_AVAILABLE
+        ) {
+
+            return back()->with(
+                'error',
+                'This ambulance is currently not available.'
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Check active driver dispatch
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            Dispatch::active()
+            ->where('driver_id', $driverId)
+            ->exists()
+        ) {
+
+            return back()->with(
+                'error',
+                'This driver already has an active dispatch.'
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Check active ambulance dispatch
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            Dispatch::active()
+            ->where('vehicle_id', $ambulanceId)
+            ->exists()
+        ) {
+
+            return back()->with(
+                'error',
+                'This ambulance already has an active dispatch.'
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Check active incident dispatch
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            Dispatch::active()
+            ->where('incident_id', $incident->id)
+            ->exists()
+        ) {
+
+            return back()->with(
+                'error',
+                'This incident already has an active dispatch.'
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create dispatch
+        |--------------------------------------------------------------------------
+        */
+
+        DB::transaction(function () use (
+            $incident,
+            $driverId,
+            $ambulanceId
+        ) {
+
+            Dispatch::create([
+                'incident_id' => $incident->id,
+                'driver_id' => $driverId,
+                'vehicle_id' => $ambulanceId,
+                'status' => Dispatch::STATUS_ASSIGNED,
+                'assigned_at' => now(),
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Update incident
+            |--------------------------------------------------------------------------
+            */
 
             $incident->update([
                 'driver_id' => $driverId,
@@ -69,15 +260,41 @@ class DispatchController extends Controller
                 'status' => Incident::STATUS_DISPATCHED,
             ]);
 
-            Driver::whereKey($driverId)->update([
-                'status' => Driver::STATUS_AVAILABLE,
+
+            /*
+            |--------------------------------------------------------------------------
+            | Update driver
+            |--------------------------------------------------------------------------
+            */
+
+            $driver = Driver::findOrFail(
+                $driverId
+            );
+
+            $driver->update([
+                'status' => Driver::STATUS_EN_ROUTE,
             ]);
 
-            Ambulance::whereKey($ambulanceId)->update([
+
+            /*
+            |--------------------------------------------------------------------------
+            | Update ambulance
+            |--------------------------------------------------------------------------
+            */
+
+            $ambulance = Ambulance::findOrFail(
+                $ambulanceId
+            );
+
+            $ambulance->update([
                 'status' => Ambulance::STATUS_ON_DUTY,
             ]);
         });
 
-        return back()->with('success', 'Dispatch assigned successfully.');
+
+        return back()->with(
+            'success',
+            'Dispatch assigned successfully.'
+        );
     }
 }

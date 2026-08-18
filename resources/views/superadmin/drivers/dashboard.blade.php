@@ -7,9 +7,6 @@
         <h1 class="page-title">Driver Dashboard</h1>
         <p class="page-subtitle mb-0">Track assigned incidents and current driver assignments in one place.</p>
     </div>
-    <a href="{{ route('superadmin.dashboard') }}" class="btn btn-outline-light page-back-button">
-        <i class="bi bi-arrow-left me-1"></i> Back to Super Admin
-    </a>
 </div>
 
 <div class="row g-3 mb-4">

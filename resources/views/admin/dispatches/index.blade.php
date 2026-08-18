@@ -68,4 +68,10 @@
     </div>
     @endforelse
 </div>
+<script>
+    // Automatically refresh the Dispatch Center every 5 seconds
+    setInterval(function() {
+        window.location.reload();
+    }, 5000);
+</script>
 @endsection

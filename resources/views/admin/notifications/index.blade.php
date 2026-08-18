@@ -89,7 +89,7 @@
 
                         <tr>
 
-                            <td colspan="5">
+                            <td colspan="7">
                                 No Notifications
                             </td>
 

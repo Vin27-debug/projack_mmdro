@@ -304,7 +304,6 @@
             <div class="col-12 col-xl-2">
                 <aside class="super-sidebar">
                     <div class="super-brand">
-                        <div class="super-brand-mark">S</div>
                         <div>
                             <h4 class="super-brand-title mb-1">MuniResQ</h4>
                             <p class="super-brand-subtitle mb-0">Super Admin</p>
