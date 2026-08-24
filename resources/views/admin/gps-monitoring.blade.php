@@ -24,15 +24,14 @@
 
 
 {{-- ============================================================
-     DRIVER / AMBULANCE CARDS
+     AMBULANCE CARDS
 ============================================================ --}}
 
-<div id="ambulanceList" class="row g-3 mb-4">
-</div>
+<div id="ambulanceList" class="row g-3 mb-4"></div>
 
 
 {{-- ============================================================
-     NO DATA MESSAGE
+     NO GPS DATA
 ============================================================ --}}
 
 <div id="noAmbulanceMessage"
@@ -61,7 +60,7 @@
                 width:100%;
                 border-radius:16px;
                 overflow:hidden;
-             ">
+            ">
         </div>
 
     </div>
@@ -75,20 +74,16 @@
 
 <link
     rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+    href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 
 <link
     rel="stylesheet"
-    href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
 
 
-<script
-    src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js">
-</script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script
-    src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js">
-</script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 
 
 <script>
@@ -107,7 +102,9 @@
         const UPDATE_INTERVAL = 5000;
 
         const DEFAULT_LAT = 15.421486;
+
         const DEFAULT_LNG = 120.842827;
+
         const DEFAULT_ZOOM = 13;
 
 
@@ -150,6 +147,7 @@
         ============================================================ */
 
         function setLiveStatus(text, type = 'success') {
+
             const element =
                 document.getElementById('liveStatus');
 
@@ -167,6 +165,7 @@
         ============================================================ */
 
         function escapeHtml(value) {
+
             return String(value ?? '')
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
@@ -181,6 +180,7 @@
         ============================================================ */
 
         function getStatusLabel(status) {
+
             const labels = {
 
                 pending: 'PENDING',
@@ -215,6 +215,7 @@
         ============================================================ */
 
         function getStatusBadge(status) {
+
             if (status === 'completed') {
 
                 return `
@@ -222,8 +223,8 @@
                     🔵 COMPLETED
                 </span>
             `;
-
             }
+
 
             if (status === 'closed') {
 
@@ -232,8 +233,8 @@
                     ⚪ CLOSED
                 </span>
             `;
-
             }
+
 
             if (status === 'cancelled') {
 
@@ -242,8 +243,8 @@
                     CANCELLED
                 </span>
             `;
-
             }
+
 
             if (status === 'arrived') {
 
@@ -252,8 +253,8 @@
                     🟡 ARRIVED
                 </span>
             `;
-
             }
+
 
             if (
                 status === 'en_route' ||
@@ -263,42 +264,56 @@
 
                 return `
                 <span class="badge bg-success">
-                    🟢 ${escapeHtml(getStatusLabel(status))}
+                    🟢 ${escapeHtml(
+                        getStatusLabel(status)
+                    )}
                 </span>
             `;
-
             }
+
 
             return `
             <span class="badge bg-secondary">
-                ${escapeHtml(getStatusLabel(status))}
+                ${escapeHtml(
+                    getStatusLabel(status)
+                )}
             </span>
         `;
         }
 
 
         /* ============================================================
-           CREATE AMBULANCE ICON
+           AMBULANCE ICON
         ============================================================ */
 
         function createAmbulanceIcon(status) {
+
             let background = '#198754';
 
+
             if (status === 'completed') {
+
                 background = '#0d6efd';
             }
 
+
             if (status === 'arrived') {
+
                 background = '#ffc107';
             }
 
+
             if (status === 'cancelled') {
+
                 background = '#dc3545';
             }
 
+
             if (status === 'no_mission') {
+
                 background = '#6c757d';
             }
+
 
             return L.divIcon({
 
@@ -332,10 +347,11 @@
 
 
         /* ============================================================
-           CREATE INCIDENT ICON
+           INCIDENT ICON
         ============================================================ */
 
         function createIncidentIcon() {
+
             return L.divIcon({
 
                 className: 'incident-marker',
@@ -368,25 +384,36 @@
 
 
         /* ============================================================
-           CREATE / UPDATE AMBULANCE MARKER
+           UPDATE AMBULANCE MARKER
         ============================================================ */
 
         function updateAmbulanceMarker(location) {
+
             const driverId =
-                location.driver_id;
+                String(location.driver_id);
+
 
             const lat =
                 Number(location.latitude);
 
+
             const lng =
                 Number(location.longitude);
+
 
             if (
                 !Number.isFinite(lat) ||
                 !Number.isFinite(lng)
             ) {
+
                 return;
             }
+
+
+            const status =
+                location.monitoring_status ||
+                location.dispatch_status ||
+                'no_mission';
 
 
             const popup = `
@@ -406,7 +433,7 @@
                     <strong>Driver:</strong>
                     ${escapeHtml(
                         location.driver_name ||
-                        'Unknown'
+                        'Unknown Driver'
                     )}
                 </div>
 
@@ -436,18 +463,26 @@
 
                 <div>
                     <strong>Last GPS:</strong>
-                    ${location.recorded_at
-                        ? new Date(
+                    ${
+                        location.recorded_at
+                        ?
+                        new Date(
                             location.recorded_at
                         ).toLocaleString()
-                        : 'Unknown'
+                        :
+                        'Unknown'
                     }
                 </div>
 
             </div>
-
         `;
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | CREATE MARKER
+            |--------------------------------------------------------------------------
+            */
 
             if (!ambulanceMarkers[driverId]) {
 
@@ -455,15 +490,20 @@
                     L.marker(
                         [lat, lng], {
                             icon: createAmbulanceIcon(
-                                location.monitoring_status === 'completed' ?
-                                'completed' :
-                                location.dispatch_status
+                                status
                             )
                         }
-                    )
-                    .addTo(map);
+                    ).addTo(map);
 
-            } else {
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | UPDATE MARKER
+            |--------------------------------------------------------------------------
+            */
+            else {
 
                 ambulanceMarkers[driverId]
                     .setLatLng([lat, lng]);
@@ -471,12 +511,9 @@
                 ambulanceMarkers[driverId]
                     .setIcon(
                         createAmbulanceIcon(
-                            location.monitoring_status === 'completed' ?
-                            'completed' :
-                            location.dispatch_status
+                            status
                         )
                     );
-
             }
 
 
@@ -486,24 +523,23 @@
 
 
         /* ============================================================
-           INCIDENT MARKER
+           UPDATE INCIDENT MARKER
         ============================================================ */
 
         function updateIncidentMarker(location) {
+
             if (
-                !location.incident_id ||
-                !location.incident_latitude ||
-                !location.incident_longitude
+                location.incident_id === null ||
+                location.incident_id === undefined
             ) {
+
                 return;
             }
 
 
-            const incidentId =
-                location.incident_id;
-
             const lat =
                 Number(location.incident_latitude);
+
 
             const lng =
                 Number(location.incident_longitude);
@@ -513,40 +549,57 @@
                 !Number.isFinite(lat) ||
                 !Number.isFinite(lng)
             ) {
+
                 return;
             }
 
 
+            if (lat === 0 && lng === 0) {
+
+                return;
+            }
+
+
+            const incidentId =
+                String(location.incident_id);
+
+
             const popup = `
 
-            <div>
+            <div style="min-width:200px">
 
                 <strong>
                     🚨 Incident
                 </strong>
 
-                <br>
+                <hr>
 
-                ${
-                    escapeHtml(
+                <div>
+                    <strong>Incident:</strong>
+                    ${escapeHtml(
                         location.incident_number ||
                         'Incident'
-                    )
-                }
+                    )}
+                </div>
 
-                <br>
-
-                ${
-                    escapeHtml(
+                <div>
+                    <strong>Location:</strong>
+                    ${escapeHtml(
                         location.incident_location ||
                         'Location unavailable'
-                    )
-                }
+                    )}
+                </div>
 
             </div>
 
         `;
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | CREATE
+            |--------------------------------------------------------------------------
+            */
 
             if (!incidentMarkers[incidentId]) {
 
@@ -555,14 +608,20 @@
                         [lat, lng], {
                             icon: createIncidentIcon()
                         }
-                    )
-                    .addTo(map);
+                    ).addTo(map);
 
-            } else {
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | UPDATE
+            |--------------------------------------------------------------------------
+            */
+            else {
 
                 incidentMarkers[incidentId]
                     .setLatLng([lat, lng]);
-
             }
 
 
@@ -572,174 +631,498 @@
 
 
         /* ============================================================
-           ROUTING
+           REMOVE ROUTE SAFELY
         ============================================================ */
 
-        function updateRoute(lat, lng, incidentLat, incidentLng) {
+        function removeRoute(driverId) {
 
-            // Convert incoming values to numbers
-            const driverLat = Number(lat);
-            const driverLng = Number(lng);
+            driverId =
+                String(driverId);
 
-            const destinationLat =
-                incidentLat !== null &&
-                incidentLat !== undefined &&
-                incidentLat !== '' ?
-                Number(incidentLat) :
-                null;
 
-            const destinationLng =
-                incidentLng !== null &&
-                incidentLng !== undefined &&
-                incidentLng !== '' ?
-                Number(incidentLng) :
-                null;
+            const route =
+                routingControls[driverId];
 
-            // No destination = no route
+
+            if (!route) {
+
+                return;
+            }
+
+
+            try {
+
+                if (map && map.hasLayer(route)) {
+
+                    map.removeControl(route);
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    'Route removal skipped:',
+                    error
+                );
+
+            }
+
+
+            delete routingControls[driverId];
+        }
+
+
+        /* ============================================================
+           UPDATE ROUTE
+        ============================================================ */
+
+        function updateRoute(location) {
+
+            const driverId =
+                String(location.driver_id);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Only active missions need routing
+            |--------------------------------------------------------------------------
+            */
+
+            const activeStatuses = [
+
+                'pending',
+
+                'assigned',
+
+                'accepted',
+
+                'en_route',
+
+                'arrived'
+
+            ];
+
+
+            const status =
+                String(
+                    location.dispatch_status || ''
+                );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | No active mission
+            |--------------------------------------------------------------------------
+            */
+
             if (
-                destinationLat === null ||
-                destinationLng === null ||
+                !location.has_active_mission ||
+                !activeStatuses.includes(status)
+            ) {
+
+                removeRoute(driverId);
+
+                return;
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | DRIVER GPS
+            |--------------------------------------------------------------------------
+            */
+
+            const driverLat =
+                Number(location.latitude);
+
+
+            const driverLng =
+                Number(location.longitude);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | INCIDENT GPS
+            |--------------------------------------------------------------------------
+            */
+
+            const incidentLat =
+                Number(location.incident_latitude);
+
+
+            const incidentLng =
+                Number(location.incident_longitude);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Validate coordinates
+            |--------------------------------------------------------------------------
+            */
+
+            if (
                 !Number.isFinite(driverLat) ||
                 !Number.isFinite(driverLng) ||
-                !Number.isFinite(destinationLat) ||
-                !Number.isFinite(destinationLng)
+                !Number.isFinite(incidentLat) ||
+                !Number.isFinite(incidentLng)
             ) {
+
+                removeRoute(driverId);
+
                 return;
             }
 
-            // Do not route to 0,0
+
+            /*
+            |--------------------------------------------------------------------------
+            | Ignore 0,0
+            |--------------------------------------------------------------------------
+            */
+
             if (
-                (destinationLat === 0 && destinationLng === 0) ||
-                (driverLat === 0 && driverLng === 0)
+                (driverLat === 0 && driverLng === 0) ||
+                (incidentLat === 0 && incidentLng === 0)
             ) {
+
+                removeRoute(driverId);
+
                 return;
             }
 
-            console.log('ROUTING:', {
-                driver: [driverLat, driverLng],
-                incident: [destinationLat, destinationLng]
+
+            /*
+            |--------------------------------------------------------------------------
+            | If route already exists:
+            | update waypoints instead of creating another route.
+            |--------------------------------------------------------------------------
+            */
+
+            if (routingControls[driverId]) {
+
+                try {
+
+                    const existingRoute =
+                        routingControls[driverId];
+
+                    existingRoute.setWaypoints([
+
+                        L.latLng(
+                            driverLat,
+                            driverLng
+                        ),
+
+                        L.latLng(
+                            incidentLat,
+                            incidentLng
+                        )
+
+                    ]);
+
+                    return;
+
+                } catch (error) {
+
+                    console.warn(
+                        'Existing route invalid. Recreating...',
+                        error
+                    );
+
+                    removeRoute(driverId);
+                }
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | CREATE ROUTE
+            |--------------------------------------------------------------------------
+            */
+
+            const control =
+                L.Routing.control({
+
+                    waypoints: [
+
+                        L.latLng(
+                            driverLat,
+                            driverLng
+                        ),
+
+                        L.latLng(
+                            incidentLat,
+                            incidentLng
+                        )
+
+                    ],
+
+
+                    router: L.Routing.osrmv1({
+
+                        serviceUrl: 'https://router.project-osrm.org/route/v1'
+
+                    }),
+
+
+                    routeWhileDragging: false,
+
+
+                    addWaypoints: false,
+
+
+                    draggableWaypoints: false,
+
+
+                    fitSelectedRoutes: false,
+
+
+                    show: false,
+
+
+                    createMarker: function() {
+
+                        return null;
+                    }
+
+                });
+
+
+            routingControls[driverId] =
+                control;
+
+
+            control.addTo(map);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | ROUTE FOUND
+            |--------------------------------------------------------------------------
+            */
+
+            control.on(
+                'routesfound',
+                function(event) {
+
+                    if (
+                        !event.routes ||
+                        !event.routes.length
+                    ) {
+
+                        return;
+                    }
+
+
+                    const route =
+                        event.routes[0];
+
+
+                    if (
+                        !route ||
+                        !route.summary
+                    ) {
+
+                        return;
+                    }
+
+
+                    const distanceKm =
+                        route.summary.totalDistance /
+                        1000;
+
+
+                    const etaMinutes =
+                        Math.max(
+                            1,
+                            Math.round(
+                                route.summary.totalTime /
+                                60
+                            )
+                        );
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Find corresponding card
+                    |--------------------------------------------------------------------------
+                    */
+
+                    const card =
+                        document.getElementById(
+                            'ambulance-card-' +
+                            driverId
+                        );
+
+
+                    if (!card) {
+
+                        return;
+                    }
+
+
+                    const distanceElement =
+                        card.querySelector(
+                            '[data-distance]'
+                        );
+
+
+                    const etaElement =
+                        card.querySelector(
+                            '[data-eta]'
+                        );
+
+
+                    if (distanceElement) {
+
+                        distanceElement.textContent =
+                            distanceKm.toFixed(2) +
+                            ' km';
+                    }
+
+
+                    if (etaElement) {
+
+                        etaElement.textContent =
+                            etaMinutes +
+                            ' min';
+                    }
+
+                }
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | ROUTING ERROR
+            |--------------------------------------------------------------------------
+            */
+
+            control.on(
+                'routingerror',
+                function(error) {
+
+                    console.warn(
+                        'Routing unavailable:',
+                        error
+                    );
+
+                }
+            );
+        }
+
+
+        /* ============================================================
+           REMOVE OLD MARKERS
+        ============================================================ */
+
+        function removeOldMarkers(locations) {
+
+            const currentDrivers =
+                new Set(
+                    locations.map(
+                        location =>
+                        String(
+                            location.driver_id
+                        )
+                    )
+                );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | AMBULANCE MARKERS
+            |--------------------------------------------------------------------------
+            */
+
+            Object.keys(
+                ambulanceMarkers
+            ).forEach(function(driverId) {
+
+                if (
+                    !currentDrivers.has(
+                        String(driverId)
+                    )
+                ) {
+
+                    const marker =
+                        ambulanceMarkers[
+                            driverId
+                        ];
+
+
+                    if (
+                        marker &&
+                        map.hasLayer(marker)
+                    ) {
+
+                        map.removeLayer(marker);
+                    }
+
+
+                    delete ambulanceMarkers[
+                        driverId
+                    ];
+                }
+
             });
 
-            // Remove previous route
-            if (routingControl) {
-                map.removeControl(routingControl);
-                routingControl = null;
-            }
 
-            // Create route
-            routingControl = L.Routing.control({
-                waypoints: [
-                    L.latLng(driverLat, driverLng),
-                    L.latLng(destinationLat, destinationLng)
-                ],
+            /*
+            |--------------------------------------------------------------------------
+            | ROUTES
+            |--------------------------------------------------------------------------
+            */
 
-                router: L.Routing.osrmv1({
-                    serviceUrl: 'https://router.project-osrm.org/route/v1'
-                }),
+            Object.keys(
+                routingControls
+            ).forEach(function(driverId) {
 
-                routeWhileDragging: false,
-                addWaypoints: false,
-                draggableWaypoints: false,
-                fitSelectedRoutes: false,
-                show: false,
+                const location =
+                    locations.find(
+                        item =>
+                        String(
+                            item.driver_id
+                        ) ===
+                        String(driverId)
+                    );
 
-                createMarker: function() {
-                    return null;
-                }
-            }).addTo(map);
 
-            // Route successfully found
-            routingControl.on('routesfound', function(e) {
+                if (!location) {
 
-                if (!e.routes || e.routes.length === 0) {
+                    removeRoute(driverId);
+
                     return;
                 }
 
-                const route = e.routes[0];
 
-                const distanceKm =
-                    route.summary.totalDistance / 1000;
+                const activeStatuses = [
 
-                const etaMinutes =
-                    Math.max(
-                        1,
-                        Math.round(route.summary.totalTime / 60)
-                    );
+                    'pending',
 
-                console.log('ROUTE FOUND:', {
-                    distance: distanceKm,
-                    eta: etaMinutes
-                });
+                    'assigned',
 
-                // Update distance
-                const distanceElement =
-                    document.getElementById('distance');
+                    'accepted',
 
-                // Update ETA
-                const etaElement =
-                    document.getElementById('eta');
+                    'en_route',
 
-                if (distanceElement) {
-                    distanceElement.innerHTML =
-                        'Distance: ' +
-                        distanceKm.toFixed(2) +
-                        ' KM';
+                    'arrived'
+
+                ];
+
+
+                if (
+                    !location.has_active_mission ||
+                    !activeStatuses.includes(
+                        String(
+                            location.dispatch_status ||
+                            ''
+                        )
+                    )
+                ) {
+
+                    removeRoute(driverId);
                 }
 
-                if (etaElement) {
-                    etaElement.innerHTML =
-                        etaMinutes +
-                        ' Minutes';
-                }
             });
-
-            // Routing error
-            routingControl.on('routingerror', function(e) {
-                console.warn('Routing unavailable:', e);
-            });
-        }
-
-        /* ============================================================
-           CARD UPDATE
-        ============================================================ */
-
-        function updateCard(location) {
-            const card =
-                document.getElementById(
-                    'ambulance-card-' +
-                    location.driver_id
-                );
-
-            if (!card) return;
-
-
-            const eta =
-                card.querySelector(
-                    '[data-eta]'
-                );
-
-            const distance =
-                card.querySelector(
-                    '[data-distance]'
-                );
-
-
-            if (eta && location._eta) {
-
-                eta.textContent =
-                    location._eta +
-                    ' min';
-
-            }
-
-
-            if (distance && location._distance) {
-
-                distance.textContent =
-                    location._distance +
-                    ' km';
-
-            }
         }
 
 
@@ -748,10 +1131,12 @@
         ============================================================ */
 
         function renderCards(locations) {
+
             const container =
                 document.getElementById(
                     'ambulanceList'
                 );
+
 
             const noMessage =
                 document.getElementById(
@@ -768,7 +1153,6 @@
                 );
 
                 return;
-
             }
 
 
@@ -781,7 +1165,8 @@
                 locations.map(function(location) {
 
                     const status =
-                        location.dispatch_status;
+                        location.dispatch_status ||
+                        'no_mission';
 
 
                     const completed =
@@ -791,51 +1176,136 @@
 
                     return `
 
+                <div
+                    class="col-md-6 col-xl-4"
+                    id="ambulance-card-${escapeHtml(
+                        location.driver_id
+                    )}"
+                >
+
                     <div
-                        class="col-md-6 col-xl-4"
-                        id="ambulance-card-${location.driver_id}"
+                        class="card border-0 shadow-sm rounded-4 h-100"
                     >
 
-                        <div
-                            class="card border-0 shadow-sm rounded-4 h-100"
-                        >
+                        <div class="card-body">
 
-                            <div class="card-body">
+                            <div
+                                class="d-flex justify-content-between align-items-start mb-3"
+                            >
 
-                                <div
-                                    class="d-flex justify-content-between align-items-start mb-3"
-                                >
+                                <div>
 
-                                    <div>
+                                    <h5 class="fw-bold mb-1">
 
-                                        <h5 class="fw-bold mb-1">
+                                        🚑
+                                        ${escapeHtml(
+                                            location.vehicle_name ||
+                                            'Ambulance'
+                                        )}
 
-                                            🚑
-                                            ${escapeHtml(
-                                                location.vehicle_name ||
-                                                'Ambulance'
-                                            )}
+                                    </h5>
 
-                                        </h5>
+                                    <small class="text-muted">
 
-                                        <small class="text-muted">
+                                        Driver:
+                                        ${escapeHtml(
+                                            location.driver_name ||
+                                            'Unknown Driver'
+                                        )}
 
-                                            Driver:
-                                            ${escapeHtml(
-                                                location.driver_name ||
-                                                'Unknown'
-                                            )}
+                                    </small>
 
-                                        </small>
+                                </div>
 
-                                    </div>
 
-                                    <div>
+                                <div>
+
+                                    ${getStatusBadge(status)}
+
+                                </div>
+
+                            </div>
+
+
+                            ${
+                                location.incident_number
+                                ?
+                                `
+                                <div class="mb-2">
+
+                                    <strong>
+                                        Incident:
+                                    </strong>
+
+                                    ${escapeHtml(
+                                        location.incident_number
+                                    )}
+
+                                </div>
+                                `
+                                :
+                                `
+                                <div class="mb-2">
+
+                                    <strong>
+                                        Mission:
+                                    </strong>
+
+                                    No active mission
+
+                                </div>
+                                `
+                            }
+
+
+                            ${
+                                location.incident_location
+                                ?
+                                `
+                                <div class="mb-2">
+
+                                    <strong>
+                                        Location:
+                                    </strong>
+
+                                    <br>
+
+                                    <small>
+                                        ${escapeHtml(
+                                            location.incident_location
+                                        )}
+                                    </small>
+
+                                </div>
+                                `
+                                :
+                                ''
+                            }
+
+
+                            <div class="row mt-3">
+
+                                <div class="col-6">
+
+                                    <small class="text-muted">
+                                        Distance
+                                    </small>
+
+                                    <div
+                                        class="fw-bold"
+                                        data-distance
+                                    >
 
                                         ${
-                                            getStatusBadge(
-                                                status
-                                            )
+                                            completed
+                                            ?
+                                            '—'
+                                            :
+                                            location.has_active_mission
+                                            ?
+                                            'Calculating...'
+                                            :
+                                            '—'
                                         }
 
                                     </div>
@@ -843,149 +1313,79 @@
                                 </div>
 
 
-                                ${
-                                    location.incident_number
-                                    ?
-                                    `
-                                    <div class="mb-2">
+                                <div class="col-6">
 
-                                        <strong>
-                                            Incident:
-                                        </strong>
+                                    <small class="text-muted">
+                                        ETA
+                                    </small>
 
-                                        ${escapeHtml(
-                                            location.incident_number
-                                        )}
+                                    <div
+                                        class="fw-bold"
+                                        data-eta
+                                    >
 
-                                    </div>
-                                    `
-                                    :
-                                    `
-                                    <div class="mb-2">
-
-                                        <strong>
-                                            Mission:
-                                        </strong>
-
-                                        No active mission
-
-                                    </div>
-                                    `
-                                }
-
-
-                                ${
-                                    location.incident_location
-                                    ?
-                                    `
-                                    <div class="mb-2">
-
-                                        <strong>
-                                            Location:
-                                        </strong>
-
-                                        <br>
-
-                                        <small>
-                                            ${escapeHtml(
-                                                location.incident_location
-                                            )}
-                                        </small>
-
-                                    </div>
-                                    `
-                                    :
-                                    ''
-                                }
-
-
-                                <div class="row mt-3">
-
-                                    <div class="col-6">
-
-                                        <small class="text-muted">
-                                            Distance
-                                        </small>
-
-                                        <div
-                                            class="fw-bold"
-                                            data-distance
-                                        >
-                                            ${
-                                                completed
-                                                ? '—'
-                                                : 'Calculating...'
-                                            }
-                                        </div>
-
-                                    </div>
-
-
-                                    <div class="col-6">
-
-                                        <small class="text-muted">
-                                            ETA
-                                        </small>
-
-                                        <div
-                                            class="fw-bold"
-                                            data-eta
-                                        >
-                                            ${
-                                                completed
-                                                ? 'Completed'
-                                                : 'Calculating...'
-                                            }
-                                        </div>
+                                        ${
+                                            completed
+                                            ?
+                                            'Completed'
+                                            :
+                                            location.has_active_mission
+                                            ?
+                                            'Calculating...'
+                                            :
+                                            '—'
+                                        }
 
                                     </div>
 
                                 </div>
 
+                            </div>
 
-                                <hr>
+
+                            <hr>
 
 
-                                <small class="text-muted">
+                            <small class="text-muted">
 
-                                    Last GPS:
-
-                                    ${
-                                        location.recorded_at
-                                        ?
-                                        new Date(
-                                            location.recorded_at
-                                        ).toLocaleString()
-                                        :
-                                        'Unknown'
-                                    }
-
-                                </small>
-
+                                Last GPS:
 
                                 ${
-                                    completed
+                                    location.recorded_at
                                     ?
-                                    `
-                                    <div class="mt-2">
-
-                                        <span
-                                            class="badge bg-primary"
-                                        >
-                                            Last Known Location
-                                        </span>
-
-                                    </div>
-                                    `
+                                    new Date(
+                                        location.recorded_at
+                                    ).toLocaleString()
                                     :
-                                    ''
+                                    'Unknown'
                                 }
 
-                            </div>
+                            </small>
+
+
+                            ${
+                                completed
+                                ?
+                                `
+                                <div class="mt-2">
+
+                                    <span
+                                        class="badge bg-primary"
+                                    >
+                                        Last Known Location
+                                    </span>
+
+                                </div>
+                                `
+                                :
+                                ''
+                            }
 
                         </div>
 
                     </div>
+
+                </div>
 
                 `;
 
@@ -998,6 +1398,7 @@
         ============================================================ */
 
         async function loadLocations() {
+
             try {
 
                 setLiveStatus(
@@ -1011,11 +1412,17 @@
                         locationsUrl +
                         '?_=' +
                         Date.now(), {
+
+                            method: 'GET',
+
                             headers: {
+
                                 'Accept': 'application/json'
+
                             },
 
                             cache: 'no-store'
+
                         }
                     );
 
@@ -1026,7 +1433,6 @@
                         'GPS request failed: ' +
                         response.status
                     );
-
                 }
 
 
@@ -1039,13 +1445,12 @@
                     throw new Error(
                         'Invalid GPS response'
                     );
-
                 }
 
 
                 /*
                 |--------------------------------------------------------------------------
-                | Render cards
+                | RENDER CARDS
                 |--------------------------------------------------------------------------
                 */
 
@@ -1054,24 +1459,7 @@
 
                 /*
                 |--------------------------------------------------------------------------
-                | Track currently returned drivers
-                |--------------------------------------------------------------------------
-                */
-
-                const currentDrivers =
-                    new Set(
-                        locations.map(
-                            location =>
-                            String(
-                                location.driver_id
-                            )
-                        )
-                    );
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | Update every ambulance
+                | UPDATE MARKERS
                 |--------------------------------------------------------------------------
                 */
 
@@ -1081,9 +1469,11 @@
                         location
                     );
 
+
                     updateIncidentMarker(
                         location
                     );
+
 
                     updateRoute(
                         location
@@ -1094,79 +1484,18 @@
 
                 /*
                 |--------------------------------------------------------------------------
-                | Remove markers for drivers no longer returned
+                | REMOVE OLD MARKERS / ROUTES
                 |--------------------------------------------------------------------------
                 */
 
-                Object.keys(
-                    ambulanceMarkers
-                ).forEach(function(driverId) {
-
-                    if (
-                        !currentDrivers.has(
-                            String(driverId)
-                        )
-                    ) {
-
-                        map.removeLayer(
-                            ambulanceMarkers[
-                                driverId
-                            ]
-                        );
-
-                        delete ambulanceMarkers[
-                            driverId
-                        ];
-
-                    }
-
-                });
+                removeOldMarkers(
+                    locations
+                );
 
 
                 /*
                 |--------------------------------------------------------------------------
-                | Remove routes for drivers no longer active
-                |--------------------------------------------------------------------------
-                */
-
-                Object.keys(
-                    routingControls
-                ).forEach(function(driverId) {
-
-                    const location =
-                        locations.find(
-                            item =>
-                            String(
-                                item.driver_id
-                            ) ===
-                            String(driverId)
-                        );
-
-
-                    if (
-                        !location ||
-                        location.monitoring_status ===
-                        'completed'
-                    ) {
-
-                        map.removeControl(
-                            routingControls[
-                                driverId
-                            ]
-                        );
-
-                        delete routingControls[
-                            driverId
-                        ];
-
-                    }
-
-                });
-
-
-                /*
-                |--------------------------------------------------------------------------
-                | First load: fit map
+                | FIRST LOAD MAP FIT
                 |--------------------------------------------------------------------------
                 */
 
@@ -1177,45 +1506,62 @@
 
                     const points =
                         locations
-                        .filter(
-                            location =>
-                            Number.isFinite(
-                                Number(
-                                    location.latitude
+                        .filter(function(location) {
+
+                            return (
+                                Number.isFinite(
+                                    Number(
+                                        location.latitude
+                                    )
+                                ) &&
+
+                                Number.isFinite(
+                                    Number(
+                                        location.longitude
+                                    )
                                 )
-                            ) &&
-                            Number.isFinite(
-                                Number(
-                                    location.longitude
-                                )
-                            )
-                        )
-                        .map(
-                            location => [
+                            );
+
+                        })
+                        .map(function(location) {
+
+                            return [
+
                                 Number(
                                     location.latitude
                                 ),
+
                                 Number(
                                     location.longitude
                                 )
-                            ]
-                        );
+
+                            ];
+
+                        });
 
 
                     if (points.length) {
 
                         map.fitBounds(
-                            L.latLngBounds(points), {
+
+                            L.latLngBounds(
+                                points
+                            ),
+
+                            {
+
                                 padding: [
                                     50,
                                     50
                                 ],
 
                                 maxZoom: 15
+
                             }
                         );
 
                     }
+
 
                     firstLoad = false;
                 }
@@ -1225,7 +1571,6 @@
                     '● LIVE',
                     'success'
                 );
-
 
             } catch (error) {
 
@@ -1239,13 +1584,12 @@
                     '● CONNECTION ERROR',
                     'danger'
                 );
-
             }
         }
 
 
         /* ============================================================
-           START
+           START MONITORING
         ============================================================ */
 
         loadLocations();
@@ -1258,15 +1602,15 @@
             );
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Fix Leaflet sizing
-        |--------------------------------------------------------------------------
-        */
+        /* ============================================================
+           MAP SIZE FIX
+        ============================================================ */
 
         setTimeout(
             function() {
+
                 map.invalidateSize();
+
             },
             500
         );
@@ -1275,7 +1619,39 @@
         window.addEventListener(
             'resize',
             function() {
+
                 map.invalidateSize();
+
+            }
+        );
+
+
+        /* ============================================================
+           CLEANUP
+        ============================================================ */
+
+        window.addEventListener(
+            'beforeunload',
+            function() {
+
+                if (updateTimer) {
+
+                    clearInterval(
+                        updateTimer
+                    );
+                }
+
+
+                Object.keys(
+                    routingControls
+                ).forEach(function(driverId) {
+
+                    removeRoute(
+                        driverId
+                    );
+
+                });
+
             }
         );
 

@@ -433,6 +433,12 @@ return Route::has($name) ? route($name) : '#';
                         <a href="{{ $adminRoute('admin.maintenance.index') }}" class="nav-link {{ request()->routeIs('admin.maintenance.*') ? 'active' : '' }}">
                             <i class="bi bi-tools"></i> Vehicle Maintenance
                         </a>
+                        <a href="{{ $adminRoute('admin.vulnerable-areas.index') }}" class="nav-link {{ request()->routeIs('admin.vulnerable-areas.*') ? 'active' : '' }}">
+                            <i class="bi bi-people"></i> Vulnerable Areas
+                        </a>
+                        <a href="{{ $adminRoute('admin.response-equipment.index') }}" class="nav-link {{ request()->routeIs('admin.response-equipment.*') ? 'active' : '' }}">
+                            <i class="bi bi-box-seam"></i> Equipment Inventory
+                        </a>
                         <a href="{{ $adminRoute('admin.operations.center') }}" class="nav-link {{ request()->routeIs('admin.operations.center') ? 'active' : '' }}">
                             <i class="bi bi-target"></i> Operations Center
                         </a>

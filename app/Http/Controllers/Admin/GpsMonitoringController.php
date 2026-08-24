@@ -9,24 +9,33 @@ use App\Models\GpsLocation;
 
 class GpsMonitoringController extends Controller
 {
-        public function index()
+    public function index()
     {
         return view('admin.gps-monitoring');
     }
 
-   
+    /**
+     * Return latest GPS location for every driver that has GPS data.
+     *
+     * GPS tracking is independent from dispatch status.
+     * Therefore, even drivers without an active mission can still
+     * appear on the admin monitoring map using their latest GPS location.
+     */
     public function locations()
     {
-       
         $drivers = Driver::with([
             'user',
             'activeVehicleAssignment.ambulance',
         ])->get();
 
-       
-        $activeDispatches = Dispatch::with([
+        /*
+        |--------------------------------------------------------------------------
+        | Active dispatches
+        |--------------------------------------------------------------------------
+        */
+
+        $dispatches = Dispatch::with([
             'incident',
-            'driver.user',
             'ambulance',
         ])
             ->whereIn('status', [
@@ -40,11 +49,19 @@ class GpsMonitoringController extends Controller
             ->get()
             ->keyBy('driver_id');
 
-        $locations = collect();
+        /*
+        |--------------------------------------------------------------------------
+        | Latest GPS locations
+        |--------------------------------------------------------------------------
+        |
+        | Instead of querying GpsLocation inside every driver loop,
+        | retrieve the latest location for each driver.
+        |
+        */
+
+        $latestLocations = collect();
 
         foreach ($drivers as $driver) {
-
-          
             $location = GpsLocation::where(
                 'driver_id',
                 $driver->id
@@ -52,115 +69,164 @@ class GpsMonitoringController extends Controller
                 ->latest('recorded_at')
                 ->first();
 
-           
+            if ($location) {
+                $latestLocations->put(
+                    $driver->id,
+                    $location
+                );
+            }
+        }
+
+        $locations = collect();
+
+        foreach ($drivers as $driver) {
+            /*
+            |--------------------------------------------------------------------------
+            | Latest GPS
+            |--------------------------------------------------------------------------
+            */
+
+            $location = $latestLocations->get(
+                $driver->id
+            );
+
             if (!$location) {
                 continue;
             }
 
-            
-            $dispatch = $activeDispatches->get($driver->id);
+            /*
+            |--------------------------------------------------------------------------
+            | Active dispatch
+            |--------------------------------------------------------------------------
+            */
+
+            $dispatch = $dispatches->get(
+                $driver->id
+            );
 
             $incident = $dispatch?->incident;
 
-           
+            /*
+            |--------------------------------------------------------------------------
+            | Ambulance
+            |--------------------------------------------------------------------------
+            */
+
             $assignedAmbulance =
                 $driver->activeVehicleAssignment?->ambulance;
 
-           
             $ambulance =
                 $dispatch?->ambulance
                 ?? $assignedAmbulance;
 
-            
+            /*
+            |--------------------------------------------------------------------------
+            | Mission status
+            |--------------------------------------------------------------------------
+            */
+
             $missionStatus = $dispatch
                 ? $dispatch->status
                 : 'no_mission';
 
-           
+            /*
+            |--------------------------------------------------------------------------
+            | Push GPS information
+            |--------------------------------------------------------------------------
+            */
+
             $locations->push([
 
                 /*
-                 * =========================
-                 * DRIVER
-                 * =========================
-                 */
+                |--------------------------------------------------------------------------
+                | DRIVER
+                |--------------------------------------------------------------------------
+                */
+
                 'driver_id' => $driver->id,
 
                 'driver_name' =>
-                    $driver->user?->name
+                $driver->user?->name
                     ?? 'Unknown Driver',
 
                 /*
-                 * =========================
-                 * VEHICLE
-                 * =========================
-                 */
+                |--------------------------------------------------------------------------
+                | VEHICLE
+                |--------------------------------------------------------------------------
+                */
+
                 'vehicle_id' =>
-                    $ambulance?->id,
+                $ambulance?->id,
 
                 'vehicle_name' =>
-                    $ambulance?->vehicle_name
+                $ambulance?->vehicle_name
+                    ?? $ambulance?->plate_number
                     ?? 'Ambulance',
 
+                'vehicle_plate' =>
+                $ambulance?->plate_number,
+
                 'vehicle_status' =>
-                    $ambulance?->status
+                $ambulance?->status
                     ?? 'UNKNOWN',
 
                 /*
-                 * =========================
-                 * MISSION
-                 * =========================
-                 */
+                |--------------------------------------------------------------------------
+                | MISSION
+                |--------------------------------------------------------------------------
+                */
+
                 'has_active_mission' =>
-                    $dispatch !== null,
+                $dispatch !== null,
 
                 'dispatch_id' =>
-                    $dispatch?->id,
+                $dispatch?->id,
 
                 'dispatch_status' =>
-                    $missionStatus,
+                $missionStatus,
+
+                'monitoring_status' =>
+                $missionStatus,
 
                 /*
-                 * =========================
-                 * INCIDENT
-                 * =========================
-                 */
+                |--------------------------------------------------------------------------
+                | INCIDENT
+                |--------------------------------------------------------------------------
+                */
+
                 'incident_id' =>
-                    $incident?->id,
+                $incident?->id,
 
                 'incident_number' =>
-                    $incident?->incident_number,
+                $incident?->incident_number,
 
                 'incident_location' =>
-                    $incident?->location,
+                $incident?->location,
 
-                /*
-                 * NEVER return 0,0
-                 * when there is no incident.
-                 */
                 'incident_latitude' =>
-                    $incident?->latitude !== null
-                        ? (float) $incident->latitude
-                        : null,
+                $incident?->latitude !== null
+                    ? (float) $incident->latitude
+                    : null,
 
                 'incident_longitude' =>
-                    $incident?->longitude !== null
-                        ? (float) $incident->longitude
-                        : null,
+                $incident?->longitude !== null
+                    ? (float) $incident->longitude
+                    : null,
 
                 /*
-                 * =========================
-                 * CURRENT GPS LOCATION
-                 * =========================
-                 */
+                |--------------------------------------------------------------------------
+                | CURRENT GPS
+                |--------------------------------------------------------------------------
+                */
+
                 'latitude' =>
-                    (float) $location->latitude,
+                (float) $location->latitude,
 
                 'longitude' =>
-                    (float) $location->longitude,
+                (float) $location->longitude,
 
                 'recorded_at' =>
-                    $location->recorded_at?->toISOString(),
+                $location->recorded_at?->toISOString(),
             ]);
         }
 

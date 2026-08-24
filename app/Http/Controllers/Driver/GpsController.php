@@ -13,12 +13,17 @@ class GpsController extends Controller
     /**
      * Update driver's current GPS location.
      *
-     * GPS tracking is independent from dispatch status.
-     * This means the driver's latest location can still be
-     * monitored even after a mission has been completed.
+     * A new GPS record is created every time.
+     * This preserves GPS history for monitoring and reports.
      */
     public function update(Request $request)
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Authentication
+        |--------------------------------------------------------------------------
+        */
+
         $user = Auth::user();
 
         if (!$user) {
@@ -27,6 +32,12 @@ class GpsController extends Controller
                 'message' => 'Unauthenticated.',
             ], 401);
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Driver profile
+        |--------------------------------------------------------------------------
+        */
 
         $driver = $user->driver;
 
@@ -37,19 +48,28 @@ class GpsController extends Controller
             ], 404);
         }
 
-        $validator = Validator::make($request->all(), [
-            'latitude' => [
-                'required',
-                'numeric',
-                'between:-90,90'
-            ],
+        /*
+        |--------------------------------------------------------------------------
+        | Validate coordinates
+        |--------------------------------------------------------------------------
+        */
 
-            'longitude' => [
-                'required',
-                'numeric',
-                'between:-180,180'
-            ],
-        ]);
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'latitude' => [
+                    'required',
+                    'numeric',
+                    'between:-90,90',
+                ],
+
+                'longitude' => [
+                    'required',
+                    'numeric',
+                    'between:-180,180',
+                ],
+            ]
+        );
 
         if ($validator->fails()) {
             return response()->json([
@@ -58,6 +78,12 @@ class GpsController extends Controller
                 'errors' => $validator->errors(),
             ], 422);
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Get validated coordinates
+        |--------------------------------------------------------------------------
+        */
 
         $validated = $validator->validated();
 
@@ -68,11 +94,6 @@ class GpsController extends Controller
         |--------------------------------------------------------------------------
         | Save GPS history
         |--------------------------------------------------------------------------
-        |
-        | We intentionally create a new record instead of updating the old
-        | record. This gives us a complete GPS history for reports and
-        | monitoring.
-        |
         */
 
         $gpsLocation = GpsLocation::create([
@@ -82,16 +103,26 @@ class GpsController extends Controller
             'recorded_at' => now(),
         ]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Response
+        |--------------------------------------------------------------------------
+        */
+
         return response()->json([
             'success' => true,
 
-            'gps_id' => $gpsLocation->id,
+            'gps_id' =>
+            $gpsLocation->id,
 
-            'driver_id' => $driver->id,
+            'driver_id' =>
+            $driver->id,
 
-            'latitude' => $latitude,
+            'latitude' =>
+            $latitude,
 
-            'longitude' => $longitude,
+            'longitude' =>
+            $longitude,
 
             'recorded_at' =>
             $gpsLocation->recorded_at?->toISOString(),

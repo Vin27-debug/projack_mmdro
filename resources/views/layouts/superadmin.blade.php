@@ -317,16 +317,14 @@
                         <a href="{{ route('superadmin.drivers') }}" class="nav-link {{ request()->routeIs('superadmin.drivers') ? 'active' : '' }}">
                             <i class="bi bi-people"></i> Drivers
                         </a>
-                        <a href="{{ route('ambulances.index') }}" class="nav-link {{ request()->routeIs('ambulances.*') ? 'active' : '' }}">
-                            <i class="bi bi-truck"></i> Ambulances
-                        </a>
-                        <a href="{{ route('backups.index') }}" class="nav-link {{ request()->routeIs('backups.*') ? 'active' : '' }}">
-                            <i class="bi bi-cloud-arrow-up"></i> Backup & Restore
-                        </a>
-                        <form method="POST" action="{{ route('logout') }}" class="mt-3 px-3">
-                            @csrf
-                            <button type="submit" class="btn btn-outline-light w-100">Logout</button>
-                        </form>
+                        <a href="{{ route('superadmin.ambulances.index') }}" class="nav-link {{ request()->routeIs('superadmin.ambulances.*') ? 'active' : '' }}">
+                            <a href="{{ route('backups.index') }}" class="nav-link {{ request()->routeIs('backups.*') ? 'active' : '' }}">
+                                <i class="bi bi-cloud-arrow-up"></i> Backup & Restore
+                            </a>
+                            <form method="POST" action="{{ route('logout') }}" class="mt-3 px-3">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-light w-100">Logout</button>
+                            </form>
                     </nav>
                 </aside>
             </div>

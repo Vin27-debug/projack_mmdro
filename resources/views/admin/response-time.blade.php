@@ -55,7 +55,9 @@
                         <h5 class="fw-bold mb-0">Response Time Trend</h5>
                         <span class="badge bg-primary text-white">Monthly average</span>
                     </div>
-                    <canvas id="responseTimeChart" height="220"></canvas>
+                    <div class="chart-container">
+                        <canvas id="responseTimeChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -88,38 +90,70 @@
     </div>
 </div>
 
+@endsection
+
 @section('scripts')
+
+<style>
+    .chart-container {
+        position: relative;
+        width: 100%;
+        height: 300px;
+    }
+
+    #responseTimeChart {
+        width: 100% !important;
+        height: 100% !important;
+    }
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+
         const ctx = document.getElementById('responseTimeChart');
 
         if (!ctx) {
             return;
         }
 
-        const labels = @json($labels);
-        const data = @json($series);
+        const labels = @json($labels ?? []);
+        const values = @json($series ?? []);
 
         new Chart(ctx, {
             type: 'line',
+
             data: {
                 labels: labels,
+
                 datasets: [{
-                    label: 'Average Response Time (min)',
-                    data: data,
+                    label: 'Average Response Time',
+                    data: values,
+
                     borderColor: '#0d6efd',
                     backgroundColor: 'rgba(13, 110, 253, 0.18)',
+
+                    borderWidth: 2,
                     fill: true,
                     tension: 0.35,
+
                     pointRadius: 4,
-                    pointHoverRadius: 5
+                    pointHoverRadius: 6
                 }]
             },
+
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+
                 scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+
                     y: {
                         beginAtZero: true,
                         ticks: {
@@ -127,6 +161,7 @@
                         }
                     }
                 },
+
                 plugins: {
                     legend: {
                         display: false
@@ -134,7 +169,7 @@
                 }
             }
         });
+
     });
 </script>
-@endsection
 @endsection

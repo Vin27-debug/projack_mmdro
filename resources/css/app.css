@@ -136,3 +136,159 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
+
+/* Shared municipal emergency operations UI */
+:root {
+    --mr-navy: #0d214b;
+    --mr-ink: #0b172f;
+    --mr-slate: #152754;
+    --mr-cream: #f3efe4;
+    --mr-gold: #c79c42;
+    --mr-emerald: #1d6b59;
+    --mr-alert: #b02a37;
+    --mr-blue: #0d6efd;
+    --mr-warning: #f4b400;
+    --mr-surface: rgba(13, 33, 75, 0.92);
+    --mr-surface-raised: rgba(21, 39, 84, 0.9);
+    --mr-line: rgba(255, 255, 255, 0.12);
+    --mr-muted: rgba(255, 255, 255, 0.72);
+}
+
+.text-white-75 {
+    color: rgba(255, 255, 255, 0.75) !important;
+}
+
+.border-white-10 {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.bg-gold {
+    background-color: var(--mr-gold) !important;
+    color: var(--mr-ink) !important;
+}
+
+.mr-status-available {
+    background-color: var(--mr-emerald) !important;
+    color: #fff !important;
+}
+
+.mr-status-assigned {
+    background-color: var(--mr-blue) !important;
+    color: #fff !important;
+}
+
+.mr-status-accepted {
+    background-color: #087f9b !important;
+    color: #fff !important;
+}
+
+.mr-status-en-route {
+    background-color: var(--mr-warning) !important;
+    color: var(--mr-ink) !important;
+}
+
+.mr-status-on-scene {
+    background-color: #6c757d !important;
+    color: #fff !important;
+}
+
+.mr-status-completed {
+    background-color: var(--mr-ink) !important;
+    color: #fff !important;
+}
+
+.mr-status-offline {
+    background-color: #343a40 !important;
+    color: #fff !important;
+}
+
+.table-responsive {
+    scrollbar-color: rgba(199, 156, 66, 0.7) rgba(255, 255, 255, 0.06);
+}
+
+.table-responsive table {
+    min-width: 38rem;
+}
+
+button,
+.btn,
+a.btn {
+    min-height: 44px;
+}
+
+:focus-visible {
+    outline: 3px solid rgba(199, 156, 66, 0.9);
+    outline-offset: 2px;
+}
+
+.admin-sidebar .nav-link,
+.sidebar-link,
+.driver-action-btn {
+    min-height: 46px;
+}
+
+.chart-card canvas {
+    width: 100% !important;
+    height: 280px !important;
+}
+
+.eoc-map-container,
+.map-shell {
+    width: 100%;
+    contain: layout paint;
+}
+
+@media (max-width: 767.98px) {
+    .table-responsive table {
+        min-width: 34rem;
+    }
+
+    .chart-card canvas {
+        height: 240px !important;
+    }
+
+    .driver-dashboard-shell .hero-panel-body,
+    .driver-dashboard-shell .hero-side-panel {
+        padding: 1.25rem;
+    }
+
+    .driver-dashboard-shell .driver-action-btn,
+    .driver-dashboard-shell form.flex-fill,
+    .driver-dashboard-shell form.flex-fill .btn {
+        width: 100%;
+    }
+
+    .driver-dashboard-shell .map-shell,
+    .driver-dashboard-shell #map {
+        min-height: 300px;
+        height: 320px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .main-content {
+        padding: 0.75rem;
+    }
+
+    .driver-dashboard-shell .card {
+        border-radius: 0.85rem;
+    }
+
+    .driver-dashboard-shell .hero-panel h2 {
+        font-size: 1.45rem;
+    }
+
+    .driver-dashboard-shell .hero-panel .btn {
+        flex: 1 1 100%;
+    }
+
+    .driver-dashboard-shell .stat-card .card-body {
+        min-height: 76px;
+        padding: 0.9rem;
+    }
+
+    .driver-dashboard-shell .map-shell,
+    .driver-dashboard-shell #map {
+        height: 300px;
+    }
+}

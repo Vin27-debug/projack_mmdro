@@ -272,7 +272,7 @@ class DispatchController extends Controller
             );
 
             $driver->update([
-                'status' => Driver::STATUS_EN_ROUTE,
+                'status' => Driver::STATUS_ASSIGNED,
             ]);
 
 

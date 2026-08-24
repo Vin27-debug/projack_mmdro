@@ -26,6 +26,8 @@ use App\Http\Controllers\Admin\PanicAlertController as AdminPanicAlertController
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\IncidentHistoryController;
+use App\Http\Controllers\Admin\VulnerableAreaController;
+use App\Http\Controllers\Admin\ResponseEquipmentController;
 use App\Http\Controllers\Admin\AmbulanceController as adminAmbulanceController;
 
 use App\Http\Controllers\Driver\DashboardController as DriverDashboardController;
@@ -264,6 +266,18 @@ Route::middleware([
         ->name('admin.incidents.create');
     Route::post('/admin/incidents', [AdminIncidentController::class, 'store'])
         ->name('admin.incidents.store');
+    Route::get('/admin/incidents/{incident}', [AdminIncidentController::class, 'show'])
+        ->name('admin.incidents.show');
+    Route::get('/admin/incidents/{incident}/edit', [AdminIncidentController::class, 'edit'])
+        ->name('admin.incidents.edit');
+    Route::put('/admin/incidents/{incident}', [AdminIncidentController::class, 'update'])
+        ->name('admin.incidents.update');
+    Route::post('/admin/incidents/{incident}/archive', [AdminIncidentController::class, 'archive'])
+        ->name('admin.incidents.archive');
+    Route::post('/admin/incidents/{incident}/restore', [AdminIncidentController::class, 'restore'])
+        ->name('admin.incidents.restore');
+    Route::get('/admin/incidents/{incident}/attachments/{attachment}/download', [AdminIncidentController::class, 'downloadAttachment'])
+        ->name('admin.incidents.attachments.download');
     Route::get('/admin/incidents/{incident}/dispatch', [AdminIncidentController::class, 'dispatchForm'])
         ->name('admin.incidents.dispatch.form');
     Route::post('/admin/incidents/{incident}/dispatch', [AdminIncidentController::class, 'dispatch'])
@@ -282,6 +296,18 @@ Route::middleware([
         ->name('admin.reports.center.export.pdf');
     Route::get('/admin/reports-center/export/excel', [ReportsCenterController::class, 'exportExcel'])
         ->name('admin.reports.center.export.excel');
+
+    Route::resource('/admin/vulnerable-areas', VulnerableAreaController::class)
+        ->except(['show', 'destroy'])
+        ->names('admin.vulnerable-areas');
+    Route::post('/admin/vulnerable-areas/{vulnerableArea}/deactivate', [VulnerableAreaController::class, 'deactivate'])
+        ->name('admin.vulnerable-areas.deactivate');
+
+    Route::resource('/admin/response-equipment', ResponseEquipmentController::class)
+        ->except(['show', 'destroy'])
+        ->names('admin.response-equipment');
+    Route::post('/admin/response-equipment/{responseEquipment}/deactivate', [ResponseEquipmentController::class, 'deactivate'])
+        ->name('admin.response-equipment.deactivate');
 
     Route::resource('dispatches', DispatchController::class);
 
@@ -325,6 +351,9 @@ Route::middleware([
 
     Route::post('/admin/incidents/{incident}/auto-dispatch', [AutoDispatchController::class, 'dispatch'])
         ->name('admin.incidents.auto-dispatch');
+
+    Route::get('/admin/incidents/history', [IncidentHistoryController::class, 'index'])
+        ->name('admin.incidents.history');
 });
 
 /*
@@ -408,7 +437,8 @@ Route::middleware([
     Route::post('/superadmin/users/{user}/reject', [UserApprovalController::class, 'reject'])
         ->name('superadmin.users.reject');
 
-    Route::resource('superadmin/ambulances', AmbulanceController::class);
+    Route::resource('superadmin/ambulances', AmbulanceController::class)
+    ->names('superadmin.ambulances');
 
     Route::get('/superadmin/assignments', [AssignmentController::class, 'index'])
         ->name('assignments.index');
@@ -432,9 +462,5 @@ Route::middleware([
         ->name('superadmin.settings.update');
 });
 
-Route::get(
-    '/admin/incidents/history',
-    [IncidentHistoryController::class, 'index']
-)->name('admin.incidents.history');
 
 require __DIR__ . '/auth.php';

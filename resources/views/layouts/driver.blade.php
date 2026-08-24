@@ -185,6 +185,25 @@
             color: #eef4ff !important;
         }
 
+        .content-area {
+            overflow-x: hidden;
+        }
+
+        .driver-mobile-header {
+            min-height: 52px;
+            padding: 0.35rem 0;
+        }
+
+        @media (max-width: 575.98px) {
+            .content-area .container-fluid {
+                padding: 0.75rem !important;
+            }
+
+            .mobile-nav-toggle {
+                min-height: 48px;
+            }
+        }
+
         @media (min-width: 992px) {
             .sidebar-driver {
                 display: flex;
@@ -293,11 +312,15 @@
 
         <main class="content-area flex-grow-1">
             <div class="container-fluid p-3 p-lg-4">
-                <div class="d-flex justify-content-between align-items-center mb-3 d-lg-none">
+                <div class="driver-mobile-header d-flex justify-content-between align-items-center mb-3 d-lg-none">
                     <button class="btn btn-outline-primary mobile-nav-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#driverOffcanvas" aria-controls="driverOffcanvas">
                         <i class="bi bi-list me-2"></i>Menu
                     </button>
-                    <div class="small text-muted">Emergency Dispatch</div>
+                    <div class="text-end">
+                        <div class="fw-semibold">MuniResQ</div>
+                        <div class="small text-muted">Driver Operations</div>
+                        <div class="small text-muted">{{ $driverName }} · {{ $driverStatusLabel }}</div>
+                    </div>
                 </div>
                 @yield('content')
             </div>

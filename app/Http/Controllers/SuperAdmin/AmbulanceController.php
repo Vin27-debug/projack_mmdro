@@ -39,9 +39,10 @@ class AmbulanceController extends Controller
         ]);
 
         return redirect()
-            ->route('ambulances.index')
+            ->route('superadmin.ambulances.index')
             ->with('success', 'Ambulance added successfully.');
     }
+
     public function edit(Ambulance $ambulance)
     {
         return view(
@@ -52,25 +53,20 @@ class AmbulanceController extends Controller
 
     public function update(Request $request, Ambulance $ambulance)
     {
-        $request->validate([
+        $validated = $request->validate([
             'plate_number' => 'required',
             'vehicle_name' => 'required',
-            'vehicle_type' => 'required',
-            'status' => 'required',
+            'vehicle_type' => 'required|in:ambulance,rescue_van,fire_truck',
+            'status' => 'required|in:available,on_duty,maintenance',
         ]);
 
-        $ambulance->update([
-            'plate_number' => $request->plate_number,
-            'vehicle_name' => $request->vehicle_name,
-            'vehicle_type' => $request->vehicle_type,
-            'status' => $request->status,
-        ]);
+        $ambulance->update($validated);
 
         return redirect()
-            ->route('ambulances.index')
+            ->route('superadmin.ambulances.index')
             ->with('success', 'Ambulance updated successfully.');
     }
-
+    
     public function destroy(Ambulance $ambulance)
     {
         $ambulance->delete();

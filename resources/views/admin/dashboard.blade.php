@@ -18,6 +18,7 @@
         min-height: 100vh;
         background-color: var(--gov-navy);
         color: #f5f4ee;
+        overflow-x: hidden;
     }
 
     .eoc-card {
@@ -283,6 +284,12 @@
         backdrop-filter: blur(16px);
     }
 
+    .chart-card canvas {
+        width: 100% !important;
+        height: 280px !important;
+        display: block;
+    }
+
     .no-data-placeholder {
         min-height: 160px;
         display: grid;
@@ -311,6 +318,18 @@
         .eoc-kpi-card,
         .chart-card {
             min-height: auto;
+        }
+
+        .eoc-title {
+            font-size: 1.7rem;
+        }
+
+        .eoc-map-container {
+            min-height: 320px;
+        }
+
+        .chart-card canvas {
+            height: 240px !important;
         }
     }
 </style>

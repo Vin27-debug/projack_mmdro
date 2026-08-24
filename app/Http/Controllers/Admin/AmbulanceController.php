@@ -53,6 +53,8 @@ class AmbulanceController extends Controller
 
     public function update(Request $request, Ambulance $ambulance)
     {
+       
+
         $data = $request->validate([
             'plate_number' => [
                 'required',

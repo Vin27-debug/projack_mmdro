@@ -36,6 +36,8 @@ class Incident extends Model
         'status',
         'driver_id',
         'ambulance_id',
+        'archived_at',
+        'archived_by',
     ];
 
     public function ambulance()
@@ -53,9 +55,36 @@ class Incident extends Model
         return $this->hasMany(Dispatch::class, 'incident_id');
     }
 
+    protected function casts(): array
+    {
+        return [
+            'archived_at' => 'datetime',
+        ];
+    }
+
+    public function attachments()
+    {
+        return $this->hasMany(IncidentAttachment::class);
+    }
+
+    public function archivedBy()
+    {
+        return $this->belongsTo(User::class, 'archived_by');
+    }
+
     public function report()
     {
         return $this->hasOne(IncidentReport::class, 'incident_id');
+    }
+
+    public function scopeNotArchived(Builder $query)
+    {
+        return $query->whereNull('archived_at');
+    }
+
+    public function scopeArchived(Builder $query)
+    {
+        return $query->whereNotNull('archived_at');
     }
 
     public function scopeOpen(Builder $query)

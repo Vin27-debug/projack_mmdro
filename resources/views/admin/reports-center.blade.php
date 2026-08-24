@@ -14,6 +14,9 @@
             <a href="{{ route('admin.reports.center.export.excel', $filters) }}" class="btn btn-outline-success">
                 <i class="bi bi-file-earmark-excel"></i> Export Excel
             </a>
+            <button type="button" onclick="window.print()" class="btn btn-outline-dark">
+                <i class="bi bi-printer"></i> Print Report
+            </button>
         </div>
     </div>
 
@@ -78,7 +81,9 @@
                         <h5 class="fw-bold mb-0">Monthly Incident Trends</h5>
                         <span class="badge bg-primary text-white">Chart.js</span>
                     </div>
-                    <canvas id="incidentTrendChart" height="220"></canvas>
+                    <div class="chart-container">
+                        <canvas id="incidentTrendChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -209,12 +214,30 @@
     </div>
 </div>
 
-@section('scripts')
+@endsection
+
+<style>
+    .chart-container {
+        position: relative;
+        width: 100%;
+        height: 300px;
+    }
+
+    #incidentTrendChart {
+        width: 100% !important;
+        height: 100% !important;
+    }
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('incidentTrendChart');
-        if (!ctx) return;
+
+        if (!ctx) {
+            return;
+        }
 
         const labels = @json($monthlyTrends['labels'] ?? []);
         const values = @json($monthlyTrends['series'] ?? []);
@@ -222,7 +245,7 @@
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels,
+                labels: labels,
                 datasets: [{
                     label: 'Incidents',
                     data: values,
@@ -250,5 +273,3 @@
         });
     });
 </script>
-@endsection
-@endsection
