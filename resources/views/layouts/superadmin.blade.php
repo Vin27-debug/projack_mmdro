@@ -318,14 +318,18 @@
                             <i class="bi bi-people"></i> Drivers
                         </a>
                         <a href="{{ route('superadmin.ambulances.index') }}" class="nav-link {{ request()->routeIs('superadmin.ambulances.*') ? 'active' : '' }}">
-                            <a href="{{ route('backups.index') }}" class="nav-link {{ request()->routeIs('backups.*') ? 'active' : '' }}">
-                                <i class="bi bi-cloud-arrow-up"></i> Backup & Restore
-                            </a>
-                            <form method="POST" action="{{ route('logout') }}" class="mt-3 px-3">
-                                @csrf
-                                <button type="submit" class="btn btn-outline-light w-100">Logout</button>
-                            </form>
+                            <i class="bi bi-truck"></i> Ambulances
+                        </a>
+                        <a href="{{ route('backups.index') }}" class="nav-link {{ request()->routeIs('backups.*') ? 'active' : '' }}">
+                            <i class="bi bi-cloud-arrow-up"></i> Backup & Restore
+                        </a>
                     </nav>
+                    <form method="POST" action="{{ route('logout') }}" class="mt-3 px-3">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-light w-100 min-touch-target">
+                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        </button>
+                    </form>
                 </aside>
             </div>
             <div class="col-12 col-xl-10">

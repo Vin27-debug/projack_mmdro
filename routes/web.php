@@ -94,9 +94,6 @@ Route::get('/driver/register', [DriverRegistrationController::class, 'create'])
 Route::post('/driver/register', [DriverRegistrationController::class, 'store'])
     ->name('driver.register.store');
 
-Route::post('/driver/hijack', [HijackController::class, 'trigger'])
-    ->name('driver.hijack.trigger');
-
 /*
 |--------------------------------------------------------------------------
 | Admin Registration
@@ -124,6 +121,9 @@ Route::middleware([
 
     Route::post('/driver/panic', [PanicController::class, 'trigger'])
         ->name('driver.panic.trigger');
+
+    Route::post('/driver/hijack', [HijackController::class, 'trigger'])
+        ->name('driver.hijack.trigger');
 
     Route::post('/driver/dispatches/{dispatch}/accept', [DriverDashboardController::class, 'acceptDispatch'])
         ->name('driver.dispatch.accept');
@@ -438,7 +438,7 @@ Route::middleware([
         ->name('superadmin.users.reject');
 
     Route::resource('superadmin/ambulances', AmbulanceController::class)
-    ->names('superadmin.ambulances');
+        ->names('superadmin.ambulances');
 
     Route::get('/superadmin/assignments', [AssignmentController::class, 'index'])
         ->name('assignments.index');

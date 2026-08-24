@@ -428,13 +428,6 @@
     let gpsInterval = null;
     let gpsRequestInFlight = false;
 
-    // Global error handler for unhandled promise rejections
-    window.addEventListener('unhandledrejection', event => {
-        console.warn('Unhandled promise rejection:', event.reason);
-        // Prevent browser from handling the error
-        event.preventDefault();
-    });
-
     function setGpsStatus(message) {
         if (gpsStatus) {
             gpsStatus.textContent = message;
@@ -447,30 +440,11 @@
                 reject(new Error('Location is not supported by this browser.'));
                 return;
             }
-           navigator.geolocation.getCurrentPosition(
-    function(position) {
-        const latitude = position.coords.latitude;
-        const longitude = position.coords.longitude;
-
-        console.log('GPS Location:', latitude, longitude);
-    },
-    function(error) {
-        console.error('GPS error:', error);
-
-        if (error.code === 1) {
-            console.error('GPS permission denied.');
-        } else if (error.code === 2) {
-            console.error('GPS position unavailable.');
-        } else if (error.code === 3) {
-            console.error('GPS timeout.');
-        }
-    },
-    {
-        enableHighAccuracy: true,
-        timeout: 30000,
-        maximumAge: 10000
-    }
-);
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 10000
+            });
         });
     }
 
@@ -490,26 +464,10 @@
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude
                 })
-            }).catch(err => {
-                console.error('GPS update network error:', err);
-                setGpsStatus('Network error');
-                return null;
             });
-
-            if (!response) {
-                gpsRequestInFlight = false;
-                return;
-            }
-
-            if (!response.ok) {
-                setGpsStatus('Error: ' + response.status);
-                gpsRequestInFlight = false;
-                return;
-            }
-
+            if (!response.ok) throw new Error(`GPS update failed: ${response.status}`);
             setGpsStatus('Live');
         } catch (error) {
-            console.error('GPS error:', error);
             setGpsStatus(error.code === 1 ? 'Permission needed' : 'Unavailable');
         } finally {
             gpsRequestInFlight = false;
@@ -530,31 +488,10 @@
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude
                 })
-            }).catch(err => {
-                console.error(`${label} alert network error:`, err);
-                alert(`${label} alert could not be sent. Network error. Check connection and try again.`);
-                return null;
             });
-
-            if (!response) return;
-
-            const data = await response.json().catch(err => {
-                console.error(`${label} response parse error:`, err);
-                return null;
-            });
-
-            if (!response.ok) {
-                alert(`${label} alert failed: ${response.status} - ${data?.message || 'Unknown error'}`);
-                return;
-            }
-
-            if (data?.success) {
-                alert(`${label} ALERT SENT`);
-            } else {
-                alert(`${label} alert could not be sent: ${data?.message || 'Unknown error'}`);
-            }
+            if (!response.ok) throw new Error(`${label} request failed: ${response.status}`);
+            alert(`${label} ALERT SENT`);
         } catch (error) {
-            console.error(`${label} trigger error:`, error);
             alert(`${label} alert could not be sent. Check location permission and connection.`);
         }
     }
@@ -580,16 +517,16 @@
     @php
     $dispatchLocation = null;
 
-    if ($currentDispatch && $currentDispatch->incident) {
+    if ($currentDispatch && $currentDispatch - > incident) {
         $dispatchLocation = [
-            'latitude' => $currentDispatch->incident->latitude,
-            'longitude' => $currentDispatch->incident->longitude,
+            'latitude' => $currentDispatch - > incident - > latitude,
+            'longitude' => $currentDispatch - > incident - > longitude,
         ];
     }
-    elseif(isset($reportableDispatch) && $reportableDispatch && $reportableDispatch->incident) {
+    elseif(isset($reportableDispatch) && $reportableDispatch && $reportableDispatch - > incident) {
         $dispatchLocation = [
-            'latitude' => $reportableDispatch->incident->latitude,
-            'longitude' => $reportableDispatch->incident->longitude,
+            'latitude' => $reportableDispatch - > incident - > latitude,
+            'longitude' => $reportableDispatch - > incident - > longitude,
         ];
     }
     @endphp
@@ -615,7 +552,7 @@
                 iconAnchor: [8, 8]
             });
 
-            const assignedVehicle = @json($driver->activeVehicleAssignment ?->ambulance);
+            const assignedVehicle = @json($driver - > activeVehicleAssignment ? - > ambulance);
             const assignedVehicleName = assignedVehicle ? (assignedVehicle.vehicle_name || 'Assigned Vehicle') : 'Assigned Vehicle';
             const plateNumber = assignedVehicle ? (assignedVehicle.plate_number || '') : '';
 

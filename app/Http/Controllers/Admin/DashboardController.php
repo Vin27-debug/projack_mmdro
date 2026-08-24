@@ -230,13 +230,15 @@ class DashboardController extends Controller
      */
     public function gpsLocations()
     {
+        // Get latest GPS location per driver more efficiently using subquery
         $latestDriverLocations = GpsLocation::with('driver.user')
-            ->latest('recorded_at')
+            ->whereIn('id', function ($query) {
+                $query->selectRaw('MAX(id)')
+                    ->from('gps_locations')
+                    ->groupBy('driver_id');
+            })
             ->get()
-            ->groupBy('driver_id')
-            ->map(function ($group) {
-                return $group->first();
-            });
+            ->keyBy('driver_id');
 
         $ambulances = $latestDriverLocations->map(function ($location) {
             $driver = $location?->driver;
@@ -268,6 +270,7 @@ class DashboardController extends Controller
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->latest()
+            ->limit(100)
             ->get()
             ->map(function ($incident) {
                 return [

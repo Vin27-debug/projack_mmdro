@@ -348,6 +348,15 @@
             box-shadow: none;
         }
 
+        .min-touch-target {
+            min-height: 44px;
+        }
+
+        :where(button, a, input, select, textarea):focus-visible {
+            outline: 3px solid rgba(82, 180, 255, 0.85);
+            outline-offset: 2px;
+        }
+
         @media (max-width: 991px) {
             .admin-sidebar {
                 min-height: auto;
@@ -481,19 +490,43 @@ return Route::has($name) ? route($name) : '#';
                 return;
             }
 
+            let badgeRequest = null;
+            let badgeInterval = null;
+
             const updateBadge = () => {
-                fetch('{{ $adminRoute("admin.notifications.unread-count") }}')
-                    .then(response => response.json())
+                if (document.hidden || badgeRequest) {
+                    return;
+                }
+
+                badgeRequest = fetch('{{ $adminRoute("admin.notifications.unread-count") }}', {
+                        headers: {
+                            'Accept': 'application/json'
+                        },
+                        cache: 'no-store'
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Notification request failed: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         badge.textContent = data.unread_count ?? 0;
                     })
                     .catch(() => {
-                        badge.textContent = '0';
+                        badge.setAttribute('aria-label', 'Notifications unavailable');
+                    })
+                    .finally(() => {
+                        badgeRequest = null;
                     });
             };
 
             updateBadge();
-            setInterval(updateBadge, 15000);
+            badgeInterval = setInterval(updateBadge, 15000);
+            document.addEventListener('visibilitychange', updateBadge);
+            window.addEventListener('pagehide', () => clearInterval(badgeInterval), {
+                once: true
+            });
         });
     </script>
 

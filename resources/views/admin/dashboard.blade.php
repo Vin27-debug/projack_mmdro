@@ -602,8 +602,8 @@ $operations = $recentActivities ?? collect();
             <div class="card eoc-card border-0 shadow-sm rounded-4 chart-card p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
-                        <div class="eoc-panel-title">Response Time Analytics</div>
-                        <p class="eoc-panel-subtitle mb-0">Average response and operational efficiency over the last 30 days.</p>
+                        <div class="eoc-panel-title">Incident Type Distribution</div>
+                        <p class="eoc-panel-subtitle mb-0">Incident categories recorded across current operations.</p>
                     </div>
                     <span class="badge-status badge-gold">Analytics</span>
                 </div>
@@ -709,6 +709,10 @@ $operations = $recentActivities ?? collect();
 
 <script>
     let liveMapInstance = null;
+    let liveMarkerLayer = null;
+    let mapRefreshInterval = null;
+    let mapRequest = null;
+    let mapHasFitted = false;
     let responseLoadChart = null;
     let dispatchChartInstance = null;
 
@@ -724,6 +728,10 @@ $operations = $recentActivities ?? collect();
             return;
         }
 
+        if (liveMapInstance) {
+            return;
+        }
+
         liveMapInstance = L.map('liveCommandMap', {
             scrollWheelZoom: false,
             zoomControl: true,
@@ -734,8 +742,15 @@ $operations = $recentActivities ?? collect();
             maxZoom: 19
         }).addTo(liveMapInstance);
 
+        liveMarkerLayer = L.layerGroup().addTo(liveMapInstance);
         loadMapData();
-        setInterval(loadMapData, 15000);
+        mapRefreshInterval = setInterval(loadMapData, 15000);
+        window.addEventListener('pagehide', () => {
+            clearInterval(mapRefreshInterval);
+            mapRequest?.abort();
+        }, {
+            once: true
+        });
     }
 
     function loadMapData() {
@@ -743,20 +758,32 @@ $operations = $recentActivities ?? collect();
             return;
         }
 
-        fetch("{{ route('admin.dashboard.live-command-map') }}")
-            .then(response => response.json())
+        if (document.hidden || mapRequest) {
+            return;
+        }
+
+        mapRequest = new AbortController();
+        fetch("{{ route('admin.dashboard.live-command-map') }}", {
+                headers: {
+                    'Accept': 'application/json'
+                },
+                cache: 'no-store',
+                signal: mapRequest.signal
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Map request failed: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                liveMapInstance.eachLayer(layer => {
-                    if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
-                        liveMapInstance.removeLayer(layer);
-                    }
-                });
+                liveMarkerLayer.clearLayers();
 
                 const markers = [];
 
                 if (data.ambulances && Array.isArray(data.ambulances)) {
                     data.ambulances.forEach(vehicle => {
-                        if (!vehicle.latitude || !vehicle.longitude) {
+                        if (!Number.isFinite(Number(vehicle.latitude)) || !Number.isFinite(Number(vehicle.longitude))) {
                             return;
                         }
 
@@ -770,21 +797,21 @@ $operations = $recentActivities ?? collect();
 
                         marker.bindPopup(`
                             <div style="font-size:0.9rem; min-width:180px;">
-                                <strong>${vehicle.name}</strong><br>
-                                Ambulance Unit: ${vehicle.plate_number || 'N/A'}<br>
-                                Driver: ${vehicle.driver_name || 'Unassigned'}<br>
-                                Status: ${vehicle.status || 'Unknown'}<br>
-                                Last Update: ${vehicle.last_updated || 'Unknown'}
+                                <strong>${escapePopupText(vehicle.name)}</strong><br>
+                                Ambulance Unit: ${escapePopupText(vehicle.plate_number || 'N/A')}<br>
+                                Driver: ${escapePopupText(vehicle.driver_name || 'Unassigned')}<br>
+                                Status: ${escapePopupText(vehicle.status || 'Unknown')}<br>
+                                Last Update: ${escapePopupText(vehicle.last_updated || 'Unknown')}
                             </div>`);
 
-                        marker.addTo(liveMapInstance);
+                        marker.addTo(liveMarkerLayer);
                         markers.push(marker.getLatLng());
                     });
                 }
 
                 if (data.drivers && Array.isArray(data.drivers)) {
                     data.drivers.forEach(driver => {
-                        if (!driver.latitude || !driver.longitude) {
+                        if (!Number.isFinite(Number(driver.latitude)) || !Number.isFinite(Number(driver.longitude))) {
                             return;
                         }
 
@@ -798,20 +825,20 @@ $operations = $recentActivities ?? collect();
 
                         driverMarker.bindPopup(`
                             <div style="font-size:0.9rem; min-width:180px;">
-                                <strong>${driver.driver_name || 'Driver'}</strong><br>
-                                Ambulance Unit: ${driver.ambulance_unit || 'Unassigned'}<br>
-                                Current Status: ${driver.status || 'Unknown'}<br>
-                                Last Update: ${driver.last_updated || 'Unknown'}
+                                <strong>${escapePopupText(driver.driver_name || 'Driver')}</strong><br>
+                                Ambulance Unit: ${escapePopupText(driver.ambulance_unit || 'Unassigned')}<br>
+                                Current Status: ${escapePopupText(driver.status || 'Unknown')}<br>
+                                Last Update: ${escapePopupText(driver.last_updated || 'Unknown')}
                             </div>`);
 
-                        driverMarker.addTo(liveMapInstance);
+                        driverMarker.addTo(liveMarkerLayer);
                         markers.push(driverMarker.getLatLng());
                     });
                 }
 
                 if (data.incidents && Array.isArray(data.incidents)) {
                     data.incidents.forEach(item => {
-                        if (!item.latitude || !item.longitude) {
+                        if (!Number.isFinite(Number(item.latitude)) || !Number.isFinite(Number(item.longitude))) {
                             return;
                         }
 
@@ -825,25 +852,31 @@ $operations = $recentActivities ?? collect();
 
                         incidentMarker.bindPopup(`
                             <div style="font-size:0.9rem; min-width:180px;">
-                                <strong>${item.incident_number || 'Incident'}</strong><br>
-                                Type: ${item.type || 'N/A'}<br>
-                                Status: ${item.status || 'N/A'}<br>
-                                Location: ${item.location || 'Unknown'}<br>
-                                Last Update: ${item.last_updated || 'Unknown'}
+                                <strong>${escapePopupText(item.incident_number || 'Incident')}</strong><br>
+                                Type: ${escapePopupText(item.type || 'N/A')}<br>
+                                Status: ${escapePopupText(item.status || 'N/A')}<br>
+                                Location: ${escapePopupText(item.location || 'Unknown')}<br>
+                                Last Update: ${escapePopupText(item.last_updated || 'Unknown')}
                             </div>`);
 
-                        incidentMarker.addTo(liveMapInstance);
+                        incidentMarker.addTo(liveMarkerLayer);
                         markers.push(incidentMarker.getLatLng());
                     });
                 }
 
-                if (markers.length) {
+                if (markers.length && !mapHasFitted) {
                     const bounds = L.latLngBounds(markers);
                     liveMapInstance.fitBounds(bounds.pad(0.15));
+                    mapHasFitted = true;
                 }
             })
-            .catch(() => {
-                console.warn('Unable to refresh live map data.');
+            .catch(error => {
+                if (error.name !== 'AbortError') {
+                    liveMapInstance.getContainer().setAttribute('aria-label', 'Live map data is temporarily unavailable');
+                }
+            })
+            .finally(() => {
+                mapRequest = null;
             });
     }
 
@@ -858,6 +891,16 @@ $operations = $recentActivities ?? collect();
         }
     }
 
+    function escapePopupText(value) {
+        return String(value ?? 'Unknown').replace(/[&<>'"]/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        } [character]));
+    }
+
     function initializeResponseLoadChart() {
         const ctx = document.getElementById('responseLoadChart');
         if (!ctx) {
@@ -865,7 +908,12 @@ $operations = $recentActivities ?? collect();
         }
 
         fetch("{{ route('admin.dashboard.response-load-analytics') }}")
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Analytics request failed: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (responseLoadChart) {
                     responseLoadChart.destroy();
@@ -896,9 +944,7 @@ $operations = $recentActivities ?? collect();
                     }
                 });
             })
-            .catch(() => {
-                console.warn('Unable to load response analytics.');
-            });
+            .catch(() => {});
     }
 
     function initializeDispatchChart() {

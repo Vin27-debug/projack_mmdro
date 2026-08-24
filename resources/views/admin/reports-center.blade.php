@@ -214,8 +214,6 @@
     </div>
 </div>
 
-@endsection
-
 <style>
     .chart-container {
         position: relative;
@@ -273,3 +271,5 @@
         });
     });
 </script>
+
+@endsection

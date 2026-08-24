@@ -16,33 +16,57 @@ class HijackController extends Controller
         $driver = Auth::user()?->driver;
 
         if (!$driver) {
-            abort(403);
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 403);
         }
 
-        HijackAlert::create([
-            'driver_id' => $driver->id,
-            'latitude' => $request->input('latitude'),
-            'longitude' => $request->input('longitude'),
-            'status' => 'active',
-            'triggered_at' => now(),
+        // Validate coordinates
+        $validated = $request->validate([
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+        ], [
+            'latitude.required' => 'Latitude is required',
+            'latitude.numeric' => 'Latitude must be numeric',
+            'latitude.between' => 'Latitude must be between -90 and 90',
+            'longitude.required' => 'Longitude is required',
+            'longitude.numeric' => 'Longitude must be numeric',
+            'longitude.between' => 'Longitude must be between -180 and 180',
         ]);
 
-        AuditLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'Hijack Alert',
-            'module' => 'Emergency',
-            'description' => 'Vehicle hijack alert triggered',
-            'ip_address' => request()->ip(),
-        ]);
+        try {
+            HijackAlert::create([
+                'driver_id' => $driver->id,
+                'latitude' => $validated['latitude'],
+                'longitude' => $validated['longitude'],
+                'status' => 'active',
+                'triggered_at' => now(),
+            ]);
 
-        Notification::create([
-            'title' => 'Vehicle Hijack Alert',
-            'message' => 'Possible vehicle hijacking detected.',
-            'type' => 'hijack',
-        ]);
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'Hijack Alert',
+                'module' => 'Emergency',
+                'description' => 'Vehicle hijack alert triggered',
+                'ip_address' => request()->ip(),
+            ]);
 
-        return response()->json([
-            'success' => true
-        ]);
+            Notification::create([
+                'title' => 'Vehicle Hijack Alert',
+                'message' => 'Possible vehicle hijacking detected.',
+                'type' => 'hijack',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Hijack alert sent.'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send hijack alert'
+            ], 500);
+        }
     }
 }
