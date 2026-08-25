@@ -26,7 +26,6 @@
     --driver-bg: #071b2f;
     --driver-accent: #2563eb;
     --driver-accent-soft: rgba(37, 99, 235, 0.16);
-    --driver-card: #ffffff;
     --driver-text: #e2e8f0;
 }
 
@@ -123,7 +122,7 @@ body {
 }
 
 .main-content {
-    background: #f5f7fb;
+    background: transparent !important;
     min-height: 100vh;
 }
 
