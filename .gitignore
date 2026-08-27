@@ -28,3 +28,4 @@ Thumbs.db
 /storage/framework/views/
 laravel.backup
 laravel.backup
+laravel.before-restore.backup
