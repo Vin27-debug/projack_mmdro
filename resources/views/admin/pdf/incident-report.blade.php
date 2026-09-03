@@ -51,7 +51,12 @@
 
                 <th>Incident #</th>
                 <th>Location</th>
+                <th>Complete Address</th>
+                <th>Classification</th>
                 <th>Status</th>
+                <th>Reported</th>
+                <th>Completed</th>
+                <th>Closed</th>
                 <th>Driver</th>
                 <th>Summary</th>
                 <th>Actions Taken</th>
@@ -76,9 +81,17 @@
                     {{ $incident->location }}
                 </td>
 
+                <td>{{ collect([$incident->house_number, $incident->street, $incident->barangay, $incident->city, $incident->province])->filter()->implode(', ') ?: 'N/A' }}</td>
+
+                <td>{{ $incident->incident_type }}</td>
+
                 <td>
                     {{ strtoupper($incident->status) }}
                 </td>
+
+                <td>{{ $incident->created_at?->format('Y-m-d H:i:s') }}</td>
+                <td>{{ $incident->completed_at?->format('Y-m-d H:i:s') ?: 'N/A' }}</td>
+                <td>{{ $incident->closed_at?->format('Y-m-d H:i:s') ?: 'N/A' }}</td>
 
                 <td>
                     {{ $incident->driver?->badge_id ?? 'N/A' }}

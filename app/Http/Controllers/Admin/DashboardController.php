@@ -262,6 +262,9 @@ class DashboardController extends Controller
                 'status_key' => $mapStatus,
                 'driver_name' => $driver?->user?->name ?? 'Unassigned',
                 'last_updated' => $location->recorded_at?->format('M d, Y H:i') ?? 'Unknown',
+                'speed_kmh' => $location->speed_kmh,
+                'speed_status' => $location->speed_status,
+                'speed_limit_kmh' => $location->speed_limit_kmh,
                 'type' => 'ambulance',
             ];
         })->filter();
@@ -282,6 +285,7 @@ class DashboardController extends Controller
                     'status' => $incident->status,
                     'status_key' => 'emergency',
                     'location' => $incident->location,
+                    'address' => collect([$incident->house_number, $incident->street, $incident->barangay, $incident->city, $incident->province])->filter()->implode(', '),
                     'driver_name' => $incident->driver?->user?->name ?? 'Unassigned',
                     'last_updated' => $incident->updated_at?->format('M d, Y H:i') ?? 'Unknown',
                     'type_label' => 'incident',
@@ -309,6 +313,9 @@ class DashboardController extends Controller
                 'status' => $driver->status ?? 'available',
                 'status_key' => $mapStatus,
                 'last_updated' => $location->recorded_at?->format('M d, Y H:i') ?? 'Unknown',
+                'speed_kmh' => $location->speed_kmh,
+                'speed_status' => $location->speed_status,
+                'speed_limit_kmh' => $location->speed_limit_kmh,
                 'type' => 'driver',
             ];
         })->filter();

@@ -31,15 +31,13 @@ class DispatchAndApprovalFlowTest extends TestCase
             'incident_type' => 'Medical',
             'location' => 'Test Location',
             'description' => 'Test description',
+            'priority' => 'Medium',
             'latitude' => '14.1234567',
             'longitude' => '121.1234567',
         ]);
 
-        $response->assertRedirect(route('admin.incidents.index'));
+        $response->assertRedirect(route('admin.incidents.show', $incident = Incident::latest()->firstOrFail()));
 
-        $incident = Incident::latest()->first();
-
-        $this->assertNotNull($incident);
         $this->assertSame('14.1234567', (string) $incident->latitude);
         $this->assertSame('121.1234567', (string) $incident->longitude);
     }

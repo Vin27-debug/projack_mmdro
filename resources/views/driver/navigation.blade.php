@@ -24,6 +24,7 @@
         <div class="card-body">
             <h5 class="mb-1">{{ $dispatch->incident->incident_number }}</h5>
             <p class="text-muted">{{ $dispatch->incident->location ?? 'Unknown Location' }}</p>
+            <p class="small">{{ collect([$dispatch->incident->house_number, $dispatch->incident->street, $dispatch->incident->barangay, $dispatch->incident->city, $dispatch->incident->province])->filter()->implode(', ') }}</p>
             <a href="https://www.google.com/maps/dir/?api=1&destination={{ $dispatch->incident->latitude }},{{ $dispatch->incident->longitude }}" target="_blank" class="btn btn-success">
                 🧭 Open in Google Maps
             </a>
@@ -99,7 +100,7 @@
                 return;
             }
 
-           navigator.geolocation.getCurrentPosition((position)  -> {
+            navigator.geolocation.getCurrentPosition((position) => {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
 
@@ -139,7 +140,8 @@
                     },
                     body: JSON.stringify({
                         latitude: lat,
-                        longitude: lng
+                        longitude: lng,
+                        speed_kmh: Number.isFinite(position.coords.speed) && position.coords.speed >= 0 ? position.coords.speed * 3.6 : null
                     })
                 });
             }, function() {

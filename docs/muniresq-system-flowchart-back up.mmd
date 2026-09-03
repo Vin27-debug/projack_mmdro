@@ -1,0 +1,352 @@
+flowchart TD
+    Start([🟢 User Accesses MuniResQ]) --> CheckAuth{Authenticated<br/>via Breeze?}
+    CheckAuth -->|No| Login["📝 Login Page<br/>routes/auth.php"]
+    Login --> EnterCreds["Enter Email & Password"]
+    EnterCreds --> ValidateLogin{Valid<br/>Credentials?}
+    ValidateLogin -->|No| LoginError["❌ Login Error<br/>Redirect to Login"]
+    LoginError --> Login
+    ValidateLogin -->|Yes| CheckStatus{User Status?}
+    CheckStatus -->|pending| PendingMsg["⚠️ Account Pending Approval<br/>(EnsureUserApproved Middleware)<br/>Logout"]
+    PendingMsg --> Logout1([🚪 Logout])
+    CheckStatus -->|rejected| RejectedMsg["❌ Account Rejected<br/>(EnsureUserApproved Middleware)<br/>Logout"]
+    RejectedMsg --> Logout1
+    CheckStatus -->|approved| CheckRole{Check<br/>User Role?}
+    
+    CheckAuth -->|Yes, Valid| CheckRole
+    
+    CheckRole -->|super-admin| SuperAdminDash["🔐 Super Admin<br/>Dashboard"]
+    CheckRole -->|admin| AdminDash["👨‍💼 Admin<br/>Dashboard"]
+    CheckRole -->|driver| DriverDash["👨‍🚗 Driver<br/>Dashboard"]
+    
+    %% ============================================================
+    %% SUPER ADMIN FLOW (Middleware: auth, approved, role:super-admin)
+    %% ============================================================
+    subgraph SuperAdmin["🔐 SUPER ADMIN PORTAL"]
+        direction TB
+        
+        SuperAdminDash --> SAMenu{Main Menu}
+        
+        %% 1. PENDING USER APPROVAL
+        SAMenu -->|Pending Users<br/>GET /superadmin/users/pending| PendingUsers["📋 UserApprovalController@index<br/>View Pending Registrations"]
+        PendingUsers --> ReviewUser{User Action?}
+        
+        ReviewUser -->|Approve| ApproveUser["✅ UserApprovalController@approve<br/>POST /superadmin/users/:user/approve<br/>──────────────────<br/>1. User status: pending → approved<br/>2. Assign driver role<br/>3. Generate badge ID<br/>4. Create Driver profile<br/>5. Set driver status: available<br/>6. Auto-assign ambulance"]
+        ApproveUser --> UserApprovedOK["✓ User Approved<br/>Can now login"]
+        
+        ReviewUser -->|Reject| RejectUser["❌ UserApprovalController@reject<br/>POST /superadmin/users/:user/reject<br/>──────────────────<br/>User status: pending → rejected<br/>Driver status: offline<br/>Cannot access system"]
+        RejectUser --> UserRejectedOK["✓ User Rejected"]
+        
+        %% 2. DRIVER MANAGEMENT
+        SAMenu -->|Drivers<br/>GET /superadmin/drivers| DriverMgmt["👥 UserApprovalController@drivers<br/>List All Drivers"]
+        DriverMgmt --> DriverAction{Driver Action?}
+        DriverAction -->|View| DriverProfile["Display Driver Info<br/>Badge ID, Status, License"]
+        DriverAction -->|Assign Vehicle| AssignForm["GET /superadmin/drivers/:driver/assign<br/>Show Vehicle Assignment Form"]
+        AssignForm --> SelectVehicle["Select Ambulance"]
+        SelectVehicle --> ConfirmAssign["POST /superadmin/drivers/:driver/assign<br/>UserApprovalController@assignVehicle<br/>Create VehicleDriverAssignment"]
+        ConfirmAssign --> VehicleAssigned["✓ Driver Assigned to Ambulance"]
+        
+        %% 3. AMBULANCE MANAGEMENT
+        SAMenu -->|Ambulances<br/>Resource: superadmin/ambulances| AmbulanceMgmt["🚑 AmbulanceController<br/>Manage Fleet"]
+        AmbulanceMgmt --> AmbAction{Action?}
+        AmbAction -->|Create| CreateAmb["GET superadmin/ambulances/create<br/>POST superadmin/ambulances<br/>Add Plate #, Type, Status=available"]
+        AmbAction -->|Edit| EditAmb["GET superadmin/ambulances/:ambulance/edit<br/>PUT superadmin/ambulances/:ambulance<br/>Update Details"]
+        AmbAction -->|View| ViewAmb["GET superadmin/ambulances<br/>List All Ambulances<br/>Status, Assignments"]
+        AmbAction -->|Delete| DeleteAmb["DELETE superadmin/ambulances/:ambulance"]
+        CreateAmb --> AmbCreated["✓ Ambulance Added"]
+        EditAmb --> AmbUpdated["✓ Ambulance Updated"]
+        ViewAmb --> AmbViewed["✓ Ambulances Listed"]
+        DeleteAmb --> AmbDeleted["✓ Ambulance Deleted"]
+        
+        %% 4. BACKUP & RESTORE
+        SAMenu -->|Backup/Restore<br/>SuperAdmin Only| BackupMenu["💾 BackupController<br/>Database Management"]
+        BackupMenu --> BackupAction{Action?}
+        BackupAction -->|Create Backup| CreateBackup["POST /backups/create<br/>Execute: mysqldump<br/>Create SQL backup file<br/>Store: storage/app/backups/"]
+        BackupAction -->|List| ViewBackups["GET /backups<br/>List All Backup Files<br/>File Size, Timestamp"]
+        BackupAction -->|Download| DownloadBackup["GET /backups/download/:file<br/>Download SQL file"]
+        BackupAction -->|Restore| RestoreBackup["POST /backups/restore<br/>Validate backup file whitelist<br/>Execute restore command<br/>Database updated"]
+        CreateBackup --> BackupLogged["✓ BackupLog Created<br/>Recorded in DB"]
+        RestoreBackup --> RestoreComplete["✓ Database Restored<br/>System Ready"]
+        
+        %% 5. SYSTEM SETTINGS
+        SAMenu -->|System Settings| SystemSettings["⚙️ SystemSettingsController"]
+        SystemSettings --> ViewSettings["GET /superadmin/settings<br/>View Config"]
+        ViewSettings --> EditSettings["POST /superadmin/settings<br/>Update System Configuration"]
+        EditSettings --> SettingsSaved["✓ Settings Saved"]
+        
+        SAMenu -->|Logout| Logout2([🚪 Logout])
+    end
+    
+    %% ============================================================
+    %% ADMIN FLOW (Middleware: auth, approved, role:admin|super-admin)
+    %% ============================================================
+    subgraph Admin["👨‍💼 ADMIN PORTAL"]
+        direction TB
+        
+        AdminDash --> AdminMenu{Main Menu}
+        
+        %% 1. INCIDENT MANAGEMENT
+        AdminMenu -->|Incidents<br/>GET /admin/incidents| IncidentList["📍 IncidentController<br/>View All Incidents"]
+        IncidentList --> IncAction{Action?}
+        IncAction -->|Create| CreateInc["GET /admin/incidents/create<br/>POST /admin/incidents<br/>Create Incident<br/>Status: pending"]
+        IncAction -->|View| ViewInc["GET /admin/incidents/:incident<br/>Display Details"]
+        IncAction -->|Edit| EditInc["GET/PUT /admin/incidents/:incident<br/>Update Incident"]
+        IncAction -->|Archive| ArchiveInc["POST /admin/incidents/:incident/archive<br/>Mark archived_at timestamp"]
+        IncAction -->|Restore| RestoreInc["POST /admin/incidents/:incident/restore<br/>Clear archived_at"]
+        CreateInc --> IncCreated["✓ Incident Status: pending<br/>Ready for Dispatch"]
+        
+        %% 2. DISPATCH CENTER (Manual Dispatch)
+        AdminMenu -->|Dispatch Center<br/>GET /dispatch-center| DispatchCenter["🚨 DispatchController@index<br/>Manual Dispatch Hub"]
+        DispatchCenter --> ViewPending["Show Incidents with<br/>Status = pending"]
+        ViewPending --> ViewAvail["Show Available Drivers<br/>Status = available"]
+        ViewAvail --> ViewAmbul["Show Available Ambulances<br/>Status = available"]
+        ViewAmbul --> ManualSelect["Admin Selects Driver<br/>& Ambulance"]
+        ManualSelect --> ManualAssign["POST /dispatches/:incident/assign<br/>DispatchController@assign<br/>──────────────────<br/>Validations:<br/>• Incident NOT completed/closed/cancelled<br/>• Driver status = available<br/>• Ambulance exists & available<br/>──────────────────<br/>Creates Dispatch:<br/>• Status: assigned (waiting driver acceptance)<br/>• assigned_at: now()"]
+        ManualAssign --> DispAssigned["✓ Dispatch Created<br/>Driver & Ambulance Assigned"]
+        
+        %% 3. AUTO DISPATCH
+        AdminMenu -->|Auto Dispatch<br/>POST /admin/incidents/:incident/auto-dispatch| AutoDispatch["⚡ AutoDispatchController<br/>Automatic Assignment"]
+        AutoDispatch --> AutoLogic["Find First Available<br/>Driver & Ambulance<br/>(Iterates until found)<br/>NOT based on GPS distance"]
+        AutoLogic --> AutoAssign["Create & Assign Dispatch<br/>Same as manual dispatch<br/>Status: assigned"]
+        AutoAssign --> AutoComplete["✓ Dispatch Auto-Created<br/>Driver Notified"]
+        
+        %% 4. GPS MONITORING
+        AdminMenu -->|GPS Monitoring<br/>GET /admin/gps-monitoring| GPSMon["📡 GpsMonitoringController<br/>Real-time Tracking"]
+        GPSMon --> GPSAction{View?}
+        GPSAction -->|Live Map| LiveMap["GET /admin/gps-locations<br/>Returns current GPS for all drivers<br/>Displays on live map"]
+        GPSAction -->|History| GPSHistory["GET /admin/gps-history<br/>Filter GPS by date/driver<br/>Show movement trail"]
+        
+        %% 5. OPERATIONS CENTER
+        AdminMenu -->|Operations Center<br/>GET /admin/operations-center| OpsCtr["🎛️ OperationsCenterController<br/>Command & Control"]
+        OpsCtr --> LiveCommand["Display:<br/>• Active incidents<br/>• Assigned drivers<br/>• Ambulance status"]
+        
+        %% 6. REPORTS & ANALYTICS
+        AdminMenu -->|Reports<br/>Multiple Routes| ReportMenu["📊 Reports Hub"]
+        ReportMenu --> ReportType{Report Type?}
+        ReportType -->|Incident Reports<br/>GET /admin/incident-reports| IncReports["List Reports<br/>Status: pending/approved"]
+        ReportType -->|Response Time<br/>GET /admin/reports/response-time| ResponseTime["Response Time Analytics<br/>Average metrics<br/>Performance KPIs"]
+        ReportType -->|Driver Performance<br/>GET /admin/reports/driver-performance| DriverPerf["Driver Performance Data<br/>Completion rates<br/>Response metrics"]
+        ReportType -->|Vehicle Utilization<br/>GET /admin/vehicle-utilization| VehUtil["Utilization Reports<br/>Hours on duty<br/>Trip counts"]
+        ReportType -->|Export<br/>PDF/Excel| ExportReport["GET /admin/reports**/pdf<br/>GET /admin/reports**/excel<br/>Download formatted reports"]
+        
+        IncReports --> ApproveReport{Admin<br/>Review?}
+        ApproveReport -->|Approve| ReportApproved["POST /admin/reports/:report/approve<br/>IncidentReportController@approve<br/>Status: approved<br/>Updates Incident & Dispatch states"]
+        ApproveReport -->|Pending| ReportPending["Status remains: pending"]
+        
+        %% 7. ALERT MANAGEMENT
+        AdminMenu -->|Panic Alerts<br/>GET /panic-alerts| PanicAlerts["🆘 PanicAlertController<br/>Emergency Panics"]
+        PanicAlerts --> ViewPanic["List All Panic Alerts<br/>Driver, Location, Time<br/>Status: active/resolved"]
+        
+        AdminMenu -->|Hijack Alerts<br/>GET /hijack-alerts| HijackAlerts["🔴 HijackAlertController<br/>Vehicle Hijacks"]
+        HijackAlerts --> ViewHijack["List All Hijack Alerts<br/>Driver, Location, Time<br/>Status: active/resolved"]
+        
+        %% 8. VEHICLE MANAGEMENT
+        AdminMenu -->|Vehicle Maintenance<br/>GET/POST /admin/vehicle-maintenance| VehMaint["🔧 VehicleMaintenanceController"]
+        VehMaint --> MaintAction{Action?}
+        MaintAction -->|Create| CreateMaint["POST /admin/vehicle-maintenance<br/>Schedule Maintenance<br/>Select Vehicle, Type"]
+        MaintAction -->|Track| TrackMaint["GET /admin/vehicle-maintenance<br/>View Records<br/>Status, Dates"]
+        MaintAction -->|Complete| CompleteMaint["POST /admin/vehicle-maintenance/:id/complete<br/>Mark Complete<br/>Vehicle available again"]
+        CreateMaint --> MaintCreated["✓ Maintenance Scheduled"]
+        
+        AdminMenu -->|Ambulances<br/>Resource: ambulances| AmbMgmtAdmin["🚑 AmbulanceController<br/>Fleet Management"]
+        AmbMgmtAdmin --> AmbAdminAction{Action?}
+        AmbAdminAction -->|View| ViewAmbAdmin["GET /ambulances<br/>All Ambulances"]
+        AmbAdminAction -->|Edit| EditAmbAdmin["Edit Ambulance<br/>Update Status"]
+        
+        %% 9. AUDIT & NOTIFICATIONS
+        AdminMenu -->|Audit Logs<br/>GET /admin/audit-logs| AuditLogs["📝 AuditLogController<br/>Action History"]
+        AuditLogs --> ViewAuditLog["All Actions Logged<br/>Timestamp, Module<br/>Action, IP, User"]
+        
+        AdminMenu -->|Notifications<br/>GET /admin/notifications| NotifAdmin["🔔 NotificationController"]
+        NotifAdmin --> ViewNotif["GET /admin/notifications<br/>Unread Notifications<br/>POST to mark read"]
+        
+        %% 10. VULNERABLE AREAS & EQUIPMENT
+        AdminMenu -->|Vulnerable Areas<br/>Resource: /admin/vulnerable-areas| VulnAreas["⚠️ VulnerableAreaController"]
+        VulnAreas --> VulnAction{Action?}
+        VulnAction -->|Create| CreateVuln["Create Zone<br/>Location, Description"]
+        VulnAction -->|Deactivate| DeactVuln["POST :area/deactivate<br/>Mark Inactive"]
+        
+        AdminMenu -->|Response Equipment<br/>Resource: /admin/response-equipment| Equipment["🛠️ ResponseEquipmentController<br/>Manage Equipment"]
+        
+        AdminMenu -->|Logout| Logout3([🚪 Logout])
+    end
+    
+    %% ============================================================
+    %% DRIVER FLOW (Middleware: auth, approved, role:driver)
+    %% ============================================================
+    subgraph Driver["👨‍🚗 DRIVER PORTAL"]
+        direction TB
+        
+        DriverDash --> DriverMenu{Main Menu}
+        
+        %% 1. DASHBOARD
+        DriverMenu -->|Dashboard<br/>GET /driver/dashboard| DashView["🏠 DriverDashboardController@index"]
+        DashView --> CheckDisp{Has Active<br/>Dispatch?}
+        CheckDisp -->|Yes| DispInfo["Display Current Dispatch<br/>Incident Details<br/>Status & Action Buttons"]
+        CheckDisp -->|No| NoDisp["Status: available<br/>Waiting for Assignment"]
+        
+        %% 2. MY ASSIGNMENTS
+        DriverMenu -->|My Assignments<br/>GET /driver/my-assignment| AssignView["📋 MyAssignmentController@index<br/>Current Assignment"]
+        AssignView --> CheckAssign{Has Pending<br/>Dispatch?}
+        CheckAssign -->|Yes| PendDisp["Display Dispatch<br/>Status: assigned (waiting acceptance)<br/>Incident Info<br/>Accept/Decline Buttons"]
+        CheckAssign -->|No| NoAssign["No Pending Assignments"]
+        
+        PendDisp --> AcceptDecide{Driver<br/>Decision?}
+        
+        AcceptDecide -->|Accept| AcceptDisp["POST /driver/dispatches/:dispatch/accept<br/>DriverDashboardController@acceptDispatch<br/>──────────────────<br/>Updates:<br/>• Dispatch: assigned → accepted<br/>• Driver: available → assigned<br/>• Ambulance: available → on_duty<br/>• Incident: pending → dispatched<br/>• accepted_at: now()"]
+        AcceptDisp --> AcceptOK["✓ Dispatch Accepted<br/>Ready for Response"]
+        
+        AcceptDecide -->|Decline| DeclineDisp["POST /driver/dispatches/:dispatch/decline<br/>DriverDashboardController@declineDispatch<br/>──────────────────<br/>Updates:<br/>• Dispatch: assigned → cancelled<br/>• Incident: returns to pending<br/>• Ambulance: on_duty → available<br/>• Driver: available (if no other active)<br/>Incident re-available for reassign"]
+        DeclineDisp --> DeclineOK["✓ Dispatch Declined<br/>Back to Available"]
+        
+        %% 3. INCIDENT PROGRESS UPDATES
+        AcceptOK --> ProgressMenu{Next Action?}
+        
+        ProgressMenu -->|En Route<br/>POST /driver/incidents/:incident/en-route| EnRoute["🚗 DriverDashboardController@markEnRoute<br/>──────────────────<br/>Updates:<br/>• Dispatch: accepted → en_route<br/>• Driver: assigned → en_route<br/>• Incident: dispatched (unchanged)"]
+        EnRoute --> EnRouteOK["✓ En Route"]
+        
+        EnRouteOK --> ProgressMenu2{Next Action?}
+        ProgressMenu2 -->|Arrived<br/>POST /driver/incidents/:incident/arrived| Arrived["🎯 DriverDashboardController@markArrived<br/>──────────────────<br/>Updates:<br/>• Dispatch: en_route → arrived<br/>• Driver: en_route → on_scene<br/>• Incident: dispatched → responding<br/>• arrived_at: now()"]
+        Arrived --> ArrivedOK["✓ Arrived at Scene"]
+        
+        ArrivedOK --> ProgressMenu3{Next Action?}
+        ProgressMenu3 -->|Completed<br/>POST /driver/incidents/:incident/completed| Completed["✔️ DriverDashboardController@markCompleted<br/>──────────────────<br/>Updates:<br/>• Dispatch: arrived → completed<br/>• Driver: on_scene → returning<br/>• Incident: responding → completed<br/>• Ambulance: on_duty → available<br/>• completed_at: now()"]
+        Completed --> CompletedOK["✓ Incident Completed"]
+        
+        %% 4. INCIDENT REPORT
+        CompletedOK --> CheckReport{Submit<br/>Report?}
+        CheckReport -->|Yes| IncidentReport["📝 IncidentReportController@create/store<br/>GET /driver/incidents/report/:incident<br/>POST /driver/incidents/report/:incident<br/>──────────────────<br/>Creates IncidentReport<br/>Status: pending<br/>Awaiting Admin Approval"]
+        IncidentReport --> ReportSubmitted["✓ Report Submitted"]
+        
+        CheckReport -->|No| SkipReport["No Report"]
+        ReportSubmitted --> ProgressMenu4{Continue?}
+        SkipReport --> ProgressMenu4
+        
+        %% 5. NAVIGATION
+        ProgressMenu -->|Navigation<br/>GET /driver/navigation| Navigation["🗺️ NavigationController@show<br/>Display Route to Incident<br/>GPS Directions, ETA"]
+        Navigation --> ProgressMenu2
+        
+        %% 6. GPS TRACKING
+        ProgressMenu4 -->|GPS Update<br/>POST /driver/gps/update| GPSUpdate["📍 GpsController@update<br/>Send Location to Server<br/>──────────────────<br/>Validates:<br/>• Latitude: -90 to 90<br/>• Longitude: -180 to 180<br/>Accuracy: optional<br/>──────────────────<br/>Creates GpsLocation Record<br/>Timestamp: recorded_at<br/>Preserves GPS history"]
+        GPSUpdate --> GPSStored["✓ Location Recorded<br/>Admin Sees Real-time"]
+        GPSStored --> ProgressMenu4
+        
+        %% 7. EMERGENCY ALERTS
+        ProgressMenu4 -->|Panic Button<br/>POST /driver/panic| Panic["🆘 PanicController@trigger<br/>Emergency - Personal Danger<br/>──────────────────<br/>1. Get Current GPS<br/>2. Validate Coordinates<br/>3. Create PanicAlert<br/>   status: active<br/>   triggered_at: now()<br/>4. Create Notification<br/>5. Alert Admin"]
+        Panic --> PanicSent["✓ Panic Alert Sent<br/>Location Transmitted"]
+        
+        ProgressMenu4 -->|Hijack Button<br/>POST /driver/hijack| Hijack["🔴 HijackController@trigger<br/>Emergency - Vehicle Hijacking<br/>──────────────────<br/>1. Get Current GPS<br/>2. Validate Coordinates<br/>3. Create HijackAlert<br/>   status: active<br/>   triggered_at: now()<br/>4. Create AuditLog<br/>   Action: Hijack Alert<br/>   Module: Emergency<br/>5. Create Notification<br/>6. Alert Admin"]
+        Hijack --> HijackSent["✓ Hijack Alert Sent<br/>Location Transmitted<br/>Authorities Notified"]
+        
+        %% 8. HISTORY
+        ProgressMenu4 -->|Dispatch History<br/>GET /driver/history| History["📜 DriverHistoryController@index<br/>All Completed Dispatches<br/>Date, Status, Incident"]
+        History --> HistoryOK["✓ History Displayed"]
+        
+        %% 9. SETTINGS
+        ProgressMenu4 -->|Settings<br/>GET /driver/settings| Settings["⚙️ DriverSettingsController@index<br/>Driver Profile Settings"]
+        Settings --> SettingsOK["✓ Settings Displayed"]
+        
+        ProgressMenu4 -->|Logout| Logout4([🚪 Logout])
+    end
+    
+    %% ============================================================
+    %% INCIDENT & DISPATCH WORKFLOW (Complete Lifecycle)
+    %% ============================================================
+    subgraph IncidentFlow["📊 INCIDENT & DISPATCH LIFECYCLE"]
+        direction TB
+        
+        IncStart["🟢 Incident Created<br/>Status: pending"]
+        IncStart --> AdminDecision{Admin Action?}
+        
+        AdminDecision -->|Manual Dispatch| ManualFlow["Admin Goes to Dispatch Center<br/>Selects Available Driver<br/>& Available Ambulance"]
+        AdminDecision -->|Auto Dispatch| AutoFlow["Admin Triggers Auto Dispatch<br/>System Finds First Available<br/>Driver & Ambulance"]
+        AdminDecision -->|Create Later| PendingWait["Incident Waits<br/>Status: pending"]
+        
+        ManualFlow --> CreateDispatch["Create Dispatch Record<br/>Status: assigned<br/>assigned_at: now()"]
+        AutoFlow --> CreateDispatch
+        PendingWait --> CreateDispatch
+        
+        CreateDispatch --> DispAssigned["Dispatch Assigned to Driver<br/>Driver Receives Notification"]
+        
+        DispAssigned --> DriverResp{Driver<br/>Response?}
+        
+        DriverResp -->|Decline| DispDecline["Dispatch Status: cancelled<br/>Incident Returns: pending<br/>Ambulance: available<br/>──────────────────<br/>Incident Re-available<br/>for Reassignment"]
+        DispDecline --> ReassignLoop["Reassign to Another Driver"]
+        ReassignLoop --> DriverResp
+        
+        DriverResp -->|Accept| AcceptState["Dispatch: assigned → accepted<br/>Incident: pending → dispatched<br/>Driver: available → assigned<br/>Ambulance: available → on_duty<br/>accepted_at: now()"]
+        
+        AcceptState --> EnRouteState["Driver Updates: en_route<br/>Dispatch: accepted → en_route"]
+        EnRouteState --> ArrivedState["Driver Updates: arrived<br/>Dispatch: en_route → arrived<br/>Driver: en_route → on_scene<br/>Incident: dispatched → responding"]
+        ArrivedState --> CompletedState["Driver Updates: completed<br/>Dispatch: arrived → completed<br/>Driver: on_scene → returning<br/>Incident: responding → completed<br/>Ambulance: on_duty → available"]
+        
+        CompletedState --> ReportRequired{Report<br/>Required?}
+        ReportRequired -->|No| IncClosed["Incident Status: closed<br/>🏁 Resolved"]
+        ReportRequired -->|Yes| ReportFlow["Driver Creates Report<br/>Status: pending<br/>Awaiting Admin Review"]
+        
+        ReportFlow --> AdminReview{Admin<br/>Approves?}
+        AdminReview -->|Approve| AdminApprove["POST /admin/reports/:report/approve<br/>AdminIncidentReportController@approve<br/>──────────────────<br/>Updates Chain:<br/>• IncidentReport: pending → approved<br/>• Dispatch: completed → closed<br/>• Incident: completed → closed<br/>• Driver: assigned → available<br/>  (if no other active)"]
+        AdminApprove --> IncClosed
+        
+        AdminReview -->|Reject| ReportReject["Status remains: pending<br/>Driver revises & resubmits"]
+        ReportReject --> ReportFlow
+    end
+    
+    %% ============================================================
+    %% EMERGENCY & ALERT SYSTEM
+    %% ============================================================
+    subgraph Emergency["🆘 EMERGENCY & ALERTS"]
+        direction TB
+        
+        %% PANIC ALERT
+        PanicTrigger["Driver Triggers<br/>Panic Button<br/>POST /driver/panic"]
+        PanicTrigger --> PanicAuth["PanicController@trigger<br/>Validate Driver Auth"]
+        PanicAuth --> PanicValidate["Validate GPS Coordinates<br/>Latitude: -90 to 90<br/>Longitude: -180 to 180"]
+        PanicValidate --> PanicCreate["Create PanicAlert Record<br/>driver_id, latitude, longitude<br/>status: active<br/>triggered_at: now()"]
+        PanicCreate --> PanicNotify["Create Notification<br/>Type: panic"]
+        PanicNotify --> AdminViewPanic["Admin Views at:<br/>GET /panic-alerts<br/>Sees Driver, Location, Time<br/>Status: active"]
+        AdminViewPanic --> AdminActionPanic["Admin Takes Action:<br/>• Contact Driver<br/>• Call Backup Units<br/>• Alert Authorities"]
+        
+        %% HIJACK ALERT
+        HijackTrigger["Driver Triggers<br/>Hijack Button<br/>POST /driver/hijack"]
+        HijackTrigger --> HijackAuth["HijackController@trigger<br/>Validate Driver Auth"]
+        HijackAuth --> HijackValidate["Validate GPS Coordinates<br/>Latitude: -90 to 90<br/>Longitude: -180 to 180"]
+        HijackValidate --> HijackCreate["Create HijackAlert Record<br/>driver_id, latitude, longitude<br/>status: active<br/>triggered_at: now()"]
+        HijackCreate --> AuditCreate["Create AuditLog Entry<br/>user_id, action: Hijack Alert<br/>module: Emergency<br/>ip_address, timestamp"]
+        AuditCreate --> HijackNotify["Create Notification<br/>Type: hijack"]
+        HijackNotify --> AdminViewHijack["Admin Views at:<br/>GET /hijack-alerts<br/>Sees Driver, Location, Time<br/>Status: active"]
+        AdminViewHijack --> AdminActionHijack["Admin Takes Action:<br/>• Emergency Protocol<br/>• Call Authorities<br/>• Security Response<br/>• GPS Tracking Live"]
+    end
+    
+    %% ============================================================
+    %% GPS TRACKING SYSTEM
+    %% ============================================================
+    subgraph GPSFlow["📡 GPS TRACKING & MONITORING"]
+        direction TB
+        
+        GPSStart["Driver Posts GPS<br/>POST /driver/gps/update<br/>GpsController@update"]
+        GPSStart --> GPSAuth["Validate Driver Auth<br/>Get Driver Profile"]
+        GPSAuth --> ValidateCoord["Validate Coordinates:<br/>Latitude: -90 to 90<br/>Longitude: -180 to 180<br/>Accuracy: optional<br/>numeric, min:0"]
+        ValidateCoord --> CreateGPSRecord["Create GpsLocation Record<br/>driver_id, latitude, longitude<br/>accuracy (if provided)<br/>recorded_at: now()"]
+        CreateGPSRecord --> PreserveHistory["GPS Record Preserved<br/>in Database History<br/>for Reports & Analysis"]
+        
+        PreserveHistory --> AdminView["Admin Views at:<br/>GET /admin/gps-locations<br/>Returns latest GPS<br/>for all drivers<br/>JSON response"]
+        AdminView --> LiveMap["Display on Live Map<br/>Real-time Positions<br/>Update Dashboard"]
+        
+        PreserveHistory --> HistoryAccess["Admin Views at:<br/>GET /admin/gps-history<br/>Query Historical GPS<br/>Filter by date/driver"]
+        HistoryAccess --> TrailDisplay["Show GPS Trail<br/>Movement Path<br/>Over Time"]
+    end
+    
+    %% Style definitions
+    classDef start fill:#4CAF50,stroke:#2E7D32,color:#fff,font-weight:bold
+    classDef error fill:#f44336,stroke:#c62828,color:#fff,font-weight:bold
+    classDef decision fill:#FFC107,stroke:#F57F17,color:#000,font-weight:bold
+    classDef process fill:#9C27B0,stroke:#6a1b9a,color:#fff
+    classDef success fill:#2E7D32,stroke:#1B5E20,color:#fff
+    classDef info fill:#2196F3,stroke:#1565c0,color:#fff
+    classDef warning fill:#ff9800,stroke:#e65100,color:#fff
+    
+    class Start start
+    class CheckAuth,ValidateLogin,CheckStatus,CheckRole,SAMenu,AdminMenu,DriverMenu,ProgressMenu,ProgressMenu2,ProgressMenu3,ProgressMenu4,ReviewUser,DriverAction,AmbAction,BackupAction,IncAction,GPSAction,ReportType,MaintAction,AmbAdminAction,VulnAction,CheckDisp,CheckAssign,AcceptDecide,AdminDecision,DispAvail,DispMethods,DriverResp,ReportNeeded,AdminReview,AdminApprove decision
+    class LoginError,PendingMsg,RejectedMsg,Logout1,Logout2,Logout3,Logout4 error
+    class UserApprovedOK,UserRejectedOK,VehicleAssigned,AmbCreated,AmbUpdated,AmbViewed,AmbDeleted,BackupLogged,RestoreComplete,SettingsSaved,IncCreated,DispAssigned,AutoComplete,IncClosed,AcceptOK,DeclineOK,EnRouteOK,ArrivedOK,CompletedOK,ReportSubmitted,PanicSent,HijackSent,HistoryOK,SettingsOK,GPSStored,MaintCreated success
+    class UserApproveMsg,ApproveUserFlow,DriverReassignLoop process

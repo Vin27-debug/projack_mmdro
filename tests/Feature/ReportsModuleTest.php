@@ -115,9 +115,17 @@ class ReportsModuleTest extends TestCase
             'incident_type' => 'Medical',
             'location' => 'Sample Road',
             'description' => 'Sample incident',
-            'status' => 'pending',
+            'status' => Incident::STATUS_COMPLETED,
             'driver_id' => $driver->id,
             'ambulance_id' => $ambulance->id,
+        ]);
+
+        Dispatch::create([
+            'incident_id' => $incident->id,
+            'driver_id' => $driver->id,
+            'vehicle_id' => $ambulance->id,
+            'status' => Dispatch::STATUS_COMPLETED,
+            'completed_at' => now(),
         ]);
 
         $response = $this->actingAs($driverUser)->post(route('driver.report.store', $incident), [

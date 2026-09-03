@@ -50,7 +50,7 @@ class DashboardAccessTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Total Incidents');
-        $response->assertSee('Pending Incidents');
+        $response->assertSee('Awaiting response');
         $response->assertSee('Recent Incidents');
     }
 

@@ -11,19 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('ambulances')) {
+            return;
+        }
+
         Schema::table('ambulances', function ($table) {
+            if (!Schema::hasColumn('ambulances', 'latitude')) {
+                $table->decimal('latitude', 10, 7)->nullable();
+            }
 
-            $table->decimal(
-                'latitude',
-                10,
-                7
-            )->nullable();
-
-            $table->decimal(
-                'longitude',
-                10,
-                7
-            )->nullable();
+            if (!Schema::hasColumn('ambulances', 'longitude')) {
+                $table->decimal('longitude', 10, 7)->nullable();
+            }
         });
     }
 
@@ -32,12 +31,16 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('ambulances', function ($table) {
+        if (!Schema::hasTable('ambulances')) {
+            return;
+        }
 
-            $table->dropColumn([
-                'latitude',
-                'longitude'
-            ]);
+        Schema::table('ambulances', function ($table) {
+            foreach (['latitude', 'longitude'] as $column) {
+                if (Schema::hasColumn('ambulances', $column)) {
+                    $table->dropColumn($column);
+                }
+            }
         });
     }
 };

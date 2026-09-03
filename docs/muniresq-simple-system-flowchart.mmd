@@ -1,0 +1,79 @@
+flowchart TD
+    START([Start]) --> LOGIN["Login"]
+    LOGIN --> CHECK{"Check user role"}
+    CHECK -->|Super Admin| SA["Super Admin"]
+    CHECK -->|Admin| AD["Admin"]
+    CHECK -->|Driver| DR["Driver"]
+
+    subgraph AUTH["Authentication"]
+        direction TB
+        START
+        LOGIN
+        CHECK
+    end
+
+    subgraph SUPER["Super Admin"]
+        direction TB
+        SA --> SA1["Manage Users"]
+        SA1 --> SA2["Manage Drivers"]
+        SA2 --> SA3["Manage Ambulances"]
+        SA3 --> SA4["Backup & Restore"]
+        SA4 --> SAOUT([Logout])
+    end
+
+    subgraph ADMIN_G["Admin"]
+        direction TB
+        AD --> AD1["Receive Incident"]
+        AD1 --> AD2["Dispatch Ambulance"]
+        AD2 --> AD3["Monitor GPS"]
+        AD3 --> AD4["Monitor Alerts"]
+        AD4 --> AD5["Review Reports"]
+        AD5 --> AD6["View Analytics"]
+        AD6 --> ADOUT([Logout])
+    end
+
+    subgraph DRIVER_G["Driver"]
+        direction TB
+        DR --> DR1["Receive Assignment"]
+        DR1 --> DR2{"Accept?"}
+        DR2 -->|No| DR3["Wait for Next Assignment"]
+        DR3 --> DR4([Logout])
+        DR2 -->|Yes| DR5["Navigate to Incident"]
+        DR5 --> DR6["Arrive"]
+        DR6 --> DR7["Respond"]
+        DR7 --> DR8["Complete"]
+        DR8 --> DR9["Submit Report"]
+        DR9 --> DR10([Logout])
+    end
+
+    subgraph INCIDENT["Incident Flow"]
+        direction TB
+        I1["Emergency Reported"] --> I2["Admin Reviews"]
+        I2 --> I3["Dispatch Ambulance"]
+        I3 --> I4{"Driver Accepts?"}
+        I4 -->|No| I5["Reassign Driver"]
+        I5 --> I3
+        I4 -->|Yes| I6["En Route"]
+        I6 --> I7["Arrive"]
+        I7 --> I8["Respond"]
+        I8 --> I9["Complete"]
+        I9 --> I10["Submit Report"]
+        I10 --> I11["Admin Reviews"]
+        I11 --> I12["Incident Closed"]
+    end
+
+    subgraph ALERTS["Emergency Alerts"]
+        direction TB
+        A1["Driver Emergency"] --> A2["Panic / Hijack"]
+        A2 --> A3["Send Location"]
+        A3 --> A4["Admin Receives Alert"]
+        A4 --> A5["Admin Responds"]
+        A5 --> A6["Resolved"]
+    end
+
+    SAOUT --> END([End])
+    ADOUT --> END
+    DR4 --> END
+    DR10 --> END
+    I12 --> END
+    A6 --> END

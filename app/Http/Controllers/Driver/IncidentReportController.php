@@ -59,14 +59,8 @@ class IncidentReportController extends Controller
                 ->first();
 
             if ($dispatch) {
-                $dispatch->update([
-                    'status' => Dispatch::STATUS_CLOSED,
-                ]);
+                $dispatch->update(['status' => Dispatch::STATUS_COMPLETED]);
             }
-
-            $incident->update([
-                'status' => Incident::STATUS_CLOSED,
-            ]);
 
             $hasOtherActiveDispatch = Dispatch::where('driver_id', $driver->id)
                 ->whereNotIn('status', [

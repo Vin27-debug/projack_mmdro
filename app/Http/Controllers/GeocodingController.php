@@ -15,17 +15,22 @@ class GeocodingController extends Controller
             return response()->json([]);
         }
 
-        $response = Http::withHeaders([
-            'User-Agent' => 'MuniResQ/1.0'
-        ])->get(
-            'https://nominatim.openstreetmap.org/search',
-            [
-                'q' => $query . ', Nueva Ecija, Philippines',
-                'format' => 'jsonv2',
-                'limit' => 5,
-                'countrycodes' => 'ph',
-            ]
-        );
+        try {
+            $response = Http::timeout(8)->withHeaders([
+                'User-Agent' => 'MuniResQ/1.0'
+            ])->get(
+                'https://nominatim.openstreetmap.org/search',
+                [
+                    'q' => $query . ', Philippines',
+                    'format' => 'jsonv2',
+                    'addressdetails' => 1,
+                    'limit' => 5,
+                    'countrycodes' => 'ph',
+                ]
+            );
+        } catch (\Throwable $e) {
+            return response()->json([]);
+        }
 
         if (!$response->successful()) {
             return response()->json([]);

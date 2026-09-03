@@ -417,9 +417,10 @@ return Route::has($name) ? route($name) : '#';
                         <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </a>
-                        <a href="{{ route('admin.audit.logs') }}" class="nav-link {{ request()->routeIs('admin.audit.logs') ? 'active' : '' }}">
-                            <i class="bi bi-journal-text"></i> Audit Logs
-                        </a>
+                    <a href="{{ route('admin.audit-logs.index') }}"
+   class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
+    <i class="bi bi-journal-text"></i> Audit Logs
+</a>
                         <a href="{{ $adminRoute('admin.notifications.index') }}" class="nav-link {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
                             <i class="bi bi-bell"></i> Notifications
                             <span class="badge bg-danger float-end" data-unread-badge>{{ $unreadNotifications ?? 0 }}</span>

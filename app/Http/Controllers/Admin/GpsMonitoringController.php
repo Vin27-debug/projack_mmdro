@@ -203,6 +203,8 @@ class GpsMonitoringController extends Controller
                 'incident_location' =>
                 $incident?->location,
 
+                'incident_address' => $incident ? collect([$incident->house_number, $incident->street, $incident->barangay, $incident->city, $incident->province])->filter()->implode(', ') : null,
+
                 'incident_latitude' =>
                 $incident?->latitude !== null
                     ? (float) $incident->latitude
@@ -227,6 +229,10 @@ class GpsMonitoringController extends Controller
 
                 'recorded_at' =>
                 $location->recorded_at?->toISOString(),
+
+                'speed_kmh' => $location->speed_kmh,
+                'speed_status' => $location->speed_status,
+                'speed_limit_kmh' => $location->speed_limit_kmh,
             ]);
         }
 

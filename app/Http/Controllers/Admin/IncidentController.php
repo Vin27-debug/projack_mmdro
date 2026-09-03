@@ -27,7 +27,7 @@ class IncidentController extends Controller
 
         $incidents = Incident::query()
             ->with(['driver.user', 'ambulance'])
-            ->when($showArchived, fn ($query) => $query->archived(), fn ($query) => $query->notArchived())
+            ->when($showArchived, fn($query) => $query->archived(), fn($query) => $query->notArchived())
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $term = trim($request->input('search'));
                 $query->where(function ($q) use ($term): void {
@@ -36,10 +36,10 @@ class IncidentController extends Controller
                         ->orWhere('location', 'like', "%{$term}%");
                 });
             })
-            ->when($request->filled('type'), fn ($query) => $query->where('incident_type', $request->input('type')))
-            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->input('status')))
-            ->when($request->filled('start_date'), fn ($query) => $query->whereDate('created_at', '>=', $request->input('start_date')))
-            ->when($request->filled('end_date'), fn ($query) => $query->whereDate('created_at', '<=', $request->input('end_date')))
+            ->when($request->filled('type'), fn($query) => $query->where('incident_type', $request->input('type')))
+            ->when($request->filled('status'), fn($query) => $query->where('status', $request->input('status')))
+            ->when($request->filled('start_date'), fn($query) => $query->whereDate('created_at', '>=', $request->input('start_date')))
+            ->when($request->filled('end_date'), fn($query) => $query->whereDate('created_at', '<=', $request->input('end_date')))
             ->latest()
             ->get();
 
@@ -64,6 +64,7 @@ class IncidentController extends Controller
                 ...$data,
                 'incident_number' => 'INC-' . str_pad(Incident::count() + 1, 3, '0', STR_PAD_LEFT),
                 'status' => Incident::STATUS_PENDING,
+                'call_received_at' => now(),
             ]);
 
             $this->storeAttachments($request, $incident);
@@ -118,6 +119,7 @@ class IncidentController extends Controller
             'archived_at' => now(),
             'archived_by' => auth()->id(),
             'status' => Incident::STATUS_CLOSED,
+            'closed_at' => now(),
         ]);
 
         return back()->with('success', $incident->incident_number . ' has been archived. The record and attachments remain searchable.');
@@ -133,6 +135,7 @@ class IncidentController extends Controller
             'archived_at' => null,
             'archived_by' => null,
             'status' => Incident::STATUS_CLOSED,
+            'closed_at' => now(),
         ]);
 
         return back()->with('success', $incident->incident_number . ' has been restored from the archive.');
@@ -158,7 +161,13 @@ class IncidentController extends Controller
         $nearestAmbulanceDistance = $recommendation['nearestAmbulanceDistance'];
 
         return view('admin.incidents.dispatch', compact(
-            'incident', 'drivers', 'vehicles', 'nearestDriver', 'nearestDistance', 'nearestAmbulance', 'nearestAmbulanceDistance'
+            'incident',
+            'drivers',
+            'vehicles',
+            'nearestDriver',
+            'nearestDistance',
+            'nearestAmbulance',
+            'nearestAmbulanceDistance'
         ));
     }
 
@@ -223,6 +232,11 @@ class IncidentController extends Controller
             'contact_number' => 'nullable|string|max:255',
             'incident_type' => 'required|string|max:255',
             'location' => 'nullable|string|max:255',
+            'house_number' => 'nullable|string|max:255',
+            'street' => 'nullable|string|max:255',
+            'barangay' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'province' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
@@ -246,7 +260,7 @@ class IncidentController extends Controller
             try {
                 $response = Http::timeout(8)->withHeaders(['User-Agent' => 'MuniResQ/1.0'])->get(
                     'https://nominatim.openstreetmap.org/search',
-                    ['q' => $request->input('location'), 'format' => 'jsonv2', 'limit' => 1, 'countrycodes' => 'ph']
+                    ['q' => $request->input('location') . ', Philippines', 'format' => 'jsonv2', 'addressdetails' => 1, 'limit' => 1, 'countrycodes' => 'ph']
                 );
 
                 if ($response->successful() && !empty($response->json())) {

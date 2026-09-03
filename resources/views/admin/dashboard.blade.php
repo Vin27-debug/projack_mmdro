@@ -801,6 +801,8 @@ $operations = $recentActivities ?? collect();
                                 Ambulance Unit: ${escapePopupText(vehicle.plate_number || 'N/A')}<br>
                                 Driver: ${escapePopupText(vehicle.driver_name || 'Unassigned')}<br>
                                 Status: ${escapePopupText(vehicle.status || 'Unknown')}<br>
+                                Speed: ${vehicle.speed_kmh == null ? 'Unavailable' : Number(vehicle.speed_kmh).toFixed(1) + ' km/h'}<br>
+                                Limit: ${vehicle.speed_limit_kmh == null ? 'UNRATED' : Number(vehicle.speed_limit_kmh).toFixed(1) + ' km/h'}<br>
                                 Last Update: ${escapePopupText(vehicle.last_updated || 'Unknown')}
                             </div>`);
 
@@ -828,6 +830,8 @@ $operations = $recentActivities ?? collect();
                                 <strong>${escapePopupText(driver.driver_name || 'Driver')}</strong><br>
                                 Ambulance Unit: ${escapePopupText(driver.ambulance_unit || 'Unassigned')}<br>
                                 Current Status: ${escapePopupText(driver.status || 'Unknown')}<br>
+                                Speed: ${driver.speed_kmh == null ? 'Unavailable' : Number(driver.speed_kmh).toFixed(1) + ' km/h'}<br>
+                                Limit: ${driver.speed_limit_kmh == null ? 'UNRATED' : Number(driver.speed_limit_kmh).toFixed(1) + ' km/h'}<br>
                                 Last Update: ${escapePopupText(driver.last_updated || 'Unknown')}
                             </div>`);
 
@@ -856,6 +860,7 @@ $operations = $recentActivities ?? collect();
                                 Type: ${escapePopupText(item.type || 'N/A')}<br>
                                 Status: ${escapePopupText(item.status || 'N/A')}<br>
                                 Location: ${escapePopupText(item.location || 'Unknown')}<br>
+                                Address: ${escapePopupText(item.address || 'Unavailable')}<br>
                                 Last Update: ${escapePopupText(item.last_updated || 'Unknown')}
                             </div>`);
 

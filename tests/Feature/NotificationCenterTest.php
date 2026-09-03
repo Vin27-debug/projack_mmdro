@@ -30,13 +30,13 @@ class NotificationCenterTest extends TestCase
             'incident_type' => 'Medical',
             'location' => 'Test Location',
             'description' => 'Test description',
+            'priority' => 'Medium',
             'latitude' => '14.1234567',
             'longitude' => '121.1234567',
         ]);
 
-        $response->assertRedirect(route('admin.incidents.index'));
+        $response->assertRedirect(route('admin.incidents.show', $incident = Incident::latest()->firstOrFail()));
 
-        $incident = Incident::latest()->first();
         $notification = Notification::where('type', 'incident')->latest()->first();
 
         $this->assertNotNull($incident);

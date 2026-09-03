@@ -9,14 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('drivers', function (Blueprint $table) {
-            $table->string('status', 30)->change();
+            $table->string('status', 30)->default('available')->change();
         });
     }
 
     public function down(): void
     {
         Schema::table('drivers', function (Blueprint $table) {
-            $table->string('status', 30)->change();
+            $table->string('status', 30)->default('available')->change();
         });
     }
 };

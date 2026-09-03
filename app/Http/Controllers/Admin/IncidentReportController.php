@@ -34,7 +34,8 @@ class IncidentReportController extends Controller
         ]);
 
         $report->incident->update([
-            'status' => 'closed'
+            'status' => 'closed',
+            'closed_at' => now()
         ]);
 
         $report->incident->dispatches()->latest()->first()?->update([

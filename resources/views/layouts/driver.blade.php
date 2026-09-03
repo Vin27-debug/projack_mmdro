@@ -2,71 +2,100 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>MuniResQ Driver</title>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        @yield('title', 'MuniResQ Driver')
+    </title>
+
 
     {{-- =====================================================
-         BOOTSTRAP
+         BOOTSTRAP CSS
     ====================================================== --}}
+
     <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
 
     {{-- =====================================================
          BOOTSTRAP ICONS
     ====================================================== --}}
+
     <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        rel="stylesheet">
+
 
     {{-- =====================================================
-         LEAFLET
+         LEAFLET CSS
     ====================================================== --}}
+
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         crossorigin="">
 
-    {{-- =====================================================
-         LEAFLET ROUTING MACHINE
-    ====================================================== --}}
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
 
     {{-- =====================================================
          VITE
     ====================================================== --}}
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    @vite([
+    'resources/css/app.css',
+    'resources/js/app.js'
+    ])
+
+
+    {{-- =====================================================
+         DRIVER LAYOUT CSS
+    ====================================================== --}}
 
     <style>
-
         /* =====================================================
-           BODY
+           BASIC RESET
         ====================================================== */
 
+        html,
         body {
             margin: 0;
+            padding: 0;
+            min-height: 100%;
+        }
+
+        body {
             background: #071329;
             color: #eef4ff;
+
+            font-family:
+                Inter,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+        }
+
+        a {
+            text-decoration: none;
         }
 
 
         /* =====================================================
-           APP SHELL
+           APP
         ====================================================== */
 
-        .app-shell {
+        .driver-app-shell {
             min-height: 100vh;
             width: 100%;
         }
 
 
         /* =====================================================
-           SIDEBAR
+           DESKTOP SIDEBAR
         ====================================================== */
 
         .sidebar-driver {
@@ -75,13 +104,11 @@
             min-height: 100vh;
 
             background:
-                linear-gradient(
-                    180deg,
+                linear-gradient(180deg,
                     #06243a 0%,
-                    #0b3658 100%
-                );
+                    #0b3658 100%);
 
-            color: #f8fafc;
+            color: #fff;
         }
 
 
@@ -89,23 +116,25 @@
            BRAND
         ====================================================== */
 
-        .brand {
+        .driver-brand {
             border-bottom:
-                1px solid rgba(255, 255, 255, 0.08);
+                1px solid rgba(255, 255, 255, .08);
         }
 
-
-        .brand-icon {
+        .driver-brand-icon {
             width: 44px;
             height: 44px;
+
             border-radius: 50%;
 
             background:
-                rgba(255, 255, 255, 0.16);
+                rgba(255, 255, 255, .14);
 
             display: flex;
             align-items: center;
             justify-content: center;
+
+            flex-shrink: 0;
         }
 
 
@@ -115,9 +144,8 @@
 
         .driver-profile {
             border-bottom:
-                1px solid rgba(255, 255, 255, 0.08);
+                1px solid rgba(255, 255, 255, .08);
         }
-
 
         .driver-avatar {
             position: relative;
@@ -128,7 +156,7 @@
             border-radius: 50%;
 
             background:
-                rgba(255, 255, 255, 0.16);
+                rgba(255, 255, 255, .14);
 
             display: grid;
             place-items: center;
@@ -136,71 +164,90 @@
             font-size: 1.8rem;
         }
 
-
-        .status-dot {
+        .driver-status-dot {
             position: absolute;
-
-            bottom: 4px;
-            right: 4px;
 
             width: 16px;
             height: 16px;
+
+            right: 4px;
+            bottom: 4px;
 
             border-radius: 50%;
 
             border:
                 2px solid #06243a;
-        }
 
-
-        .status-dot.online {
             background: #20c997;
         }
 
 
-        .status-dot.offline {
-            background: #f4b942;
-        }
-
-
         /* =====================================================
-           SIDEBAR LINKS
+           NAVIGATION
         ====================================================== */
+
+        .sidebar-nav {
+            padding: 1rem;
+        }
 
         .sidebar-link {
             display: flex;
             align-items: center;
 
-            gap: 0.8rem;
+            gap: .8rem;
 
-            padding: 0.85rem 0.95rem;
+            width: 100%;
 
-            margin-bottom: 0.35rem;
+            padding: .85rem .95rem;
 
-            border-radius: 0.9rem;
+            margin-bottom: .35rem;
+
+            border-radius: .9rem;
 
             color:
-                rgba(255, 255, 255, 0.88);
-
-            text-decoration: none;
+                rgba(255, 255, 255, .88);
 
             transition:
                 background-color .2s ease,
-                color .2s ease;
+                color .2s ease,
+                transform .15s ease;
         }
 
+        .sidebar-link:hover {
+            background:
+                rgba(255, 255, 255, .10);
 
-        .sidebar-link:hover,
+            color: #fff;
+
+            transform:
+                translateX(2px);
+        }
+
         .sidebar-link.active {
-            background-color:
-                rgba(255, 255, 255, 0.12);
+            background:
+                rgba(255, 255, 255, .16);
 
-            color: #ffffff;
+            color: #fff;
+        }
+
+        .sidebar-link i {
+            width: 28px;
+            text-align: center;
         }
 
 
         /* =====================================================
-           CONTENT
+           LOGOUT
+        ====================================================== */
+
+        .driver-logout {
+            border-top:
+                1px solid rgba(255, 255, 255, .08);
+        }
+
+
+        /* =====================================================
+           MAIN CONTENT
         ====================================================== */
 
         .content-area {
@@ -210,121 +257,17 @@
             overflow-x: hidden;
 
             background:
-                radial-gradient(
-                    circle at top left,
-                    rgba(59, 105, 255, 0.12),
-                    transparent 28%
-                ),
-                linear-gradient(
-                    180deg,
+                radial-gradient(circle at top left,
+                    rgba(59, 105, 255, .12),
+                    transparent 28%),
+
+                linear-gradient(180deg,
                     #071329 0%,
-                    #08172f 100%
-                );
+                    #08172f 100%);
         }
 
-
-        /* =====================================================
-           CARDS
-        ====================================================== */
-
-        .card {
-            background:
-                rgba(7, 18, 38, 0.92);
-
-            border:
-                1px solid rgba(255, 255, 255, 0.08);
-
-            border-radius: 1.5rem;
-        }
-
-
-        .card-body,
-        .card-header,
-        .card-footer {
-            color:
-                rgba(255, 255, 255, 0.92);
-        }
-
-
-        .card-header {
-            background:
-                rgba(11, 26, 49, 0.92);
-
-            border-bottom:
-                1px solid rgba(255, 255, 255, 0.1);
-        }
-
-
-        .text-muted {
-            color:
-                rgba(255, 255, 255, 0.72) !important;
-        }
-
-
-        /* =====================================================
-           TABLE
-        ====================================================== */
-
-        .table thead th,
-        .table tbody td,
-        .table tbody th {
-            background:
-                rgba(255, 255, 255, 0.04) !important;
-
-            color:
-                #eef4ff !important;
-
-            border-color:
-                rgba(255, 255, 255, 0.08) !important;
-        }
-
-
-        /* =====================================================
-           FORM
-        ====================================================== */
-
-        .form-control,
-        .form-select,
-        .input-group-text,
-        .form-check-input {
-            background:
-                rgba(255, 255, 255, 0.06);
-
-            border-color:
-                rgba(255, 255, 255, 0.14);
-
-            color:
-                #eef4ff;
-        }
-
-
-        .form-control:focus,
-        .form-select:focus {
-            background:
-                rgba(255, 255, 255, 0.08);
-
-            border-color:
-                rgba(13, 110, 253, 0.9);
-
-            color:
-                #eef4ff;
-
-            box-shadow:
-                0 0 0 0.2rem rgba(13, 110, 253, 0.2);
-        }
-
-
-        .form-control::placeholder {
-            color:
-                rgba(255, 255, 255, 0.65);
-        }
-
-
-        label,
-        legend,
-        .form-check-label {
-            color:
-                rgba(255, 255, 255, 0.88);
+        .driver-page-content {
+            width: 100%;
         }
 
 
@@ -334,234 +277,342 @@
 
         .driver-mobile-header {
             min-height: 52px;
-            padding: 0.35rem 0;
-        }
+            padding: .35rem 0;
 
+            position: relative;
+            z-index: 100;
+        }
 
         .mobile-nav-toggle {
             min-height: 46px;
+
             border-radius: 999px;
+
+            position: relative;
+            z-index: 2001;
+
+            cursor: pointer;
         }
 
 
         /* =====================================================
-           MOBILE OFFCANVAS
+           CUSTOM MOBILE SIDEBAR
+
+           IMPORTANT:
+           NO BOOTSTRAP OFFCANVAS HERE
         ====================================================== */
 
-        .driver-offcanvas {
-            width: 280px !important;
+        .driver-mobile-menu {
+
+            position: fixed;
+
+            top: 0;
+            left: 0;
+
+            width: 280px;
+            max-width: 85vw;
+
+            height: 100vh;
 
             background:
-                linear-gradient(
-                    180deg,
+                linear-gradient(180deg,
                     #06243a 0%,
-                    #0b3658 100%
-                ) !important;
+                    #0b3658 100%);
 
-            color:
-                #ffffff !important;
+            color: #fff;
+
+            z-index: 3000;
+
+            overflow-y: auto;
+
+            transform: translateX(-110%);
+
+            transition:
+                transform .25s ease;
+
+            box-shadow:
+                8px 0 30px rgba(0, 0, 0, .35);
         }
 
 
-        .driver-offcanvas .offcanvas-header {
-            background:
-                #06243a !important;
+        /* OPEN STATE */
 
-            color:
-                #ffffff !important;
-
-            border-bottom:
-                1px solid rgba(255, 255, 255, 0.08) !important;
-        }
-
-
-        .driver-offcanvas .offcanvas-body {
-            background:
-                #06243a !important;
-
-            color:
-                #ffffff !important;
-        }
-
-
-        .driver-mobile-profile {
-            background:
-                #06243a !important;
-
-            color:
-                #ffffff !important;
-
-            border-bottom:
-                1px solid rgba(255, 255, 255, 0.08);
-        }
-
-
-        .driver-offcanvas .sidebar-link {
-            color:
-                rgba(255, 255, 255, 0.88) !important;
-        }
-
-
-        .driver-offcanvas .sidebar-link:hover,
-        .driver-offcanvas .sidebar-link.active {
-            background:
-                rgba(255, 255, 255, 0.12) !important;
-
-            color:
-                #ffffff !important;
+        .driver-mobile-menu.is-open {
+            transform: translateX(0);
         }
 
 
         /* =====================================================
-           DASHBOARD
+           MOBILE MENU OVERLAY
         ====================================================== */
 
-        .driver-dashboard-shell {
-            display: block;
+        .driver-mobile-overlay {
+
+            position: fixed;
+
+            top: 0;
+            left: 0;
+
+            width: 100%;
+            height: 100vh;
+
+            background:
+                rgba(0, 0, 0, .55);
+
+            z-index: 2999;
+
+            opacity: 0;
+
+            visibility: hidden;
+
+            transition:
+                opacity .25s ease,
+                visibility .25s ease;
+        }
+
+
+        .driver-mobile-overlay.is-open {
+
+            opacity: 1;
+
+            visibility: visible;
         }
 
 
         /* =====================================================
-           HERO
+           PREVENT BODY SCROLL WHEN MENU OPEN
         ====================================================== */
 
-        .hero-panel {
-            background:
-                linear-gradient(
-                    90deg,
-                    #06243a 0%,
-                    #083b57 60%
-                );
-
-            color:
-                #f6f8fb;
+        body.mobile-menu-open {
+            overflow: hidden;
         }
 
 
-        .hero-panel-body {
-            padding: 1.5rem;
-        }
+        /* =====================================================
+           MOBILE MENU HEADER
+        ====================================================== */
 
+        .driver-mobile-menu-header {
 
-        .hero-side-panel {
-            padding: 1.5rem;
-
-            background:
-                rgba(255, 255, 255, .06);
-        }
-
-
-        .hero-eyebrow {
-            letter-spacing: .16em;
-            opacity: .78;
-        }
-
-
-        .hero-copy {
-            color:
-                rgba(255, 255, 255, .82);
-
-            line-height: 1.7;
-        }
-
-
-        .hero-summary-card {
-            background:
-                rgba(255, 255, 255, .14);
-
-            border:
-                1px solid rgba(255, 255, 255, .16);
-
-            border-radius: 1rem;
+            min-height: 70px;
 
             padding: 1rem;
 
-            height: 100%;
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            background:
+                #06243a;
+
+            border-bottom:
+                1px solid rgba(255, 255, 255, .08);
         }
 
 
-        .hero-icon {
-            width: 48px;
-            height: 48px;
+        .driver-mobile-menu-title {
+            font-weight: 700;
+            color: #fff;
+        }
+
+
+        .driver-mobile-menu-subtitle {
+            color:
+                rgba(255, 255, 255, .60);
+
+            font-size: .75rem;
+        }
+
+
+        .driver-mobile-close {
+
+            width: 40px;
+            height: 40px;
+
+            border: 0;
 
             border-radius: 50%;
 
-            display: grid;
-            place-items: center;
+            background:
+                rgba(255, 255, 255, .10);
+
+            color: #fff;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            cursor: pointer;
+
+            font-size: 1.25rem;
+        }
+
+        .driver-mobile-close:hover {
 
             background:
                 rgba(255, 255, 255, .18);
-
-            font-size: 1.2rem;
-        }
-
-
-        .driver-action-btn {
-            min-height: 46px;
-
-            border-radius: 999px;
-
-            padding-inline: 1rem;
         }
 
 
         /* =====================================================
-           STAT CARDS
+           MOBILE PROFILE
         ====================================================== */
 
-        .stat-card {
+        .driver-mobile-profile {
+
+            padding: 1rem;
+
+            background:
+                rgba(0, 0, 0, .10);
+
+            border-bottom:
+                1px solid rgba(255, 255, 255, .08);
+        }
+
+
+        /* =====================================================
+           MOBILE NAV
+        ====================================================== */
+
+        .driver-mobile-nav {
+
+            padding: 1rem;
+        }
+
+
+        .driver-mobile-nav .sidebar-link {
+
+            color:
+                rgba(255, 255, 255, .88);
+
+            cursor: pointer;
+        }
+
+
+        .driver-mobile-nav .sidebar-link:hover {
+
+            background:
+                rgba(255, 255, 255, .10);
+
+            color: #fff;
+
+            transform: translateX(2px);
+        }
+
+
+        .driver-mobile-nav .sidebar-link.active {
+
+            background:
+                rgba(255, 255, 255, .16);
+
+            color: #fff;
+        }
+
+
+        /* =====================================================
+           MOBILE LOGOUT
+        ====================================================== */
+
+        .driver-mobile-logout {
+
+            padding: 1rem;
+        }
+
+
+        /* =====================================================
+           CARDS
+        ====================================================== */
+
+        .driver-layout .card {
+
+            background:
+                rgba(7, 18, 38, .94);
+
+            color:
+                rgba(255, 255, 255, .92);
+
             border:
-                1px solid rgba(0, 0, 0, .04);
+                1px solid rgba(255, 255, 255, .08);
+
+            border-radius:
+                1.25rem;
         }
 
+        .driver-layout .card-header {
 
-        .stat-icon {
-            width: 46px;
-            height: 46px;
+            background:
+                rgba(11, 26, 49, .94);
 
-            border-radius: 50%;
+            color: #fff;
 
-            display: grid;
-            place-items: center;
-
-            font-size: 1.1rem;
+            border-bottom:
+                1px solid rgba(255, 255, 255, .08);
         }
 
+        .driver-layout .card-body {
 
-        /* =====================================================
-           MAP
-        ====================================================== */
-
-        .map-shell {
-            min-height: 360px;
-
-            border-radius: 1rem;
-
-            overflow: hidden;
-
-            border:
-                1px solid rgba(0, 0, 0, .06);
-
-            background: #d9e2ec;
-        }
-
-
-        #map {
-            width: 100%;
-            height: 360px;
+            color:
+                rgba(255, 255, 255, .92);
         }
 
 
         /* =====================================================
-           LEAFLET FIX
+           TEXT
         ====================================================== */
 
-        .leaflet-container {
-            width: 100%;
-            height: 100%;
+        .driver-layout .text-muted {
 
-            font-family:
-                inherit;
+            color:
+                rgba(255, 255, 255, .68) !important;
+        }
+
+        .driver-layout .text-white-50 {
+
+            color:
+                rgba(255, 255, 255, .65) !important;
+        }
+
+
+        /* =====================================================
+           FORMS
+        ====================================================== */
+
+        .driver-layout .form-control,
+        .driver-layout .form-select,
+        .driver-layout .input-group-text {
+
+            background:
+                rgba(255, 255, 255, .06);
+
+            border-color:
+                rgba(255, 255, 255, .14);
+
+            color: #eef4ff;
+        }
+
+        .driver-layout .form-control:focus,
+        .driver-layout .form-select:focus {
+
+            background:
+                rgba(255, 255, 255, .08);
+
+            border-color:
+                rgba(13, 110, 253, .9);
+
+            color: #fff;
+
+            box-shadow:
+                0 0 0 .2rem rgba(13, 110, 253, .20);
+        }
+
+        .driver-layout .form-control::placeholder {
+
+            color:
+                rgba(255, 255, 255, .55);
         }
 
 
@@ -569,54 +620,81 @@
            TABLE
         ====================================================== */
 
-        .table-responsive {
-            overflow-x: auto;
+        .driver-layout .table {
+
+            --bs-table-bg: transparent;
+
+            --bs-table-color: #eef4ff;
+        }
+
+        .driver-layout .table th,
+        .driver-layout .table td {
+
+            background:
+                rgba(255, 255, 255, .04) !important;
+
+            color:
+                #eef4ff !important;
+
+            border-color:
+                rgba(255, 255, 255, .08) !important;
         }
 
 
         /* =====================================================
-           MOBILE
+           MAP
         ====================================================== */
 
-        @media (max-width: 575.98px) {
+        .driver-layout .map-shell {
 
-            .content-area .container-fluid {
-                padding: 0.75rem !important;
-            }
+            width: 100%;
 
+            min-height: 360px;
 
-            .mobile-nav-toggle {
-                min-height: 48px;
-            }
+            overflow: hidden;
 
+            border-radius: 1rem;
+
+            border:
+                1px solid rgba(255, 255, 255, .08);
+        }
+
+        .driver-layout #map {
+
+            width: 100%;
+
+            height: 360px;
         }
 
 
         /* =====================================================
-           TABLET
+           BUTTONS
         ====================================================== */
 
-        @media (min-width: 768px) {
+        .driver-action-btn {
 
-            .hero-panel-body {
-                padding: 2rem;
-            }
+            min-height: 46px;
 
+            border-radius: 999px;
 
-            .hero-side-panel {
-                padding: 2rem;
-            }
+            font-weight: 600;
+        }
 
 
-            #map {
-                height: 430px;
-            }
+        /* =====================================================
+           LEAFLET
+        ====================================================== */
 
+        .leaflet-container {
 
-            .map-shell {
-                min-height: 430px;
-            }
+            background: #172033;
 
+            font-family: inherit;
+        }
+
+        .leaflet-control-attribution {
+
+            font-size: 10px;
         }
 
 
@@ -627,41 +705,101 @@
         @media (min-width: 992px) {
 
             .sidebar-driver {
+
                 display: flex !important;
             }
 
+            .driver-mobile-header {
 
-            .mobile-nav-toggle {
-                display: none;
+                display: none !important;
             }
 
+            .driver-mobile-menu {
+
+                display: none !important;
+            }
+
+            .driver-mobile-overlay {
+
+                display: none !important;
+            }
         }
 
 
-        @media (min-width: 1024px) {
+        /* =====================================================
+           MOBILE / TABLET
+        ====================================================== */
 
-            .hero-panel-body {
-                padding: 2.25rem;
+        @media (max-width: 991.98px) {
+
+            .sidebar-driver {
+
+                display: none !important;
+            }
+        }
+
+
+        /* =====================================================
+           TABLET MAP
+        ====================================================== */
+
+        @media (min-width: 768px) {
+
+            .driver-layout #map {
+
+                height: 430px;
             }
 
+            .driver-layout .map-shell {
 
-            .hero-side-panel {
-                padding: 2.25rem;
+                min-height: 430px;
             }
+        }
 
 
-            #map {
+        /* =====================================================
+           LARGE SCREEN MAP
+        ====================================================== */
+
+        @media (min-width: 1200px) {
+
+            .driver-layout #map {
+
                 height: 480px;
             }
 
+            .driver-layout .map-shell {
 
-            .map-shell {
                 min-height: 480px;
             }
-
         }
 
+
+        /* =====================================================
+           SMALL MOBILE
+        ====================================================== */
+
+        @media (max-width: 575.98px) {
+
+            .driver-layout .content-area>.container-fluid {
+
+                padding: .75rem !important;
+            }
+
+            .mobile-nav-toggle {
+
+                min-height: 48px;
+            }
+
+            .driver-mobile-header {
+
+                padding-top: .25rem;
+            }
+        }
     </style>
+
+
+    @stack('styles')
 
 </head>
 
@@ -669,271 +807,103 @@
 <body class="driver-layout">
 
 
-<div class="app-shell d-flex flex-column flex-lg-row">
-
-
     {{-- =====================================================
-         DESKTOP SIDEBAR
+         MAIN APP
     ====================================================== --}}
 
-    <aside class="sidebar-driver d-none d-lg-flex flex-column">
+    <div class="driver-app-shell d-flex flex-column flex-lg-row">
 
 
-        {{-- BRAND --}}
+        {{-- =====================================================
+             DESKTOP SIDEBAR
+        ====================================================== --}}
 
-        <div class="brand p-3 d-flex align-items-center gap-2">
+        <aside
+            class="sidebar-driver d-none d-lg-flex flex-column">
 
-            <div class="brand-icon">
 
-                <i class="bi bi-hospital text-white fs-4"></i>
+            {{-- BRAND --}}
 
-            </div>
+            <div
+                class="driver-brand p-3 d-flex align-items-center gap-2">
 
-            <div>
+                <div class="driver-brand-icon">
 
-                <div class="h6 mb-0 text-white">
-                    MuniResQ
+                    <i class="bi bi-hospital text-white fs-4"></i>
+
                 </div>
 
-                <small class="text-white-50">
-                    Driver Operations
-                </small>
+                <div>
 
-            </div>
+                    <div class="fw-bold text-white">
+                        MuniResQ
+                    </div>
 
-        </div>
+                    <small class="text-white-50">
+                        Driver Operations
+                    </small>
 
-
-        {{-- DRIVER PROFILE --}}
-
-        <div class="driver-profile p-3 text-center">
-
-            <div class="driver-avatar mx-auto mb-2">
-
-                <i class="bi bi-person-fill"></i>
-
-                <span
-                    class="status-dot online"
-                    title="Available">
-                </span>
+                </div>
 
             </div>
 
 
-            <div class="fw-semibold text-white">
-                {{ auth()->user()->name }}
-            </div>
+            {{-- PROFILE --}}
 
+            <div
+                class="driver-profile p-3 text-center">
 
-            <div class="text-white-50 small">
+                <div
+                    class="driver-avatar mx-auto mb-2">
 
-                @if(auth()->user()->driver)
+                    <i class="bi bi-person-fill"></i>
 
-                    <span class="me-2">
-                        Badge:
-                        {{ auth()->user()->driver->badge_id }}
+                    <span
+                        class="driver-status-dot"
+                        title="Available">
                     </span>
+
+                </div>
+
+                <div class="fw-semibold text-white">
+
+                    {{ ($user ?? auth()->user())?->name ?? 'Driver' }}
+
+                </div>
+
+                @if(($user ?? auth()->user())?->driver)
+
+                <div class="text-white-50 small mt-1">
+
+                    Badge:
+                    {{ auth()->user()->driver->badge_id }}
+
+                </div>
 
                 @endif
 
-                <span class="badge bg-light text-dark">
-                    Available
-                </span>
+                <div class="mt-2">
 
-            </div>
-
-        </div>
-
-
-        {{-- NAVIGATION --}}
-
-        <nav class="nav flex-column sidebar-nav p-3">
-
-            <a
-                href="{{ url('/driver/dashboard') }}"
-                class="sidebar-link active">
-
-                <i class="bi bi-speedometer2 fs-4"></i>
-
-                <span>
-                    Dashboard
-                </span>
-
-            </a>
-
-
-            <a
-                href="{{ url('/driver/navigation') }}"
-                class="sidebar-link">
-
-                <i class="bi bi-geo-alt-fill fs-4"></i>
-
-                <span>
-                    Navigation
-                </span>
-
-            </a>
-
-
-            <a
-                href="{{ url('/driver/my-assignment') }}"
-                class="sidebar-link">
-
-                <i class="bi bi-list-check fs-4"></i>
-
-                <span>
-                    My Assignment
-                </span>
-
-            </a>
-
-
-            <a
-                href="{{ url('/driver/incidents/report') }}"
-                class="sidebar-link">
-
-                <i class="bi bi-file-earmark-medical fs-4"></i>
-
-                <span>
-                    Reports
-                </span>
-
-            </a>
-
-
-            <a
-                href="{{ url('/driver/history') }}"
-                class="sidebar-link">
-
-                <i class="bi bi-clock-history fs-4"></i>
-
-                <span>
-                    Dispatch History
-                </span>
-
-            </a>
-
-
-            <a
-                href="{{ url('/driver/settings') }}"
-                class="sidebar-link">
-
-                <i class="bi bi-gear fs-4"></i>
-
-                <span>
-                    Settings
-                </span>
-
-            </a>
-
-
-            <a
-                href="{{ url('/profile') }}"
-                class="sidebar-link">
-
-                <i class="bi bi-person-circle fs-4"></i>
-
-                <span>
-                    Profile
-                </span>
-
-            </a>
-
-        </nav>
-
-
-        {{-- LOGOUT --}}
-
-        <div class="mt-auto p-3">
-
-            <form
-                method="POST"
-                action="{{ url('/logout') }}">
-
-                @csrf
-
-                <button
-                    type="submit"
-                    class="btn btn-danger w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill">
-
-                    <i class="bi bi-box-arrow-right"></i>
-
-                    <span>
-                        Logout
+                    <span class="badge bg-success">
+                        Available
                     </span>
 
-                </button>
-
-            </form>
-
-        </div>
-
-    </aside>
-
-
-
-    {{-- =====================================================
-         MOBILE OFFCANVAS
-    ====================================================== --}}
-
-    <div
-        class="offcanvas offcanvas-start d-lg-none driver-offcanvas"
-        tabindex="-1"
-        id="driverOffcanvas"
-        aria-labelledby="driverOffcanvasLabel">
-
-
-        <div class="offcanvas-header">
-
-            <h5
-                class="offcanvas-title"
-                id="driverOffcanvasLabel">
-
-                Driver Navigation
-
-            </h5>
-
-
-            <button
-                type="button"
-                class="btn-close btn-close-white"
-                data-bs-dismiss="offcanvas"
-                aria-label="Close">
-            </button>
-
-        </div>
-
-
-        <div class="offcanvas-body p-0">
-
-
-            <div class="p-3 driver-mobile-profile">
-
-                <div class="fw-semibold">
-
-                    {{ auth()->user()->name }}
-
-                </div>
-
-
-                <div class="small text-white-50">
-
-                    Available
-
                 </div>
 
             </div>
 
 
-            <nav class="nav flex-column p-3">
+            {{-- NAVIGATION --}}
+
+            <nav class="nav flex-column sidebar-nav">
 
 
                 <a
-                    href="{{ url('/driver/dashboard') }}"
-                    class="sidebar-link active"
-                    data-bs-dismiss="offcanvas">
+                    href="{{ route('driver.dashboard') }}"
+                    class="sidebar-link
+                    {{ request()->routeIs('driver.dashboard') ? 'active' : '' }}">
 
-                    <i class="bi bi-speedometer2 fs-4"></i>
+                    <i class="bi bi-speedometer2 fs-5"></i>
 
                     <span>
                         Dashboard
@@ -943,10 +913,11 @@
 
 
                 <a
-                    href="{{ url('/driver/navigation') }}"
-                    class="sidebar-link">
+                    href="{{ route('driver.navigation') }}"
+                    class="sidebar-link
+                    {{ request()->routeIs('driver.navigation') ? 'active' : '' }}">
 
-                    <i class="bi bi-geo-alt-fill fs-4"></i>
+                    <i class="bi bi-geo-alt-fill fs-5"></i>
 
                     <span>
                         Navigation
@@ -956,10 +927,11 @@
 
 
                 <a
-                    href="{{ url('/driver/my-assignment') }}"
-                    class="sidebar-link">
+                    href="{{ route('driver.assignment') }}"
+                    class="sidebar-link
+                    {{ request()->routeIs('driver.assignment') ? 'active' : '' }}">
 
-                    <i class="bi bi-list-check fs-4"></i>
+                    <i class="bi bi-list-check fs-5"></i>
 
                     <span>
                         My Assignment
@@ -969,10 +941,11 @@
 
 
                 <a
-                    href="{{ url('/driver/incidents/report') }}"
-                    class="sidebar-link">
+                    href="{{ route('driver.report.create') }}"
+                    class="sidebar-link
+                    {{ request()->routeIs('driver.report.*') ? 'active' : '' }}">
 
-                    <i class="bi bi-file-earmark-medical fs-4"></i>
+                    <i class="bi bi-file-earmark-medical fs-5"></i>
 
                     <span>
                         Reports
@@ -982,10 +955,11 @@
 
 
                 <a
-                    href="{{ url('/driver/history') }}"
-                    class="sidebar-link">
+                    href="{{ route('driver.history') }}"
+                    class="sidebar-link
+                    {{ request()->routeIs('driver.history') ? 'active' : '' }}">
 
-                    <i class="bi bi-clock-history fs-4"></i>
+                    <i class="bi bi-clock-history fs-5"></i>
 
                     <span>
                         Dispatch History
@@ -995,10 +969,11 @@
 
 
                 <a
-                    href="{{ url('/driver/settings') }}"
-                    class="sidebar-link">
+                    href="{{ route('driver.settings') }}"
+                    class="sidebar-link
+                    {{ request()->routeIs('driver.settings') ? 'active' : '' }}">
 
-                    <i class="bi bi-gear fs-4"></i>
+                    <i class="bi bi-gear fs-5"></i>
 
                     <span>
                         Settings
@@ -1009,9 +984,10 @@
 
                 <a
                     href="{{ url('/profile') }}"
-                    class="sidebar-link">
+                    class="sidebar-link
+                    {{ request()->is('profile*') ? 'active' : '' }}">
 
-                    <i class="bi bi-person-circle fs-4"></i>
+                    <i class="bi bi-person-circle fs-5"></i>
 
                     <span>
                         Profile
@@ -1021,1793 +997,597 @@
 
             </nav>
 
+
+            {{-- LOGOUT --}}
+
+            <div
+                class="driver-logout mt-auto p-3">
+
+                <form
+                    method="POST"
+                    action="{{ route('logout') }}">
+
+                    @csrf
+
+                    <button
+                        type="submit"
+                        class="btn btn-danger w-100
+                        d-flex align-items-center
+                        justify-content-center
+                        gap-2 rounded-pill">
+
+                        <i class="bi bi-box-arrow-right"></i>
+
+                        <span>
+                            Logout
+                        </span>
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        </aside>
+
+
+        {{-- =====================================================
+             CUSTOM MOBILE MENU
+        ====================================================== --}}
+
+        <div
+            id="driverMobileMenu"
+            class="driver-mobile-menu">
+
+
+            {{-- MOBILE MENU HEADER --}}
+
+            <div class="driver-mobile-menu-header">
+
+                <div>
+
+                    <div class="driver-mobile-menu-title">
+                        MuniResQ Driver
+                    </div>
+
+                    <div class="driver-mobile-menu-subtitle">
+                        Driver Operations
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="driverMobileClose"
+                    class="driver-mobile-close"
+                    aria-label="Close menu">
+
+                    <i class="bi bi-x-lg"></i>
+
+                </button>
+
+            </div>
+
+
+            {{-- MOBILE PROFILE --}}
+
+            <div class="driver-mobile-profile">
+
+                <div
+                    class="d-flex align-items-center gap-3">
+
+
+                    <div
+                        class="driver-avatar"
+                        style="
+                            width:55px;
+                            height:55px;
+                            font-size:1.4rem;
+                        ">
+
+                        <i class="bi bi-person-fill"></i>
+
+                        <span
+                            class="driver-status-dot"
+                            style="
+                                width:14px;
+                                height:14px;
+                                right:2px;
+                                bottom:2px;
+                            ">
+                        </span>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="fw-semibold text-white">
+
+                            {{ ($user ?? auth()->user())?->name ?? 'Driver' }}
+
+                        </div>
+
+
+                        <div class="small text-white-50">
+
+                            Driver
+
+                        </div>
+
+
+                        @if(($user ?? auth()->user())?->driver)
+
+                        <div class="small text-white-50">
+
+                            Badge:
+                            {{ auth()->user()->driver->badge_id }}
+
+                        </div>
+
+                        @endif
+
+
+                        <span class="badge bg-success mt-1">
+
+                            Available
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {{-- MOBILE NAVIGATION --}}
+
+            <nav class="driver-mobile-nav">
+
+
+                <a
+                    href="{{ route('driver.dashboard') }}"
+                    class="sidebar-link
+                    {{ request()->routeIs('driver.dashboard') ? 'active' : '' }}">
+
+                    <i class="bi bi-speedometer2 fs-5"></i>
+
+                    <span>
+                        Dashboard
+                    </span>
+
+                </a>
+
+
+                <a
+                    href="{{ route('driver.navigation') }}"
+                    class="sidebar-link
+                    {{ request()->routeIs('driver.navigation') ? 'active' : '' }}">
+
+                    <i class="bi bi-geo-alt-fill fs-5"></i>
+
+                    <span>
+                        Navigation
+                    </span>
+
+                </a>
+
+
+                <a
+                    href="{{ route('driver.assignment') }}"
+                    class="sidebar-link
+                    {{ request()->routeIs('driver.assignment') ? 'active' : '' }}">
+
+                    <i class="bi bi-list-check fs-5"></i>
+
+                    <span>
+                        My Assignment
+                    </span>
+
+                </a>
+
+
+                <a
+                    href="{{ route('driver.report.create') }}"
+                    class="sidebar-link
+                    {{ request()->routeIs('driver.report.*') ? 'active' : '' }}">
+
+                    <i class="bi bi-file-earmark-medical fs-5"></i>
+
+                    <span>
+                        Reports
+                    </span>
+
+                </a>
+
+
+                <a
+                    href="{{ route('driver.history') }}"
+                    class="sidebar-link
+                    {{ request()->routeIs('driver.history') ? 'active' : '' }}">
+
+                    <i class="bi bi-clock-history fs-5"></i>
+
+                    <span>
+                        Dispatch History
+                    </span>
+
+                </a>
+
+
+                <a
+                    href="{{ route('driver.settings') }}"
+                    class="sidebar-link
+                    {{ request()->routeIs('driver.settings') ? 'active' : '' }}">
+
+                    <i class="bi bi-gear fs-5"></i>
+
+                    <span>
+                        Settings
+                    </span>
+
+                </a>
+
+
+                <a
+                    href="{{ url('/profile') }}"
+                    class="sidebar-link
+                    {{ request()->is('profile*') ? 'active' : '' }}">
+
+                    <i class="bi bi-person-circle fs-5"></i>
+
+                    <span>
+                        Profile
+                    </span>
+
+                </a>
+
+            </nav>
+
+
+            {{-- MOBILE LOGOUT --}}
+
+            <div class="driver-mobile-logout">
+
+                <form
+                    method="POST"
+                    action="{{ route('logout') }}">
+
+                    @csrf
+
+                    <button
+                        type="submit"
+                        class="btn btn-danger
+                        w-100 rounded-pill">
+
+                        <i
+                            class="bi bi-box-arrow-right me-2">
+                        </i>
+
+                        Logout
+
+                    </button>
+
+                </form>
+
+            </div>
+
         </div>
+
+
+        {{-- =====================================================
+             MOBILE OVERLAY
+        ====================================================== --}}
+
+        <div
+            id="driverMobileOverlay"
+            class="driver-mobile-overlay">
+        </div>
+
+
+        {{-- =====================================================
+             MAIN CONTENT
+        ====================================================== --}}
+
+        <main
+            class="content-area flex-grow-1">
+
+
+            <div
+                class="container-fluid p-3 p-lg-4">
+
+
+                {{-- =================================================
+                     MOBILE HEADER
+                ================================================== --}}
+
+                <div
+                    class="driver-mobile-header
+                    d-flex
+                    justify-content-between
+                    align-items-center
+                    mb-3
+                    d-lg-none">
+
+
+                    {{-- MENU BUTTON --}}
+
+                    <button
+                        type="button"
+                        id="driverMobileOpen"
+                        class="btn btn-primary mobile-nav-toggle">
+
+                        <i class="bi bi-list fs-5"></i>
+
+                        <span>
+                            Menu
+                        </span>
+
+                    </button>
+
+
+                    {{-- MOBILE TITLE --}}
+
+                    <div class="text-end">
+
+                        <div class="fw-semibold">
+
+                            MuniResQ
+
+                        </div>
+
+                        <div class="small text-muted">
+
+                            Driver Operations
+
+                        </div>
+
+                        <div class="small text-muted">
+
+                            {{ ($user ?? auth()->user())?->name ?? 'Driver' }}
+
+                            ·
+
+                            Available
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                {{-- =================================================
+                     PAGE CONTENT
+                ================================================== --}}
+
+                <div class="driver-page-content">
+
+                    @yield('content')
+
+                </div>
+
+            </div>
+
+        </main>
 
     </div>
 
 
-
     {{-- =====================================================
-         MAIN CONTENT
+         BOOTSTRAP JS
     ====================================================== --}}
 
-    <main class="content-area flex-grow-1">
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+    </script>
 
 
-        <div class="container-fluid p-3 p-lg-4">
+    {{-- =====================================================
+         LEAFLET JS
+    ====================================================== --}}
 
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        crossorigin="">
+    </script>
 
-            {{-- MOBILE HEADER --}}
 
-            <div
-                class="driver-mobile-header d-flex justify-content-between align-items-center mb-3 d-lg-none">
+    {{-- =====================================================
+         PAGE SCRIPTS
+    ====================================================== --}}
 
+    @yield('scripts')
 
-                <button
-                    class="btn btn-outline-primary mobile-nav-toggle"
-                    type="button"
-                    data-bs-toggle="offcanvas"
-                    data-bs-target="#driverOffcanvas"
-                    aria-controls="driverOffcanvas">
+    @stack('scripts')
 
-                    <i class="bi bi-list me-2"></i>
 
-                    Menu
+    {{-- =====================================================
+         CUSTOM MOBILE MENU JAVASCRIPT
+    ====================================================== --}}
 
-                </button>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
 
+            const menu =
+                document.getElementById('driverMobileMenu');
 
-                <div class="text-end">
+            const overlay =
+                document.getElementById('driverMobileOverlay');
 
-                    <div class="fw-semibold">
-                        MuniResQ
-                    </div>
+            const openButton =
+                document.getElementById('driverMobileOpen');
 
-                    <div class="small text-muted">
-                        Driver Operations
-                    </div>
+            const closeButton =
+                document.getElementById('driverMobileClose');
 
-                    <div class="small text-muted">
 
-                        {{ auth()->user()->name }}
+            /* =================================================
+               CHECK ELEMENTS
+            ================================================= */
 
-                        ·
-
-                        Available
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-
-            {{-- =====================================================
-                 DASHBOARD
-            ====================================================== --}}
-
-            <div class="driver-dashboard-shell">
-
-
-                {{-- =================================================
-                     HERO
-                ================================================== --}}
-
-                <div
-                    class="card border-0 shadow-sm rounded-4 hero-panel overflow-hidden mb-4">
-
-
-                    <div class="row g-0 align-items-stretch">
-
-
-                        <div
-                            class="col-12 col-lg-8 hero-panel-body">
-
-
-                            <div
-                                class="small text-uppercase fw-semibold hero-eyebrow">
-
-                                Emergency Operations
-
-                            </div>
-
-
-                            <h2 class="fw-bold mb-2">
-
-                                Driver Operations Center
-
-                            </h2>
-
-
-                            <p class="mb-3 mb-lg-4 hero-copy">
-
-                                {{ auth()->user()->name }}
-
-                                —
-
-                                monitor active dispatches and coordinate ambulance response with precision.
-
-                            </p>
-
-
-                            <div class="d-flex flex-wrap gap-2">
-
-
-                                {{-- PANIC --}}
-
-                                <button
-                                    id="panicBtn"
-                                    type="button"
-                                    class="btn btn-danger btn-lg driver-action-btn">
-
-                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
-
-                                    Panic
-
-                                </button>
-
-
-                                {{-- HIJACK --}}
-
-                                <button
-                                    id="hijackBtn"
-                                    type="button"
-                                    class="btn btn-warning btn-lg driver-action-btn">
-
-                                    <i class="bi bi-shield-exclamation me-1"></i>
-
-                                    Hijack
-
-                                </button>
-
-
-                                {{-- REPORT --}}
-
-                                <a
-                                    href="{{ url('/driver/incidents/report') }}"
-                                    class="btn btn-outline-light btn-lg driver-action-btn">
-
-                                    <i class="bi bi-file-earmark-medical me-1"></i>
-
-                                    Report
-
-                                </a>
-
-
-                                {{-- LOGOUT --}}
-
-                                <form
-                                    method="POST"
-                                    action="{{ url('/logout') }}"
-                                    class="d-inline">
-
-                                    @csrf
-
-                                    <button
-                                        type="submit"
-                                        class="btn btn-outline-light btn-lg driver-action-btn">
-
-                                        <i class="bi bi-box-arrow-right me-1"></i>
-
-                                        Logout
-
-                                    </button>
-
-                                </form>
-
-
-                            </div>
-
-
-                        </div>
-
-
-                        {{-- HERO SIDE --}}
-
-                        <div
-                            class="col-12 col-lg-4 hero-side-panel">
-
-
-                            <div class="hero-summary-card">
-
-
-                                <div
-                                    class="d-flex align-items-center gap-3 mb-3">
-
-
-                                    <div class="hero-icon">
-
-                                        <i class="bi bi-truck-flatbed"></i>
-
-                                    </div>
-
-
-                                    <div>
-
-                                        <div class="small text-uppercase opacity-75">
-
-                                            Driver Status
-
-                                        </div>
-
-
-                                        <span
-                                            class="badge bg-success fs-6 px-3 py-2">
-
-                                            AVAILABLE
-
-                                        </span>
-
-                                    </div>
-
-
-                                </div>
-
-
-                                <div>
-
-                                    <div class="small text-uppercase opacity-75">
-
-                                        Active Dispatch
-
-                                    </div>
-
-
-                                    <div class="fw-semibold">
-
-                                        None
-
-                                    </div>
-
-                                </div>
-
-
-                            </div>
-
-                        </div>
-
-
-                    </div>
-
-                </div>
-
-
-
-                {{-- =================================================
-                     STAT CARDS
-                ================================================== --}}
-
-                <div class="row g-3 mb-4">
-
-
-                    {{-- ACTIVE DISPATCH --}}
-
-                    <div class="col-12 col-sm-6 col-lg-3">
-
-                        <div
-                            class="card border-0 shadow-sm rounded-4 stat-card h-100">
-
-                            <div
-                                class="card-body d-flex align-items-center gap-3">
-
-                                <div
-                                    class="stat-icon bg-primary text-white">
-
-                                    <i class="bi bi-activity"></i>
-
-                                </div>
-
-                                <div>
-
-                                    <div class="small text-muted">
-                                        Active Dispatch
-                                    </div>
-
-                                    <div class="fw-bold">
-                                        —
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- VEHICLE --}}
-
-                    <div class="col-12 col-sm-6 col-lg-3">
-
-                        <div
-                            class="card border-0 shadow-sm rounded-4 stat-card h-100">
-
-                            <div
-                                class="card-body d-flex align-items-center gap-3">
-
-                                <div
-                                    class="stat-icon bg-info text-white">
-
-                                    <i class="bi bi-truck"></i>
-
-                                </div>
-
-                                <div>
-
-                                    <div class="small text-muted">
-                                        Vehicle
-                                    </div>
-
-
-                                    @if(
-                                        auth()->user()->driver &&
-                                        auth()->user()->driver->vehicle
-                                    )
-
-                                        <div class="fw-bold">
-
-                                            {{ auth()->user()->driver->vehicle->make ?? 'Vehicle' }}
-
-                                        </div>
-
-                                        <div class="small text-muted">
-
-                                            {{ auth()->user()->driver->vehicle->plate_number ?? '' }}
-
-                                        </div>
-
-                                    @else
-
-                                        <div class="fw-bold">
-                                            No Vehicle
-                                        </div>
-
-                                    @endif
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- DRIVER STATUS --}}
-
-                    <div class="col-12 col-sm-6 col-lg-3">
-
-                        <div
-                            class="card border-0 shadow-sm rounded-4 stat-card h-100">
-
-                            <div
-                                class="card-body d-flex align-items-center gap-3">
-
-                                <div
-                                    class="stat-icon bg-success text-white">
-
-                                    <i class="bi bi-person-badge"></i>
-
-                                </div>
-
-                                <div>
-
-                                    <div class="small text-muted">
-                                        Driver Status
-                                    </div>
-
-                                    <span
-                                        class="badge bg-success fs-6 px-3 py-2">
-
-                                        AVAILABLE
-
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- GPS --}}
-
-                    <div class="col-12 col-sm-6 col-lg-3">
-
-                        <div
-                            class="card border-0 shadow-sm rounded-4 stat-card h-100">
-
-                            <div
-                                class="card-body d-flex align-items-center gap-3">
-
-                                <div
-                                    class="stat-icon bg-secondary text-white">
-
-                                    <i class="bi bi-geo-alt"></i>
-
-                                </div>
-
-                                <div>
-
-                                    <div class="small text-muted">
-                                        GPS Status
-                                    </div>
-
-                                    <div
-                                        id="gpsStatus"
-                                        class="fw-bold"
-                                        role="status"
-                                        aria-live="polite">
-
-                                        Starting...
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                </div>
-
-
-
-                {{-- =================================================
-                     MAP + INCIDENTS
-                ================================================== --}}
-
-                <div class="row g-4">
-
-
-                    <div class="col-12 col-xl-8">
-
-
-                        {{-- MAP CARD --}}
-
-                        <div
-                            class="card border-0 shadow-sm rounded-4">
-
-
-                            <div class="card-body">
-
-
-                                <div
-                                    class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-3">
-
-
-                                    <div>
-
-                                        <h5 class="fw-bold mb-1">
-                                            Mission Map
-                                        </h5>
-
-                                        <p
-                                            class="text-muted small mb-0">
-
-                                            Live position and incident location for rapid response.
-
-                                        </p>
-
-                                    </div>
-
-
-                                    <span
-                                        class="badge rounded-pill bg-danger-subtle text-danger align-self-start">
-
-                                        <i class="bi bi-broadcast-pin me-1"></i>
-
-                                        Live Tracking
-
-                                    </span>
-
-
-                                </div>
-
-
-                                {{-- MAP --}}
-
-                                <div class="map-shell">
-
-                                    <div id="map"></div>
-
-                                </div>
-
-
-                                {{-- VEHICLE --}}
-
-                                <div
-                                    class="mt-3 mb-3 p-3 rounded-3 bg-secondary bg-opacity-10">
-
-
-                                    <div
-                                        class="small text-muted text-uppercase">
-
-                                        Vehicle
-
-                                    </div>
-
-
-                                    @if(
-                                        auth()->user()->driver &&
-                                        auth()->user()->driver->vehicle
-                                    )
-
-                                        <div class="fw-semibold">
-
-                                            {{ auth()->user()->driver->vehicle->make ?? 'Vehicle' }}
-
-                                            •
-
-                                            {{ auth()->user()->driver->vehicle->plate_number ?? 'No Plate' }}
-
-                                        </div>
-
-                                    @else
-
-                                        <div class="fw-semibold">
-
-                                            No Vehicle Assigned
-
-                                        </div>
-
-                                    @endif
-
-                                </div>
-
-
-                                {{-- STATUS --}}
-
-                                <div class="mb-2">
-
-                                    <div
-                                        class="small text-muted text-uppercase">
-
-                                        Status
-
-                                    </div>
-
-                                    <div class="mt-1">
-
-                                        <span class="badge bg-secondary">
-
-                                            No Active Dispatch
-
-                                        </span>
-
-                                    </div>
-
-                                </div>
-
-
-                            </div>
-
-                        </div>
-
-
-
-                        {{-- =================================================
-                             ASSIGNED INCIDENTS
-                        ================================================== --}}
-
-                        <div
-                            class="card border-0 shadow-sm rounded-4 mt-4">
-
-
-                            <div class="card-body">
-
-
-                                <h6 class="fw-bold mb-2">
-                                    Assigned Incidents
-                                </h6>
-
-
-                                <p
-                                    class="small text-muted mb-3">
-
-                                    Recent assignments and activity for this driver.
-
-                                </p>
-
-
-                                <div class="table-responsive">
-
-
-                                    <table
-                                        class="table table-sm align-middle mb-0">
-
-
-                                        <thead>
-
-                                            <tr>
-
-                                                <th>
-                                                    Incident
-                                                </th>
-
-                                                <th>
-                                                    Status
-                                                </th>
-
-                                            </tr>
-
-                                        </thead>
-
-
-                                        <tbody>
-
-
-                                            @forelse(
-                                                $incidents ?? []
-                                                as $incident
-                                            )
-
-                                                <tr>
-
-                                                    <td>
-
-                                                        <div
-                                                            class="fw-semibold">
-
-                                                            {{ $incident->incident_number ?? 'INC-' . $incident->id }}
-
-                                                        </div>
-
-
-                                                        <div
-                                                            class="small text-muted">
-
-                                                            {{ $incident->location ?? 'Unknown location' }}
-
-                                                        </div>
-
-                                                    </td>
-
-
-                                                    <td>
-
-                                                        @php
-
-                                                            $status = strtolower(
-                                                                $incident->status ?? 'unknown'
-                                                            );
-
-                                                        @endphp
-
-
-                                                        @if($status === 'closed')
-
-                                                            <span
-                                                                class="badge bg-secondary text-white">
-
-                                                                Closed
-
-                                                            </span>
-
-                                                        @elseif($status === 'active')
-
-                                                            <span
-                                                                class="badge bg-danger">
-
-                                                                Active
-
-                                                            </span>
-
-                                                        @elseif($status === 'dispatched')
-
-                                                            <span
-                                                                class="badge bg-warning text-dark">
-
-                                                                Dispatched
-
-                                                            </span>
-
-                                                        @else
-
-                                                            <span
-                                                                class="badge bg-secondary">
-
-                                                                {{ ucfirst($status) }}
-
-                                                            </span>
-
-                                                        @endif
-
-                                                    </td>
-
-                                                </tr>
-
-
-                                            @empty
-
-                                                <tr>
-
-                                                    <td
-                                                        colspan="2"
-                                                        class="text-center text-muted py-4">
-
-                                                        No assigned incidents.
-
-                                                    </td>
-
-                                                </tr>
-
-                                            @endforelse
-
-
-                                        </tbody>
-
-                                    </table>
-
-                                </div>
-
-
-                            </div>
-
-                        </div>
-
-
-                    </div>
-
-
-                </div>
-
-
-            </div>
-
-
-        </div>
-
-
-    </main>
-
-
-</div>
-
-
-
-{{-- =====================================================
-     BOOTSTRAP JS
-====================================================== --}}
-
-<script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
-</script>
-
-
-
-{{-- =====================================================
-     LEAFLET JS
-====================================================== --}}
-
-<script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    crossorigin="">
-</script>
-
-
-
-{{-- =====================================================
-     LEAFLET ROUTING MACHINE
-====================================================== --}}
-
-<script
-    src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js">
-</script>
-
-
-
-<script>
-
-document.addEventListener('DOMContentLoaded', function () {
-
-    /* =====================================================
-       ELEMENTS
-    ====================================================== */
-
-    const gpsStatus =
-        document.getElementById('gpsStatus');
-
-    const mapElement =
-        document.getElementById('map');
-
-    const panicBtn =
-        document.getElementById('panicBtn');
-
-    const hijackBtn =
-        document.getElementById('hijackBtn');
-
-
-    /* =====================================================
-       LARAVEL DATA
-    ====================================================== */
-
-    const csrfToken =
-        '{{ csrf_token() }}';
-
-    const driverName =
-        @json(auth()->user()->name);
-
-    const gpsUpdateUrl =
-        '{{ route('driver.gps.update') }}';
-
-
-    /* =====================================================
-       ACTIVE DISPATCH
-    ====================================================== */
-
-    /*
-     * Wala munang active dispatch.
-     *
-     * Kapag mayroon nang assigned incident,
-     * dito natin ilalagay ang coordinates.
-     */
-
-    const activeDispatchLocation = null;
-
-
-    /* =====================================================
-       VARIABLES
-    ====================================================== */
-
-    let currentPosition = null;
-
-    let gpsInterval = null;
-
-    let gpsRequestInFlight = false;
-
-    let map = null;
-
-    let driverMarker = null;
-
-    let incidentMarker = null;
-
-    let routingControl = null;
-
-
-    /* =====================================================
-       GPS STATUS
-    ====================================================== */
-
-    function setGpsStatus(message) {
-
-        if (gpsStatus) {
-
-            gpsStatus.textContent = message;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       GET GPS POSITION
-    ====================================================== */
-
-    function getPosition() {
-
-        return new Promise(function (resolve, reject) {
-
-            if (!navigator.geolocation) {
-
-                reject(
-                    new Error(
-                        'GPS is not supported by this browser.'
-                    )
-                );
-
-                return;
-
-            }
-
-
-            navigator.geolocation.getCurrentPosition(
-
-                function (position) {
-
-                    currentPosition = position;
-
-                    resolve(position);
-
-                },
-
-                function (error) {
-
-                    console.error(
-                        'GPS error:',
-                        error
-                    );
-
-                    reject(error);
-
-                },
-
-                {
-                    enableHighAccuracy: true,
-                    timeout: 30000,
-                    maximumAge: 10000
-                }
-
-            );
-
-        });
-
-    }
-
-
-    /* =====================================================
-       DRIVER ICON
-    ====================================================== */
-
-    function createDriverIcon() {
-
-        return L.divIcon({
-
-            className: 'driver-map-pin',
-
-            html:
-                '<div style="' +
-                'background:#0d6efd;' +
-                'border:3px solid white;' +
-                'border-radius:50%;' +
-                'width:18px;' +
-                'height:18px;' +
-                'box-shadow:0 2px 10px rgba(0,0,0,.35);' +
-                '"></div>',
-
-            iconSize: [18, 18],
-
-            iconAnchor: [9, 9]
-
-        });
-
-    }
-
-
-    /* =====================================================
-       UPDATE DRIVER MARKER
-    ====================================================== */
-
-    function updateDriverMarker(
-        latitude,
-        longitude
-    ) {
-
-        if (!map) {
-
-            return;
-
-        }
-
-
-        const position = [
-            latitude,
-            longitude
-        ];
-
-
-        if (!driverMarker) {
-
-            driverMarker =
-                L.marker(
-                    position,
-                    {
-                        icon: createDriverIcon()
-                    }
-                )
-                .addTo(map)
-                .bindPopup(
-                    '<strong>Driver</strong><br>' +
-                    escapeHtml(driverName)
-                );
-
-        } else {
-
-            driverMarker.setLatLng(position);
-
-        }
-
-    }
-
-
-    /* =====================================================
-       SEND GPS TO LARAVEL
-    ====================================================== */
-
-    async function sendLocation() {
-
-        if (
-            gpsRequestInFlight ||
-            document.hidden
-        ) {
-
-            return;
-
-        }
-
-
-        gpsRequestInFlight = true;
-
-
-        try {
-
-            setGpsStatus('Getting location...');
-
-
-            const position =
-                await getPosition();
-
-
-            const latitude =
-                position.coords.latitude;
-
-            const longitude =
-                position.coords.longitude;
-
-
-            /*
-             * SEND GPS TO LARAVEL
-             */
-
-            const response =
-                await fetch(
-                    gpsUpdateUrl,
-                    {
-                        method: 'POST',
-
-                        headers: {
-                            'Content-Type':
-                                'application/json',
-
-                            'X-CSRF-TOKEN':
-                                csrfToken,
-
-                            'Accept':
-                                'application/json'
-                        },
-
-                        body:
-                            JSON.stringify({
-                                latitude:
-                                    latitude,
-
-                                longitude:
-                                    longitude
-                            })
-                    }
-                );
-
-
-            /*
-             * CHECK RESPONSE
-             */
-
-            if (!response.ok) {
-
-                setGpsStatus(
-                    'Error ' +
-                    response.status
-                );
+            if (
+                !menu ||
+                !overlay ||
+                !openButton ||
+                !closeButton
+            ) {
 
                 console.error(
-                    'GPS server error:',
-                    response.status
+                    'MuniResQ mobile menu elements not found.'
                 );
 
                 return;
-
             }
 
 
-            /*
-             * GPS IS LIVE
-             */
+            /* =================================================
+               OPEN MENU
+            ================================================= */
 
-            setGpsStatus('Live');
+            function openMobileMenu() {
 
+                menu.classList.add('is-open');
 
-            /*
-             * UPDATE MAP MARKER
-             */
+                overlay.classList.add('is-open');
 
-            updateDriverMarker(
-                latitude,
-                longitude
-            );
-
-
-            /*
-             * ACTIVE INCIDENT ROUTE
-             */
-
-            if (activeDispatchLocation) {
-
-                showIncidentRoute(
-                    latitude,
-                    longitude
+                document.body.classList.add(
+                    'mobile-menu-open'
                 );
 
             }
 
 
-        } catch (error) {
+            /* =================================================
+               CLOSE MENU
+            ================================================= */
 
-            console.error(
-                'GPS update error:',
-                error
-            );
+            function closeMobileMenu() {
 
+                menu.classList.remove('is-open');
 
-            if (error.code === 1) {
+                overlay.classList.remove('is-open');
 
-                setGpsStatus(
-                    'Permission needed'
-                );
-
-            } else if (error.code === 2) {
-
-                setGpsStatus(
-                    'Location unavailable'
-                );
-
-            } else if (error.code === 3) {
-
-                setGpsStatus(
-                    'GPS timeout'
-                );
-
-            } else {
-
-                setGpsStatus(
-                    'Unavailable'
+                document.body.classList.remove(
+                    'mobile-menu-open'
                 );
 
             }
 
-        } finally {
 
-            gpsRequestInFlight = false;
+            /* =================================================
+               MENU BUTTON
+            ================================================= */
 
-        }
+            openButton.addEventListener(
+                'click',
+                function(event) {
 
-    }
+                    event.preventDefault();
 
+                    event.stopPropagation();
 
-    /* =====================================================
-       INCIDENT + ROUTE
-    ====================================================== */
+                    openMobileMenu();
 
-    function showIncidentRoute(
-        driverLat,
-        driverLng
-    ) {
-
-        if (!activeDispatchLocation) {
-
-            return;
-
-        }
-
-
-        const incidentLat =
-            Number(
-                activeDispatchLocation.latitude
+                }
             );
 
 
-        const incidentLng =
-            Number(
-                activeDispatchLocation.longitude
+            /* =================================================
+               CLOSE BUTTON
+            ================================================= */
+
+            closeButton.addEventListener(
+                'click',
+                function(event) {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+                    closeMobileMenu();
+
+                }
             );
 
 
-        if (
-            !Number.isFinite(incidentLat) ||
-            !Number.isFinite(incidentLng)
-        ) {
+            /* =================================================
+               OVERLAY CLICK
+            ================================================= */
 
-            return;
+            overlay.addEventListener(
+                'click',
+                function() {
 
-        }
+                    closeMobileMenu();
 
-
-        /*
-         * INCIDENT MARKER
-         */
-
-        if (!incidentMarker) {
-
-            incidentMarker =
-                L.marker(
-                    [
-                        incidentLat,
-                        incidentLng
-                    ]
-                )
-                .addTo(map)
-                .bindPopup(
-                    '<strong>Emergency Incident</strong>'
-                );
-
-        } else {
-
-            incidentMarker.setLatLng(
-                [
-                    incidentLat,
-                    incidentLng
-                ]
+                }
             );
 
-        }
 
+            /* =================================================
+               CLOSE WHEN NAVIGATION IS CLICKED
+            ================================================= */
 
-        /*
-         * REMOVE OLD ROUTE
-         */
+            menu.querySelectorAll(
+                'a.sidebar-link'
+            ).forEach(function(link) {
 
-        if (routingControl) {
+                link.addEventListener(
+                    'click',
+                    function() {
 
-            map.removeControl(
-                routingControl
-            );
-
-            routingControl = null;
-
-        }
-
-
-        /*
-         * CREATE ROUTE
-         */
-
-        if (
-            typeof L.Routing !==
-            'undefined'
-        ) {
-
-            routingControl =
-                L.Routing.control({
-
-                    waypoints: [
-
-                        L.latLng(
-                            driverLat,
-                            driverLng
-                        ),
-
-                        L.latLng(
-                            incidentLat,
-                            incidentLng
-                        )
-
-                    ],
-
-                    routeWhileDragging:
-                        false,
-
-                    addWaypoints:
-                        false,
-
-                    draggableWaypoints:
-                        false,
-
-                    fitSelectedRoutes:
-                        true,
-
-                    show:
-                        false,
-
-                    createMarker:
-                        function () {
-                            return null;
-                        }
-
-                })
-                .on(
-                    'routingerror',
-                    function (error) {
-
-                        console.warn(
-                            'Routing error:',
-                            error
-                        );
+                        closeMobileMenu();
 
                     }
-                )
-                .addTo(map);
+                );
 
-        }
-
-
-        /*
-         * FIT MAP
-         */
-
-        map.fitBounds(
-
-            [
-                [
-                    driverLat,
-                    driverLng
-                ],
-
-                [
-                    incidentLat,
-                    incidentLng
-                ]
-            ],
-
-            {
-                padding: [50, 50]
-            }
-
-        );
-
-    }
-
-
-    /* =====================================================
-       INITIALIZE MAP
-    ====================================================== */
-
-    function initializeMap() {
-
-        if (
-            !mapElement ||
-            typeof L === 'undefined'
-        ) {
-
-            console.error(
-                'Leaflet or map element not found.'
-            );
-
-            return;
-
-        }
-
-
-        /*
-         * CREATE MAP
-         */
-
-        map =
-            L.map('map', {
-                zoomControl: true
             });
 
 
-        /*
-         * OPEN STREET MAP
-         */
+            /* =================================================
+               ESC KEY
+            ================================================= */
 
-        L.tileLayer(
+            document.addEventListener(
+                'keydown',
+                function(event) {
 
-            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    if (
+                        event.key === 'Escape'
+                    ) {
 
-            {
-                maxZoom: 19,
-
-                attribution:
-                    '&copy; OpenStreetMap contributors'
-            }
-
-        ).addTo(map);
-
-
-        /*
-         * USE CURRENT GPS
-         */
-
-        if (currentPosition) {
-
-            const latitude =
-                currentPosition.coords.latitude;
-
-            const longitude =
-                currentPosition.coords.longitude;
-
-
-            updateDriverMarker(
-                latitude,
-                longitude
-            );
-
-
-            if (activeDispatchLocation) {
-
-                showIncidentRoute(
-                    latitude,
-                    longitude
-                );
-
-            } else {
-
-                map.setView(
-                    [
-                        latitude,
-                        longitude
-                    ],
-                    15
-                );
-
-            }
-
-        } else {
-
-            /*
-             * NUEVA ECIJA FALLBACK
-             */
-
-            map.setView(
-                [
-                    15.4866,
-                    120.9675
-                ],
-                13
-            );
-
-        }
-
-
-        /*
-         * FIX MAP SIZE
-         */
-
-        setTimeout(
-            function () {
-
-                map.invalidateSize();
-
-            },
-            300
-        );
-
-
-        /*
-         * RESIZE
-         */
-
-        window.addEventListener(
-            'resize',
-            function () {
-
-                setTimeout(
-                    function () {
-
-                        if (map) {
-
-                            map.invalidateSize();
-
-                        }
-
-                    },
-                    150
-                );
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       PANIC / HIJACK
-    ====================================================== */
-
-    async function triggerEmergency(
-        url,
-        label
-    ) {
-
-        try {
-
-            let position =
-                currentPosition;
-
-
-            /*
-             * GET GPS IF NOT AVAILABLE
-             */
-
-            if (!position) {
-
-                position =
-                    await getPosition();
-
-            }
-
-
-            /*
-             * SEND EMERGENCY
-             */
-
-            const response =
-                await fetch(
-
-                    url,
-
-                    {
-                        method: 'POST',
-
-                        headers: {
-
-                            'Content-Type':
-                                'application/json',
-
-                            'X-CSRF-TOKEN':
-                                csrfToken,
-
-                            'Accept':
-                                'application/json'
-
-                        },
-
-                        body:
-                            JSON.stringify({
-
-                                latitude:
-                                    position.coords.latitude,
-
-                                longitude:
-                                    position.coords.longitude
-
-                            })
+                        closeMobileMenu();
 
                     }
 
-                );
-
-
-            /*
-             * RESPONSE
-             */
-
-            const data =
-                await response
-                    .json()
-                    .catch(
-                        function () {
-                            return null;
-                        }
-                    );
-
-
-            /*
-             * SERVER ERROR
-             */
-
-            if (!response.ok) {
-
-                alert(
-                    label +
-                    ' alert failed: ' +
-                    response.status
-                );
-
-                return;
-
-            }
-
-
-            /*
-             * SUCCESS
-             */
-
-            if (
-                data &&
-                data.success
-            ) {
-
-                alert(
-                    label +
-                    ' ALERT SENT'
-                );
-
-            } else {
-
-                alert(
-                    label +
-                    ' alert could not be sent.'
-                );
-
-            }
-
-
-        } catch (error) {
-
-            console.error(
-                label +
-                ' error:',
-                error
+                }
             );
 
 
-            alert(
-                label +
-                ' alert could not be sent. ' +
-                'Check location permission and connection.'
-            );
+            /* =================================================
+               WINDOW RESIZE
+            ================================================= */
 
-        }
+            window.addEventListener(
+                'resize',
+                function() {
 
-    }
+                    if (
+                        window.innerWidth >= 992
+                    ) {
 
+                        closeMobileMenu();
 
-    /* =====================================================
-       PANIC BUTTON
-    ====================================================== */
-
-    if (panicBtn) {
-
-        panicBtn.addEventListener(
-            'click',
-            async function () {
-
-                if (
-                    !confirm(
-                        'Trigger PANIC alert?'
-                    )
-                ) {
-
-                    return;
+                    }
 
                 }
-
-
-                await triggerEmergency(
-                    '{{ route('driver.panic.trigger') }}',
-                    'PANIC'
-                );
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       HIJACK BUTTON
-    ====================================================== */
-
-    if (hijackBtn) {
-
-        hijackBtn.addEventListener(
-            'click',
-            async function () {
-
-                if (
-                    !confirm(
-                        'Trigger HIJACK alert?'
-                    )
-                ) {
-
-                    return;
-
-                }
-
-
-                await triggerEmergency(
-                    '{{ route('driver.hijack.trigger') }}',
-                    'HIJACK'
-                );
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       ESCAPE HTML
-    ====================================================== */
-
-    function escapeHtml(value) {
-
-        const div =
-            document.createElement('div');
-
-
-        div.textContent =
-            value ?? '';
-
-
-        return div.innerHTML;
-
-    }
-
-
-    /* =====================================================
-       START DRIVER TRACKING
-    ====================================================== */
-
-    async function startDriverTracking() {
-
-        /*
-         * INITIAL GPS
-         */
-
-        await sendLocation();
-
-
-        /*
-         * INITIALIZE MAP
-         */
-
-        initializeMap();
-
-
-        /*
-         * UPDATE EVERY 15 SECONDS
-         */
-
-        gpsInterval =
-            setInterval(
-                sendLocation,
-                15000
             );
 
-    }
-
-
-    /* =====================================================
-       VISIBILITY CHANGE
-    ====================================================== */
-
-    document.addEventListener(
-        'visibilitychange',
-        function () {
-
-            if (!document.hidden) {
-
-                sendLocation();
-
-            }
-
-        }
-    );
-
-
-    /* =====================================================
-       PAGE HIDE
-    ====================================================== */
-
-    window.addEventListener(
-        'pagehide',
-        function () {
-
-            if (gpsInterval) {
-
-                clearInterval(
-                    gpsInterval
-                );
-
-                gpsInterval = null;
-
-            }
-
-        },
-        {
-            once: true
-        }
-    );
-
-
-    /* =====================================================
-       START
-    ====================================================== */
-
-    startDriverTracking();
-
-});
-
-</script>
+        });
+    </script>
 
 
 </body>

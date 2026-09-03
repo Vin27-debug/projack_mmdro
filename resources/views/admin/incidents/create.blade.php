@@ -64,7 +64,7 @@
 
     <form method="POST" action="{{ route('admin.incidents.store') }}" enctype="multipart/form-data">
         @if($errors->any())
-            <div class="alert alert-danger">{{ $errors->first() }}</div>
+        <div class="alert alert-danger">{{ $errors->first() }}</div>
         @endif
         @csrf
 
@@ -83,9 +83,12 @@
 
         <div class="mb-3">
             <label for="incident_type" class="form-label">Incident Type</label>
-            <input type="text" id="incident_type" name="incident_type"
-                class="form-control" value="{{ old('incident_type') }}"
-                placeholder="Example: Medical Emergency, Fire, Accident" required>
+            <select id="incident_type" name="incident_type" class="form-select" required>
+                <option value="">Select incident classification</option>
+                @foreach(\App\Models\Incident::INCIDENT_TYPES as $type)
+                <option value="{{ $type }}" @selected(old('incident_type')===$type)>{{ $type }}</option>
+                @endforeach
+            </select>
         </div>
 
         <div class="mb-4">
@@ -93,8 +96,8 @@
             <select id="priority" name="priority" class="form-select">
                 <option value="Low" {{ old('priority') === 'Low' ? 'selected' : '' }}>🟢 Low</option>
                 <option value="Medium" {{ old('priority', 'Medium') === 'Medium' ? 'selected' : '' }}>🟡 Medium</option>
-                <option value="High" {{ old('priority') === 'High' ? 'selected' : '' }}>🟠 High</option>
-                <option value="Critical" {{ old('priority') === 'Critical' ? 'selected' : '' }}>🔴 Critical</option>
+                <option value="High" {{ old('priority') === 'High' ? 'selected' : '' }}>🔴 Critical</option>
+                <option value="Critical" {{ old('priority') === 'Critical' ? 'selected' : '' }}>⚫ Dead On Spot</option>
             </select>
         </div>
 
@@ -120,6 +123,11 @@
                 <select id="barangay" name="barangay" class="form-select" required disabled>
                     <option value="">Select Barangay</option>
                 </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="house_number" class="form-label">House Number</label>
+                <input type="text" id="house_number" name="house_number" class="form-control" value="{{ old('house_number') }}" placeholder="Example: 123">
             </div>
 
             <div class="mb-3">
@@ -208,6 +216,7 @@
         const city = document.getElementById('city');
         const barangay = document.getElementById('barangay');
         const street = document.getElementById('street');
+        const houseNumber = document.getElementById('house_number');
         const fullLocation = document.getElementById('full_location');
 
         const latitude = document.getElementById('latitude');
@@ -319,6 +328,7 @@
 
         function updateFullLocation() {
             const parts = [
+                houseNumber.value.trim(),
                 street.value.trim(),
                 getSelectedText(barangay),
                 getSelectedText(city),
@@ -798,6 +808,13 @@
             return results[0];
         }
 
+        function applyGeocodedAddress(result) {
+            const address = result?.address || result?.properties || {};
+            if (!houseNumber.value.trim() && (address.house_number || address.housenumber)) houseNumber.value = address.house_number || address.housenumber;
+            if (!street.value.trim() && (address.road || address.street)) street.value = address.road || address.street;
+            updateFullLocation();
+        }
+
         // ============================================================
         // SEARCH LOCATION
         // ============================================================
@@ -942,6 +959,8 @@
                         lat,
                         lng
                     );
+
+                    applyGeocodedAddress(best);
 
                     const name =
                         best.display_name ||

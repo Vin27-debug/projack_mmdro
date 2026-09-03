@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'muniresq' => [
+        'speed' => [
+            'yellow_over_limit_percent' => (float) env('MUNIRESQ_SPEED_YELLOW_OVER_LIMIT_PERCENT', 10),
+            'red_over_limit_percent' => (float) env('MUNIRESQ_SPEED_RED_OVER_LIMIT_PERCENT', 20),
+            'road_limits_kmh' => json_decode(env('MUNIRESQ_ROAD_SPEED_LIMITS', '{}'), true) ?: [],
+        ],
+    ],
 
     /*
     |--------------------------------------------------------------------------

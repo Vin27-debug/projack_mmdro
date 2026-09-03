@@ -3,8 +3,6 @@
 namespace App\Models;
 
 use App\Models\Driver;
-
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -18,6 +16,11 @@ use App\Models\Notification;
     'name',
     'email',
     'password',
+    'employee_id',
+    'position',
+    'department',
+    'contact_number',
+    'office',
     'badge_id',
     'status',
     'created_by',
@@ -27,21 +30,19 @@ use App\Models\Notification;
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
-    /**@use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasRoles;
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+            'approved_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
+
     public function driver()
     {
         return $this->hasOne(Driver::class);
@@ -49,8 +50,16 @@ class User extends Authenticatable
 
     public function notifications()
     {
-        return $this->hasMany(
-            Notification::class
-        );
+        return $this->hasMany(Notification::class);
+    }
+
+    public function approvedBy()
+    {
+        return $this->belongsTo(self::class, 'approved_by');
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(self::class, 'created_by');
     }
 }

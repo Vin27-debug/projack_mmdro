@@ -45,6 +45,13 @@
 
 </div>
 
+<div class="small text-muted mb-3">
+    Speed status: <span class="text-success fw-semibold">Green</span> within configured limit,
+    <span class="text-warning fw-semibold">Yellow</span> approaching,
+    <span class="text-danger fw-semibold">Red</span> exceeding.
+    Unrated means no road-specific speed limit is configured.
+</div>
+
 
 {{-- ============================================================
      MAP
@@ -445,6 +452,10 @@
                         )
                     )}
                 </div>
+
+                <div><strong>Speed:</strong> ${location.speed_kmh !== null ? escapeHtml(Number(location.speed_kmh).toFixed(1) + ' km/h') : 'Unavailable'}</div>
+                <div><strong>Limit:</strong> ${location.speed_limit_kmh !== null ? escapeHtml(Number(location.speed_limit_kmh).toFixed(1) + ' km/h') : 'Speed limit unavailable'}</div>
+                <div><strong>Speed status:</strong> ${escapeHtml((location.speed_status || 'UNRATED').toUpperCase())}</div>
 
                 ${
                     location.incident_number
@@ -1344,6 +1355,9 @@
 
 
                             <hr>
+
+                            <div class="mb-2"><strong>Speed:</strong> <span class="badge bg-${location.speed_status === 'red' ? 'danger' : (location.speed_status === 'yellow' ? 'warning text-dark' : (location.speed_status === 'green' ? 'success' : 'secondary'))}">${location.speed_kmh !== null ? Number(location.speed_kmh).toFixed(1) + ' km/h' : 'Unavailable'}${location.speed_status ? ' - ' + escapeHtml(location.speed_status.toUpperCase()) : ' - UNRATED'}</span></div>
+                            <div class="small text-muted">Limit: ${location.speed_limit_kmh !== null ? Number(location.speed_limit_kmh).toFixed(1) + ' km/h' : 'Speed limit unavailable'}</div>
 
 
                             <small class="text-muted">

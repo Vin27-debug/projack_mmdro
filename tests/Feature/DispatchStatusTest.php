@@ -118,6 +118,59 @@ class DispatchStatusTest extends TestCase
         $response->assertDontSee('Mark En Route');
     }
 
+    public function test_driver_dashboard_shows_next_emergency_action_in_sequence(): void
+    {
+        $role = Role::firstOrCreate(['name' => 'driver']);
+        $user = User::factory()->create(['status' => 'approved']);
+        $user->assignRole($role);
+
+        $driver = Driver::create([
+            'user_id' => $user->id,
+            'badge_id' => 'AMB-105',
+            'contact_number' => '09123456794',
+            'license_number' => 'LIC-105',
+            'license_expiry' => '2030-01-01',
+            'status' => 'en_route',
+        ]);
+
+        $ambulance = Ambulance::create([
+            'plate_number' => 'ABC-105',
+            'vehicle_name' => 'Ambulance Six',
+            'vehicle_type' => 'ambulance',
+            'status' => 'on_duty',
+        ]);
+
+        $incident = Incident::create([
+            'incident_number' => 'INC-0105',
+            'reporter_name' => 'Dana Doe',
+            'contact_number' => '09120000005',
+            'incident_type' => 'Medical',
+            'location' => 'Test Avenue',
+            'description' => 'Sample incident',
+            'status' => Incident::STATUS_DISPATCHED,
+            'driver_id' => $driver->id,
+            'ambulance_id' => $ambulance->id,
+            'call_received_at' => now()->subMinutes(20),
+            'response_at' => now()->subMinutes(14),
+            'at_scene_at' => now()->subMinutes(7),
+        ]);
+
+        Dispatch::create([
+            'incident_id' => $incident->id,
+            'driver_id' => $driver->id,
+            'vehicle_id' => $ambulance->id,
+            'status' => Dispatch::STATUS_EN_ROUTE,
+            'accepted_at' => now()->subMinutes(15),
+            'en_route_at' => now()->subMinutes(14),
+        ]);
+
+        $response = $this->actingAs($user)->get(route('driver.dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('Mark At Patient');
+        $response->assertDontSee('Mark At Scene');
+    }
+
     public function test_driver_gps_update_syncs_ambulance_coordinates_via_active_dispatch(): void
     {
         $role = Role::firstOrCreate(['name' => 'driver']);
@@ -173,7 +226,7 @@ class DispatchStatusTest extends TestCase
         ]);
     }
 
-    public function test_driver_decline_dispatch_cancels_the_incident(): void
+    public function test_driver_decline_dispatch_returns_the_incident_to_pending(): void
     {
         $role = Role::firstOrCreate(['name' => 'driver']);
         $user = User::factory()->create(['status' => 'approved']);
@@ -224,7 +277,7 @@ class DispatchStatusTest extends TestCase
         ]);
         $this->assertDatabaseHas('incidents', [
             'id' => $incident->id,
-            'status' => 'cancelled',
+            'status' => Incident::STATUS_PENDING,
         ]);
     }
 

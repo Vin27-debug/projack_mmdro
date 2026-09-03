@@ -25,14 +25,17 @@ return new class extends Migration
                 'maintenance'
             ])->default('available');
 
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
+
             $table->timestamps();
         });
 
         DB::statement('
             INSERT INTO ambulances_new
-            (id, plate_number, vehicle_name, vehicle_type, status, created_at, updated_at)
+            (id, plate_number, vehicle_name, vehicle_type, status, latitude, longitude, created_at, updated_at)
             SELECT
-                id, plate_number, vehicle_name, vehicle_type, status, created_at, updated_at
+                id, plate_number, vehicle_name, vehicle_type, status, latitude, longitude, created_at, updated_at
             FROM ambulances
         ');
 

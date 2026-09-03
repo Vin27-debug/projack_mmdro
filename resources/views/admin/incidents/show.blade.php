@@ -171,6 +171,9 @@
 
                             <div class="field-value">
                                 {{ $incident->location ?: 'N/A' }}
+                                @if($incident->house_number || $incident->street || $incident->barangay || $incident->city || $incident->province)
+                                <div class="small text-muted mt-1">{{ collect([$incident->house_number, $incident->street, $incident->barangay, $incident->city, $incident->province])->filter()->implode(', ') }}</div>
+                                @endif
                             </div>
 
                         </div>
@@ -294,6 +297,37 @@
 
         </div>
 
+
+        {{-- EMERGENCY TIME RECORD --}}
+
+        <div class="card border-0 shadow-sm mb-4">
+
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-stopwatch me-2"></i>
+                Emergency Time Record
+            </div>
+
+            <div class="card-body">
+                @php
+                $timeLabels = [
+                'Call Received' => $incident->call_received_at,
+                'Response' => $incident->response_at,
+                'At Scene' => $incident->at_scene_at,
+                'At Patient' => $incident->at_patient_at,
+                'Depart Scene' => $incident->depart_scene_at,
+                'At Hospital' => $incident->at_hospital_at,
+                ];
+                @endphp
+
+                @foreach($timeLabels as $label => $timestamp)
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <span class="fw-semibold">{{ $label }}</span>
+                    <span class="text-muted">{{ $timestamp?->format('M d, Y h:i A') ?? 'Not yet recorded' }}</span>
+                </div>
+                @endforeach
+            </div>
+
+        </div>
 
         {{-- ATTACHMENTS --}}
 
@@ -513,6 +547,26 @@
 
         {{-- DISPATCH HISTORY --}}
 
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-dark text-white"><i class="bi bi-list-check me-2"></i>Incident Timeline</div>
+            <div class="card-body">
+                @php($latestDispatch = $incident->dispatches->sortByDesc('created_at')->first())
+                @foreach([
+                'Incident Reported' => $incident->created_at,
+                'Dispatch Created' => $latestDispatch?->created_at,
+                'Driver Accepted' => $latestDispatch?->accepted_at,
+                'En Route' => $latestDispatch?->en_route_at,
+                'Arrived' => $latestDispatch?->arrived_at,
+                'Response Completed' => $incident->completed_at ?: $latestDispatch?->completed_at,
+                'Report Submitted' => $incident->report?->submitted_at,
+                'Report Approved' => $incident->report?->status === 'approved' ? $incident->report->updated_at : null,
+                'Incident Closed' => $incident->closed_at,
+                ] as $label => $timestamp)
+                <div class="d-flex justify-content-between border-bottom py-2"><span>{{ $label }}</span><span class="text-muted">{{ $timestamp?->format('M d, Y h:i A') ?: 'Pending' }}</span></div>
+                @endforeach
+            </div>
+        </div>
+
         <div class="card border-0 shadow-sm">
 
             <div class="card-header bg-dark text-white">
@@ -560,6 +614,16 @@
 
                         {{ $dispatch->vehicle?->plate_number ?? 'Ambulance' }}
 
+                    </div>
+
+                    <div class="small mt-2">
+                        Created: {{ $dispatch->created_at?->format('M d, Y h:i A') ?? 'N/A' }}
+                        @if($dispatch->assigned_at) · Assigned: {{ $dispatch->assigned_at->format('M d, Y h:i A') }} @endif
+                        @if($dispatch->accepted_at) · Accepted: {{ $dispatch->accepted_at->format('M d, Y h:i A') }} @endif
+                        @if($dispatch->declined_at) · Declined: {{ $dispatch->declined_at->format('M d, Y h:i A') }} @endif
+                        @if($dispatch->en_route_at) · En route: {{ $dispatch->en_route_at->format('M d, Y h:i A') }} @endif
+                        @if($dispatch->arrived_at) · Arrived: {{ $dispatch->arrived_at->format('M d, Y h:i A') }} @endif
+                        @if($dispatch->completed_at) · Completed: {{ $dispatch->completed_at->format('M d, Y h:i A') }} @endif
                     </div>
 
                 </div>

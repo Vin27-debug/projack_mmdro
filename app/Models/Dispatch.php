@@ -41,6 +41,8 @@ class Dispatch extends Model
         'accepted_at',
         'arrived_at',
         'completed_at',
+        'en_route_at',
+        'declined_at',
     ];
 
     protected $casts = [
@@ -48,6 +50,8 @@ class Dispatch extends Model
         'accepted_at' => 'datetime',
         'arrived_at' => 'datetime',
         'completed_at' => 'datetime',
+        'en_route_at' => 'datetime',
+        'declined_at' => 'datetime',
     ];
 
     public function incident()

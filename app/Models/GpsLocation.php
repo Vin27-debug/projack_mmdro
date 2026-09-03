@@ -11,12 +11,17 @@ class GpsLocation extends Model
         'latitude',
         'longitude',
         'recorded_at',
+        'speed_kmh',
+        'speed_status',
+        'speed_limit_kmh',
     ];
 
     protected $casts = [
         'latitude' => 'float',
         'longitude' => 'float',
         'recorded_at' => 'datetime',
+        'speed_kmh' => 'float',
+        'speed_limit_kmh' => 'float',
     ];
 
     public function driver()

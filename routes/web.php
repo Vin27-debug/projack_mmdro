@@ -48,6 +48,7 @@ use App\Http\Controllers\SuperAdmin\AmbulanceController;
 use App\Http\Controllers\SuperAdmin\AssignmentController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\DriverController;
+use App\Http\Controllers\SuperAdmin\AdminController;
 
 use App\Http\Controllers\SuperAdmin\SystemSettingsController;
 
@@ -146,8 +147,26 @@ Route::middleware([
     Route::post('/driver/gps/update', [GpsController::class, 'update'])
         ->name('driver.gps.update');
 
+    Route::post('/driver/incidents/{incident}/call-received', [DriverDashboardController::class, 'markCallReceived'])
+        ->name('driver.incidents.call-received');
+
+    Route::post('/driver/incidents/{incident}/response', [DriverDashboardController::class, 'markResponse'])
+        ->name('driver.incidents.response');
+
     Route::post('/driver/incidents/{incident}/en-route', [DriverDashboardController::class, 'markEnRoute'])
         ->name('driver.incidents.en-route');
+
+    Route::post('/driver/incidents/{incident}/at-scene', [DriverDashboardController::class, 'markAtScene'])
+        ->name('driver.incidents.at-scene');
+
+    Route::post('/driver/incidents/{incident}/at-patient', [DriverDashboardController::class, 'markAtPatient'])
+        ->name('driver.incidents.at-patient');
+
+    Route::post('/driver/incidents/{incident}/depart-scene', [DriverDashboardController::class, 'markDepartScene'])
+        ->name('driver.incidents.depart-scene');
+
+    Route::post('/driver/incidents/{incident}/at-hospital', [DriverDashboardController::class, 'markAtHospital'])
+        ->name('driver.incidents.at-hospital');
 
     Route::post('/driver/incidents/{incident}/arrived', [DriverDashboardController::class, 'markArrived'])
         ->name('driver.incidents.arrived');
@@ -188,6 +207,7 @@ Route::middleware([
 
     Route::get('/admin/reports/pdf', [PdfReportController::class, 'downloadReport'])
         ->name('admin.reports.pdf');
+
     Route::get('/admin/reports/pdf/view', [PdfReportController::class, 'viewReport'])
         ->name('admin.reports.pdf.view');
 
@@ -335,8 +355,7 @@ Route::middleware([
 
     Route::get('/admin/audit-logs', [AuditLogController::class, 'index'])
         ->name('admin.audit-logs.index');
-    Route::get('/admin/audit-logs', [AuditLogController::class, 'index'])
-        ->name('admin.audit.logs');
+
 
     Route::get('/admin/backups', [BackupController::class, 'index'])
         ->name('admin.backups.index');
@@ -354,6 +373,12 @@ Route::middleware([
 
     Route::get('/admin/incidents/history', [IncidentHistoryController::class, 'index'])
         ->name('admin.incidents.history');
+
+    Route::get('/dispatch-center', [DispatchController::class, 'index'])
+        ->name('dispatch.center');
+
+    Route::get('/admin/dispatches', [DispatchController::class, 'index'])
+        ->name('admin.dispatches.index');
 });
 
 /*
@@ -370,11 +395,6 @@ Route::middleware([
     Route::get('/admin/gps-locations', [GpsMonitoringController::class, 'locations'])
         ->name('admin.gps.locations');
 
-    Route::get('/admin/dispatches', [DispatchController::class, 'index'])
-        ->name('admin.dispatches.index');
-
-    Route::get('/admin/dispatch-center', [DispatchController::class, 'index'])
-        ->name('admin.dispatch.center');
 
     Route::post('/admin/reports/{report}/approve', [AdminIncidentReportController::class, 'approve'])
         ->name('admin.reports.approve');
@@ -392,6 +412,32 @@ Route::middleware([
     'role:super-admin'
 ])->group(function () {
 
+    Route::get('/admins/create', [AdminController::class, 'create'])
+        ->name('admins.create');
+
+    Route::get('/admins', [AdminController::class, 'index'])
+        ->name('admins.index');
+
+    Route::post('/admins', [AdminController::class, 'store'])
+        ->name('admins.store');
+
+    Route::get('/admins/{user}', [AdminController::class, 'show'])
+        ->name('admins.show');
+
+    Route::get('/admins/{user}/edit', [AdminController::class, 'edit'])
+        ->name('admins.edit');
+
+    Route::put('/admins/{user}', [AdminController::class, 'update'])
+        ->name('admins.update');
+
+    Route::post('/admins/{user}/approve', [AdminController::class, 'approve'])
+        ->name('admins.approve');
+
+    Route::post('/admins/{user}/reject', [AdminController::class, 'reject'])
+        ->name('admins.reject');
+
+    Route::post('/admins/{user}/suspend', [AdminController::class, 'suspend'])
+        ->name('admins.suspend');
     Route::get(
         '/superadmin/drivers/{driver}/assign',
         [UserApprovalController::class, 'assignForm']
@@ -408,8 +454,7 @@ Route::middleware([
     Route::post('/superadmin/drivers', [DriverController::class, 'store'])
         ->name('superadmin.drivers.store');
 
-    Route::post('/superadmin/drivers', [DriverController::class, 'store'])
-        ->name('superadmin.drivers.store');
+
     Route::get('/backups', [BackupController::class, 'index'])
         ->name('backups.index');
 

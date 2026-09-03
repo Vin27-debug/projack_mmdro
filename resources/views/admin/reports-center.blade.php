@@ -188,8 +188,22 @@
                             <th>Reporter</th>
                             <th>Type</th>
                             <th>Location</th>
+                            <th>Complete Address</th>
                             <th>Status</th>
+                            <th>Call Received</th>
+                            <th>Response</th>
+                            <th>At Scene</th>
+                            <th>At Patient</th>
+                            <th>Depart Scene</th>
+                            <th>At Hospital</th>
                             <th>Created</th>
+                            <th>Dispatch Created</th>
+                            <th>Accepted</th>
+                            <th>Declined</th>
+                            <th>En Route</th>
+                            <th>Arrived</th>
+                            <th>Completed</th>
+                            <th>Closed</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -199,12 +213,27 @@
                             <td>{{ $incident->reporter_name }}</td>
                             <td>{{ $incident->incident_type }}</td>
                             <td>{{ $incident->location }}</td>
+                            <td>{{ collect([$incident->house_number, $incident->street, $incident->barangay, $incident->city, $incident->province])->filter()->implode(', ') ?: 'N/A' }}</td>
                             <td><span class="badge bg-secondary">{{ ucfirst($incident->status) }}</span></td>
+                            @php($dispatch = $incident->dispatches->sortByDesc('created_at')->first())
+                            <td>{{ $incident->call_received_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
+                            <td>{{ $incident->response_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
+                            <td>{{ $incident->at_scene_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
+                            <td>{{ $incident->at_patient_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
+                            <td>{{ $incident->depart_scene_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
+                            <td>{{ $incident->at_hospital_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
                             <td>{{ $incident->created_at?->format('M d, Y H:i') }}</td>
+                            <td>{{ $dispatch?->created_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
+                            <td>{{ $dispatch?->accepted_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
+                            <td>{{ $dispatch?->declined_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
+                            <td>{{ $dispatch?->en_route_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
+                            <td>{{ $dispatch?->arrived_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
+                            <td>{{ $incident->completed_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
+                            <td>{{ $incident->closed_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-muted">No incidents found.</td>
+                            <td colspan="20" class="text-muted">No incidents found.</td>
                         </tr>
                         @endforelse
                     </tbody>

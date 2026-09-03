@@ -23,12 +23,27 @@ class Incident extends Model
         self::STATUS_CANCELLED,
     ];
 
+    public const INCIDENT_TYPES = [
+        'Medical Emergency',
+        'Accident / Collision',
+        'Fire',
+        'Crime / Security',
+        'Natural Disaster',
+        'Rescue / Trapped Person',
+        'Other Emergency',
+    ];
+
     protected $fillable = [
         'incident_number',
         'reporter_name',
         'contact_number',
         'incident_type',
         'location',
+        'house_number',
+        'street',
+        'barangay',
+        'city',
+        'province',
         'description',
         'latitude',
         'longitude',
@@ -36,8 +51,16 @@ class Incident extends Model
         'status',
         'driver_id',
         'ambulance_id',
+        'call_received_at',
+        'response_at',
+        'at_scene_at',
+        'at_patient_at',
+        'depart_scene_at',
+        'at_hospital_at',
         'archived_at',
         'archived_by',
+        'completed_at',
+        'closed_at',
     ];
 
     public function ambulance()
@@ -58,7 +81,17 @@ class Incident extends Model
     protected function casts(): array
     {
         return [
+            'call_received_at' => 'datetime',
+            'response_at' => 'datetime',
+            'at_scene_at' => 'datetime',
+            'at_patient_at' => 'datetime',
+            'depart_scene_at' => 'datetime',
+            'at_hospital_at' => 'datetime',
             'archived_at' => 'datetime',
+            'latitude' => 'float',
+            'longitude' => 'float',
+            'completed_at' => 'datetime',
+            'closed_at' => 'datetime',
         ];
     }
 

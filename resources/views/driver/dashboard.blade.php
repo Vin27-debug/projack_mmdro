@@ -1,95 +1,332 @@
 @extends('layouts.driver')
 
+@section('title', 'MuniResQ Driver Dashboard')
+
 @section('content')
 
-{{-- =====================================================
-     LEAFLET CSS
-===================================================== --}}
-<link rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+@php
+
+/*
+|--------------------------------------------------------------------------
+| DRIVER
+|--------------------------------------------------------------------------
+*/
+
+$driverName =
+$driver->user->name
+?? auth()->user()->name
+?? 'Driver';
+
+
+/*
+|--------------------------------------------------------------------------
+| VEHICLE
+|--------------------------------------------------------------------------
+*/
+
+$assignedVehicle =
+$currentDispatch?->vehicle
+?? $currentDispatch?->ambulance
+?? data_get($driver, 'activeVehicleAssignment.ambulance');
+
+
+$vehicleName =
+$assignedVehicle?->vehicle_name
+?? 'Not Assigned';
+
+
+$vehiclePlate =
+$assignedVehicle?->plate_number
+?? null;
+
+
+/*
+|--------------------------------------------------------------------------
+| DRIVER STATUS
+|--------------------------------------------------------------------------
+*/
+
+$driverStatus =
+$driver->status
+?? 'available';
+
+
+$driverStatusClass = match ($driverStatus) {
+
+'available'
+=> 'bg-success',
+
+'assigned'
+=> 'bg-primary',
+
+'accepted'
+=> 'bg-info text-dark',
+
+'en_route'
+=> 'bg-warning text-dark',
+
+'arrived',
+'on_scene'
+=> 'bg-secondary',
+
+'offline'
+=> 'bg-secondary',
+
+default
+=> 'bg-dark',
+};
+
+
+/*
+|--------------------------------------------------------------------------
+| CURRENT DISPATCH
+|--------------------------------------------------------------------------
+*/
+
+$dispatchStatus =
+$currentDispatch?->status;
+
+
+/*
+|--------------------------------------------------------------------------
+| INCIDENT
+|--------------------------------------------------------------------------
+*/
+
+$mapIncident =
+$currentDispatch?->incident
+?? ($reportableDispatch ?? null)?->incident;
+
+
+$incidentLat =
+$mapIncident?->latitude;
+
+
+$incidentLng =
+$mapIncident?->longitude;
+
+
+$hasIncidentCoordinates =
+$incidentLat !== null
+&&
+$incidentLng !== null
+&&
+is_numeric($incidentLat)
+&&
+is_numeric($incidentLng);
+
+@endphp
+
+
+{{-- =========================================================
+     SUCCESS
+========================================================== --}}
 
 @if(session('success'))
-<div class="alert alert-success rounded-4 border-0 shadow-sm">
+
+<div
+    class="alert alert-success
+               border-0 rounded-4 shadow-sm">
+
+    <i class="bi bi-check-circle me-2"></i>
+
     {{ session('success') }}
+
 </div>
+
 @endif
 
-{{-- =====================================================
-     DASHBOARD
-===================================================== --}}
+
+{{-- =========================================================
+     ERROR
+========================================================== --}}
+
+@if(session('error'))
+
+<div
+    class="alert alert-danger
+               border-0 rounded-4 shadow-sm">
+
+    <i class="bi bi-exclamation-circle me-2"></i>
+
+    {{ session('error') }}
+
+</div>
+
+@endif
+
+
+{{-- VALIDATION --}}
+@if(($errors ?? new \Illuminate\Support\ViewErrorBag())->any())
+
+<div
+    class="alert alert-danger
+               border-0 rounded-4 shadow-sm">
+
+    <strong>
+        Please check the following:
+    </strong>
+
+    <ul class="mb-0 mt-2">
+
+        @foreach(($errors ?? new \Illuminate\Support\ViewErrorBag())->all() as $error)
+
+        <li>
+            {{ $error }}
+        </li>
+
+        @endforeach
+
+    </ul>
+
+</div>
+
+@endif
+
 
 <div class="driver-dashboard-shell">
 
-    {{-- =================================================
+
+    {{-- =========================================================
          HERO
-    ================================================== --}}
-    <div class="card border-0 shadow-sm rounded-4 hero-panel overflow-hidden mb-4">
+    ========================================================== --}}
 
-        <div class="row g-0 align-items-stretch">
+    <section
+        class="hero-panel card
+               border-0 shadow-sm
+               rounded-4 overflow-hidden
+               mb-4">
 
-            <div class="col-12 col-lg-8 hero-panel-body">
+        <div class="row g-0">
 
-                <div class="small text-uppercase fw-semibold hero-eyebrow">
-                    Emergency Operations
+
+            {{-- HERO LEFT --}}
+            <div
+                class="col-12 col-lg-8
+                       hero-panel-body">
+
+                <div class="hero-eyebrow">
+                    EMERGENCY OPERATIONS
                 </div>
 
-                <h2 class="fw-bold mb-2">
-                    Driver Operations Center
-                </h2>
 
-                <p class="mb-3 mb-lg-4 hero-copy">
-                    {{ $driver->user->name ?? 'Driver' }}
-                    — monitor active dispatches and coordinate ambulance response with precision.
+                <h1 class="hero-title">
+
+                    Driver Operations Center
+
+                </h1>
+
+
+                <p class="hero-copy">
+
+                    {{ $driverName }}
+
+                    —
+                    monitor dispatches,
+                    update your response status,
+                    and coordinate ambulance operations.
+
                 </p>
 
-                <div class="d-flex flex-wrap gap-2">
+
+                <div
+                    class="d-flex
+                           flex-wrap
+                           gap-2">
+
 
                     {{-- PANIC --}}
-                    <button id="panicBtn"
-                            type="button"
-                            class="btn btn-danger btn-lg driver-action-btn">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    <button
+                        id="panicBtn"
+                        type="button"
+                        class="btn btn-danger
+                               driver-action-btn">
+
+                        <i
+                            class="bi bi-exclamation-triangle-fill me-1">
+                        </i>
+
                         PANIC
+
                     </button>
+
 
                     {{-- HIJACK --}}
-                    <button id="hijackBtn"
-                            type="button"
-                            class="btn btn-warning btn-lg driver-action-btn">
-                        <i class="bi bi-shield-exclamation"></i>
+                    <button
+                        id="hijackBtn"
+                        type="button"
+                        class="btn btn-warning
+                               driver-action-btn">
+
+                        <i
+                            class="bi bi-shield-exclamation me-1">
+                        </i>
+
                         HIJACK
+
                     </button>
 
-                    {{-- REPORT --}}
-                    @if($reportableDispatch)
 
-                        <a href="{{ route('driver.report.create', $reportableDispatch->incident) }}"
-                           class="btn btn-primary btn-lg driver-action-btn">
-                            <i class="bi bi-file-earmark-text"></i>
-                            File Report
-                        </a>
+                    {{-- REPORT --}}
+                    @if(
+                    isset($reportableDispatch)
+                    &&
+                    $reportableDispatch?->incident
+                    )
+
+                    <a
+                        href="{{ route(
+                                'driver.report.create',
+                                $reportableDispatch->incident
+                            ) }}"
+                        class="btn btn-primary
+                                   driver-action-btn">
+
+                        <i
+                            class="bi bi-file-earmark-text me-1">
+                        </i>
+
+                        File Report
+
+                    </a>
 
                     @else
 
-                        <button type="button"
-                                class="btn btn-outline-light btn-lg driver-action-btn"
-                                disabled>
-                            No Report Available
-                        </button>
+                    <button
+                        type="button"
+                        class="btn btn-outline-light
+                                   driver-action-btn"
+                        disabled>
+
+                        <i
+                            class="bi bi-file-earmark-x me-1">
+                        </i>
+
+                        No Report Available
+
+                    </button>
 
                     @endif
 
+
                     {{-- LOGOUT --}}
-                    <form method="POST"
-                          action="{{ route('logout') }}"
-                          class="d-inline">
+                    <form
+                        method="POST"
+                        action="{{ route('logout') }}">
 
                         @csrf
 
-                        <button type="submit"
-                                class="btn btn-outline-light btn-lg driver-action-btn">
-                            <i class="bi bi-box-arrow-right"></i>
+                        <button
+                            type="submit"
+                            class="btn btn-outline-light
+                                   driver-action-btn">
+
+                            <i
+                                class="bi bi-box-arrow-right me-1">
+                            </i>
+
                             Logout
+
                         </button>
 
                     </form>
@@ -98,54 +335,83 @@
 
             </div>
 
-            {{-- HERO SIDE --}}
-            <div class="col-12 col-lg-4 hero-side-panel">
 
-                <div class="hero-summary-card">
+            {{-- HERO RIGHT --}}
+            <div
+                class="col-12 col-lg-4
+                       hero-side-panel">
 
-                    <div class="d-flex align-items-center gap-3 mb-3">
+                <div
+                    class="hero-summary-card">
+
+
+                    <div
+                        class="d-flex
+                               align-items-center
+                               gap-3 mb-4">
 
                         <div class="hero-icon">
-                            <i class="bi bi-truck-flatbed"></i>
+
+                            <i class="bi bi-truck"></i>
+
                         </div>
+
 
                         <div>
 
-                            <div class="small text-uppercase opacity-75">
+                            <div
+                                class="small
+                                       text-uppercase
+                                       opacity-75">
+
                                 Driver Status
+
                             </div>
 
-                            @php
-                                $status = $driver->status ?? 'available';
 
-                                $statusClass = match($status) {
-                                    'available' => 'bg-success',
-                                    'assigned' => 'bg-primary',
-                                    'accepted' => 'bg-info',
-                                    'en_route' => 'bg-warning text-dark',
-                                    'on_scene',
-                                    'arrived' => 'bg-secondary',
-                                    'offline' => 'bg-secondary',
-                                    default => 'bg-dark',
-                                };
-                            @endphp
+                            <span
+                                class="badge
+                                       {{ $driverStatusClass }}
+                                       fs-6 px-3 py-2">
 
-                            <span class="badge {{ $statusClass }} fs-6 px-3 py-2">
-                                {{ strtoupper(str_replace('_', ' ', $status)) }}
+                                {{ strtoupper(
+                                    str_replace(
+                                        '_',
+                                        ' ',
+                                        $driverStatus
+                                    )
+                                ) }}
+
                             </span>
 
                         </div>
 
                     </div>
 
+
                     <div>
 
-                        <div class="small text-uppercase opacity-75">
+                        <div
+                            class="small
+                                   text-uppercase
+                                   opacity-75">
+
                             Active Dispatch
+
                         </div>
 
-                        <div class="fw-semibold">
-                            {{ $currentDispatch?->incident?->incident_number ?? 'None' }}
+
+                        <div
+                            class="fw-semibold
+                                   fs-5">
+
+                            {{
+                                $currentDispatch
+                                ?->incident
+                                ?->incident_number
+                                ?? 'None'
+                            }}
+
                         </div>
 
                     </div>
@@ -156,34 +422,57 @@
 
         </div>
 
-    </div>
+    </section>
 
 
-    {{-- =================================================
+    {{-- =========================================================
          STAT CARDS
-    ================================================== --}}
+    ========================================================== --}}
 
     <div class="row g-3 mb-4">
 
+
         {{-- ACTIVE DISPATCH --}}
-        <div class="col-12 col-sm-6 col-lg-3">
+        <div class="col-12 col-sm-6 col-xl-3">
 
-            <div class="card border-0 shadow-sm rounded-4 stat-card h-100">
+            <div
+                class="card stat-card h-100">
 
-                <div class="card-body d-flex align-items-center gap-3">
+                <div
+                    class="card-body
+                           d-flex
+                           align-items-center
+                           gap-3">
 
-                    <div class="stat-icon bg-primary text-white">
+                    <div
+                        class="stat-icon bg-primary">
+
                         <i class="bi bi-activity"></i>
+
                     </div>
 
-                    <div>
 
-                        <div class="small text-muted">
+                    <div class="min-w-0">
+
+                        <div
+                            class="small text-muted">
+
                             Active Dispatch
+
                         </div>
 
-                        <div class="fw-bold">
-                            {{ $currentDispatch?->incident?->incident_number ?? '—' }}
+
+                        <div
+                            class="stat-value
+                                   text-truncate">
+
+                            {{
+                                $currentDispatch
+                                ?->incident
+                                ?->incident_number
+                                ?? '—'
+                            }}
+
                         </div>
 
                     </div>
@@ -196,48 +485,53 @@
 
 
         {{-- VEHICLE --}}
-        <div class="col-12 col-sm-6 col-lg-3">
+        <div class="col-12 col-sm-6 col-xl-3">
 
-            <div class="card border-0 shadow-sm rounded-4 stat-card h-100">
+            <div
+                class="card stat-card h-100">
 
-                <div class="card-body d-flex align-items-center gap-3">
+                <div
+                    class="card-body
+                           d-flex
+                           align-items-center
+                           gap-3">
 
-                    <div class="stat-icon bg-info text-white">
+                    <div
+                        class="stat-icon bg-info">
+
                         <i class="bi bi-truck"></i>
+
                     </div>
 
-                    <div>
 
-                        <div class="small text-muted">
+                    <div class="min-w-0">
+
+                        <div
+                            class="small text-muted">
+
                             Vehicle
+
                         </div>
 
-                        @php
 
-                            $activeVehicle =
-                                $currentDispatch?->vehicle
-                                ?? $currentDispatch?->ambulance
-                                ?? $driver->activeVehicleAssignment?->ambulance;
+                        <div
+                            class="stat-value
+                                   text-truncate">
 
-                            $vehicleLabel =
-                                $activeVehicle?->vehicle_name
-                                ?? 'Not Assigned';
+                            {{ $vehicleName }}
 
-                            $vehiclePlate =
-                                $activeVehicle?->plate_number
-                                ?? null;
-
-                        @endphp
-
-                        <div class="fw-bold">
-                            {{ $vehicleLabel }}
                         </div>
+
 
                         @if($vehiclePlate)
 
-                            <div class="small text-muted">
-                                {{ $vehiclePlate }}
-                            </div>
+                        <div
+                            class="small text-muted
+                                       text-truncate">
+
+                            {{ $vehiclePlate }}
+
+                        </div>
 
                         @endif
 
@@ -251,41 +545,49 @@
 
 
         {{-- DRIVER STATUS --}}
-        <div class="col-12 col-sm-6 col-lg-3">
+        <div class="col-12 col-sm-6 col-xl-3">
 
-            <div class="card border-0 shadow-sm rounded-4 stat-card h-100">
+            <div
+                class="card stat-card h-100">
 
-                <div class="card-body d-flex align-items-center gap-3">
+                <div
+                    class="card-body
+                           d-flex
+                           align-items-center
+                           gap-3">
 
-                    <div class="stat-icon bg-success text-white">
-                        <i class="bi bi-person-badge"></i>
+                    <div
+                        class="stat-icon bg-success">
+
+                        <i
+                            class="bi bi-person-badge">
+                        </i>
+
                     </div>
+
 
                     <div>
 
-                        <div class="small text-muted">
+                        <div
+                            class="small text-muted">
+
                             Driver Status
+
                         </div>
 
-                        @php
 
-                            $status = $driver->status ?? 'available';
+                        <span
+                            class="badge
+                                   {{ $driverStatusClass }}">
 
-                            $statusClass = match($status) {
-                                'available' => 'bg-success',
-                                'assigned' => 'bg-primary',
-                                'accepted' => 'bg-info',
-                                'en_route' => 'bg-warning text-dark',
-                                'arrived',
-                                'on_scene' => 'bg-secondary',
-                                'offline' => 'bg-secondary',
-                                default => 'bg-dark',
-                            };
+                            {{ strtoupper(
+                                str_replace(
+                                    '_',
+                                    ' ',
+                                    $driverStatus
+                                )
+                            ) }}
 
-                        @endphp
-
-                        <span class="badge {{ $statusClass }} fs-6 px-3 py-2">
-                            {{ strtoupper(str_replace('_', ' ', $status)) }}
                         </span>
 
                     </div>
@@ -298,28 +600,47 @@
 
 
         {{-- GPS --}}
-        <div class="col-12 col-sm-6 col-lg-3">
+        <div class="col-12 col-sm-6 col-xl-3">
 
-            <div class="card border-0 shadow-sm rounded-4 stat-card h-100">
+            <div
+                class="card stat-card h-100">
 
-                <div class="card-body d-flex align-items-center gap-3">
+                <div
+                    class="card-body
+                           d-flex
+                           align-items-center
+                           gap-3">
 
-                    <div class="stat-icon bg-secondary text-white">
+                    <div
+                        class="stat-icon bg-secondary">
+
                         <i class="bi bi-geo-alt"></i>
+
                     </div>
+
 
                     <div>
 
-                        <div class="small text-muted">
+                        <div
+                            class="small text-muted">
+
                             GPS Status
+
                         </div>
 
-                        <div id="gpsStatus"
-                             class="fw-bold"
-                             role="status"
-                             aria-live="polite">
-                            Starting...
+
+                        <div
+                            id="gpsStatus"
+                            class="gps-status
+                                   status-waiting"
+                            role="status"
+                            aria-live="polite">
+
+                            Waiting for GPS...
+
                         </div>
+
+                        <div id="currentSpeed" class="small text-muted">Speed: unavailable | Speed limit unavailable | UNRATED</div>
 
                     </div>
 
@@ -332,118 +653,167 @@
     </div>
 
 
-    {{-- =================================================
-         MAP + INCIDENT
-    ================================================== --}}
+    {{-- =========================================================
+         MAIN ROW
+    ========================================================== --}}
 
     <div class="row g-4">
 
+
+        {{-- =====================================================
+             LEFT
+        ====================================================== --}}
+
         <div class="col-12 col-xl-8">
 
-            <div class="card border-0 shadow-sm rounded-4">
+
+            {{-- =================================================
+                 MISSION MAP
+            ================================================== --}}
+
+            <div
+                class="card
+                       rounded-4
+                       shadow-sm">
 
                 <div class="card-body">
 
-                    <div class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-3">
+
+                    <div
+                        class="d-flex
+                               flex-column
+                               flex-md-row
+                               justify-content-between
+                               gap-2 mb-3">
 
                         <div>
 
-                            <h5 class="fw-bold mb-1">
+                            <h5
+                                class="fw-bold mb-1">
+
+                                <i
+                                    class="bi bi-map me-1">
+                                </i>
+
                                 Mission Map
+
                             </h5>
 
-                            <p class="text-muted small mb-0">
-                                Live position and incident location for rapid response.
+
+                            <p
+                                class="small text-muted mb-0">
+
+                                Your current position
+                                and assigned incident location.
+
                             </p>
 
                         </div>
 
-                        <span class="badge rounded-pill bg-danger-subtle text-danger align-self-start">
+
+                        <span
+                            class="badge
+                                   rounded-pill
+                                   bg-danger-subtle
+                                   text-danger
+                                   align-self-start">
+
                             Live Tracking
+
                         </span>
 
                     </div>
 
 
-                    {{-- ASSIGNED VEHICLE --}}
-                    @php
+                    {{-- MAP --}}
+                    <div class="map-shell">
 
-                        $assignedVehicle =
-                            $driver->activeVehicleAssignment?->ambulance;
+                        <div id="map"></div>
 
-                        $assignedVehicleLabel =
-                            $assignedVehicle
-                            ? trim(
-                                ($assignedVehicle->vehicle_name ?? '')
-                                .
-                                (
-                                    $assignedVehicle->plate_number
-                                    ? ' • ' . $assignedVehicle->plate_number
-                                    : ''
-                                )
-                            )
-                            : null;
-
-                    @endphp
+                    </div>
 
 
                     {{-- =================================================
                          ACTIVE DISPATCH
                     ================================================== --}}
 
-                    @if($currentDispatch && $currentDispatch->incident)
+                    @if(
+                    $currentDispatch
+                    &&
+                    $currentDispatch->incident
+                    )
 
-                        <div class="map-shell">
-                            <div id="map"></div>
-                        </div>
+
+                    <div class="info-grid">
 
 
-                        {{-- INCIDENT NUMBER --}}
-                        <div class="mb-3 p-3 rounded-3 bg-secondary bg-opacity-10">
+                        {{-- INCIDENT --}}
+                        <div class="info-box">
 
-                            <div class="small text-muted text-uppercase">
-                                Incident #
+                            <div class="info-label">
+                                Incident
                             </div>
 
-                            <div class="fw-semibold">
-                                {{ $currentDispatch->incident->incident_number }}
+                            <div class="info-value">
+
+                                {{
+                                        $currentDispatch
+                                        ->incident
+                                        ->incident_number
+                                    }}
+
                             </div>
 
                         </div>
 
 
                         {{-- LOCATION --}}
-                        <div class="mb-3">
+                        <div class="info-box">
 
-                            <div class="small text-muted text-uppercase">
+                            <div class="info-label">
                                 Location
                             </div>
 
-                            <div class="fw-semibold">
-                                {{ $currentDispatch->incident->location }}
+                            <div class="info-value">
+
+                                {{
+                                        $currentDispatch
+                                        ->incident
+                                        ->location
+                                    }}
+                                <div class="small text-muted">{{ collect([$currentDispatch->incident->house_number, $currentDispatch->incident->street, $currentDispatch->incident->barangay, $currentDispatch->incident->city, $currentDispatch->incident->province])->filter()->implode(', ') }}</div>
+
                             </div>
 
                         </div>
 
+                        <div class="info-box">
+                            <div class="info-label">Classification</div>
+                            <div class="info-value">{{ $currentDispatch->incident->incident_type }}</div>
+                        </div>
+
 
                         {{-- VEHICLE --}}
-                        <div class="mb-3">
+                        <div class="info-box">
 
-                            <div class="small text-muted text-uppercase">
+                            <div class="info-label">
                                 Vehicle
                             </div>
 
-                            <div class="fw-semibold">
+                            <div class="info-value">
 
-                                {{
-                                    $currentDispatch->vehicle?->vehicle_name
-                                    ??
-                                    $currentDispatch->ambulance?->vehicle_name
-                                    ??
-                                    $assignedVehicleLabel
-                                    ??
-                                    'Not assigned'
-                                }}
+                                {{ $vehicleName }}
+
+                                @if($vehiclePlate)
+
+                                <span
+                                    class="text-muted">
+
+                                    • {{ $vehiclePlate }}
+
+                                </span>
+
+                                @endif
 
                             </div>
 
@@ -451,262 +821,374 @@
 
 
                         {{-- STATUS --}}
-                        <div class="mb-3">
+                        <div class="info-box">
 
-                            <div class="small text-muted text-uppercase">
-                                Status
+                            <div class="info-label">
+                                Dispatch Status
                             </div>
 
-                            @php
+                            <div class="info-value">
 
-                                $s = $currentDispatch->status ?? 'pending';
+                                @php
 
-                                $statusClass = match($s) {
+                                $dispatchBadge =
+                                match($dispatchStatus) {
 
-                                    'assigned'
-                                        => 'badge bg-primary',
+                                \App\Models\Dispatch::STATUS_PENDING,
+                                \App\Models\Dispatch::STATUS_ASSIGNED
+                                => 'bg-primary',
 
-                                    'accepted'
-                                        => 'badge bg-success',
+                                \App\Models\Dispatch::STATUS_ACCEPTED
+                                => 'bg-success',
 
-                                    'en_route'
-                                        => 'badge bg-warning text-dark',
+                                \App\Models\Dispatch::STATUS_EN_ROUTE
+                                => 'bg-warning text-dark',
 
-                                    'arrived'
-                                        => 'badge bg-info text-dark',
+                                \App\Models\Dispatch::STATUS_ARRIVED
+                                => 'bg-info text-dark',
 
-                                    'completed'
-                                        => 'badge bg-dark',
-
-                                    default
-                                        => 'badge bg-secondary',
-
+                                default
+                                => 'bg-secondary',
                                 };
 
-                            @endphp
+                                @endphp
 
-                            <div class="mt-1">
 
-                                <span class="{{ $statusClass }}">
-                                    {{ str_replace('_', ' ', ucfirst($s)) }}
+                                <span
+                                    class="badge
+                                               {{ $dispatchBadge }}">
+
+                                    {{
+                                            strtoupper(
+                                                str_replace(
+                                                    '_',
+                                                    ' ',
+                                                    $dispatchStatus
+                                                    ?? 'unknown'
+                                                )
+                                            )
+                                        }}
+
                                 </span>
 
                             </div>
 
                         </div>
 
+                        <div class="info-box">
+                            <div class="info-label">Event Times</div>
+                            <div class="info-value small">
+                                Created: {{ $currentDispatch->created_at?->format('M d, Y h:i A') ?? 'N/A' }}<br>
+                                Accepted: {{ $currentDispatch->accepted_at?->format('M d, Y h:i A') ?? 'Pending' }}<br>
+                                En route: {{ $currentDispatch->en_route_at?->format('M d, Y h:i A') ?? 'Pending' }}<br>
+                                Arrived: {{ $currentDispatch->arrived_at?->format('M d, Y h:i A') ?? 'Pending' }}<br>
+                                Completed: {{ $currentDispatch->completed_at?->format('M d, Y h:i A') ?? 'Pending' }}
+                            </div>
+                        </div>
 
-                        {{-- =================================================
-                             ACTION BUTTONS
+                    </div>
+
+
+                    {{-- =================================================
+                             ACTIONS
                         ================================================== --}}
 
-                        <div class="d-flex flex-column flex-sm-row gap-2 flex-wrap">
-
-                            {{-- ACCEPT / DECLINE --}}
-                            @if(
-                                in_array(
-                                    $currentDispatch->status,
-                                    [
-                                        \App\Models\Dispatch::STATUS_PENDING,
-                                        \App\Models\Dispatch::STATUS_ASSIGNED
-                                    ],
-                                    true
-                                )
-                            )
-
-                                <form method="POST"
-                                      action="{{ route('driver.dispatch.accept', $currentDispatch) }}"
-                                      class="flex-fill">
-
-                                    @csrf
-
-                                    <button type="submit"
-                                            class="btn btn-primary w-100 btn-lg driver-action-btn">
-                                        <i class="bi bi-check-circle"></i>
-                                        Accept Dispatch
-                                    </button>
-
-                                </form>
+                    <div
+                        class="dispatch-actions mt-3">
 
 
-                                <form method="POST"
-                                      action="{{ route('driver.dispatch.decline', $currentDispatch) }}"
-                                      class="flex-fill">
+                        {{-- ACCEPT / DECLINE --}}
+                        @if(
+                        in_array(
+                        $currentDispatch->status,
+                        [
+                        \App\Models\Dispatch::STATUS_PENDING,
+                        \App\Models\Dispatch::STATUS_ASSIGNED
+                        ],
+                        true
+                        )
+                        )
 
-                                    @csrf
+                        <form
+                            method="POST"
+                            action="{{ route(
+                                        'driver.dispatch.accept',
+                                        $currentDispatch
+                                    ) }}"
+                            class="flex-fill">
 
-                                    <button type="submit"
-                                            class="btn btn-outline-danger w-100 btn-lg driver-action-btn">
-                                        <i class="bi bi-x-circle"></i>
-                                        Decline Dispatch
-                                    </button>
+                            @csrf
 
-                                </form>
+                            <button
+                                type="submit"
+                                class="btn btn-primary
+                                               w-100
+                                               driver-action-btn">
 
+                                <i
+                                    class="bi bi-check-circle me-1">
+                                </i>
 
-                            {{-- ACCEPTED --}}
-                            @elseif(
-                                $currentDispatch->status
-                                === \App\Models\Dispatch::STATUS_ACCEPTED
-                            )
+                                Accept Dispatch
 
-                                <form method="POST"
-                                      action="{{ route('driver.incidents.en-route', $currentDispatch->incident) }}"
-                                      class="flex-fill">
+                            </button>
 
-                                    @csrf
-
-                                    <button type="submit"
-                                            class="btn btn-primary w-100 btn-lg driver-action-btn">
-                                        <i class="bi bi-signpost-2"></i>
-                                        Mark En Route
-                                    </button>
-
-                                </form>
-
-
-                            {{-- EN ROUTE --}}
-                            @elseif(
-                                $currentDispatch->status
-                                === \App\Models\Dispatch::STATUS_EN_ROUTE
-                            )
-
-                                <form method="POST"
-                                      action="{{ route('driver.incidents.arrived', $currentDispatch->incident) }}"
-                                      class="flex-fill">
-
-                                    @csrf
-
-                                    <button type="submit"
-                                            class="btn btn-warning w-100 btn-lg driver-action-btn">
-                                        <i class="bi bi-geo-alt-fill"></i>
-                                        Mark On Scene
-                                    </button>
-
-                                </form>
+                        </form>
 
 
-                            {{-- ARRIVED --}}
-                            @elseif(
-                                $currentDispatch->status
-                                === \App\Models\Dispatch::STATUS_ARRIVED
-                            )
+                        <form
+                            method="POST"
+                            action="{{ route(
+                                        'driver.dispatch.decline',
+                                        $currentDispatch
+                                    ) }}"
+                            class="flex-fill">
 
-                                <form method="POST"
-                                      action="{{ route('driver.incidents.completed', $currentDispatch->incident) }}"
-                                      class="flex-fill">
+                            @csrf
 
-                                    @csrf
+                            <button
+                                type="submit"
+                                class="btn btn-outline-danger
+                                               w-100
+                                               driver-action-btn">
 
-                                    <button type="submit"
-                                            class="btn btn-success w-100 btn-lg driver-action-btn">
-                                        <i class="bi bi-check2-all"></i>
-                                        Mark Completed
-                                    </button>
+                                <i
+                                    class="bi bi-x-circle me-1">
+                                </i>
 
-                                </form>
+                                Decline Dispatch
 
-                            @endif
+                            </button>
+
+                        </form>
 
 
-                            {{-- ASSIGNMENT --}}
-                            <a href="{{ route('driver.assignment') }}"
-                               class="btn btn-outline-primary btn-lg driver-action-btn flex-fill">
-                                <i class="bi bi-list-task"></i>
-                                View Assignment
-                            </a>
+                        {{-- ACCEPTED --}}
+                        @elseif(
+                        $currentDispatch->status
+                        ===
+                        \App\Models\Dispatch::STATUS_ACCEPTED
+                        )
 
-                        </div>
+                        @if($currentDispatch->incident?->response_at === null)
+                        <form
+                            method="POST"
+                            action="{{ route('driver.incidents.response', $currentDispatch->incident) }}"
+                            class="flex-fill">
+
+                            @csrf
+
+                            <button
+                                type="submit"
+                                class="btn btn-primary
+                                               w-100
+                                               driver-action-btn">
+
+                                <i
+                                    class="bi bi-check2-circle me-1">
+                                </i>
+
+                                Mark Response
+
+                            </button>
+
+                        </form>
+                        @else
+                        <form method="POST" action="{{ route('driver.incidents.en-route', $currentDispatch->incident) }}" class="flex-fill">
+                            @csrf
+                            <button type="submit" class="btn btn-info w-100 driver-action-btn">
+                                <i class="bi bi-sign-turn-right-fill me-1"></i>
+                                Mark En Route
+                            </button>
+                        </form>
+                        @endif
+
+
+                        {{-- EN ROUTE --}}
+                        @elseif(
+                        $currentDispatch->status
+                        ===
+                        \App\Models\Dispatch::STATUS_EN_ROUTE
+                        )
+
+                        @if($currentDispatch->incident?->at_scene_at === null)
+                        <form method="POST" action="{{ route('driver.incidents.at-scene', $currentDispatch->incident) }}" class="flex-fill">
+                            @csrf
+                            <button type="submit" class="btn btn-warning w-100 driver-action-btn">
+                                <i class="bi bi-geo-alt-fill me-1"></i>
+                                Mark At Scene
+                            </button>
+                        </form>
+                        @elseif($currentDispatch->incident?->at_patient_at === null)
+                        <form method="POST" action="{{ route('driver.incidents.at-patient', $currentDispatch->incident) }}" class="flex-fill">
+                            @csrf
+                            <button type="submit" class="btn btn-primary w-100 driver-action-btn">
+                                <i class="bi bi-person-heart me-1"></i>
+                                Mark At Patient
+                            </button>
+                        </form>
+                        @elseif($currentDispatch->incident?->depart_scene_at === null)
+                        <form method="POST" action="{{ route('driver.incidents.depart-scene', $currentDispatch->incident) }}" class="flex-fill">
+                            @csrf
+                            <button type="submit" class="btn btn-info w-100 driver-action-btn">
+                                <i class="bi bi-truck-front me-1"></i>
+                                Depart Scene
+                            </button>
+                        </form>
+                        @elseif($currentDispatch->incident?->at_hospital_at === null)
+                        <form method="POST" action="{{ route('driver.incidents.at-hospital', $currentDispatch->incident) }}" class="flex-fill">
+                            @csrf
+                            <button type="submit" class="btn btn-success w-100 driver-action-btn">
+                                <i class="bi bi-hospital me-1"></i>
+                                Mark At Hospital
+                            </button>
+                        </form>
+                        @else
+                        <form method="POST" action="{{ route('driver.incidents.completed', $currentDispatch->incident) }}" class="flex-fill">
+                            @csrf
+                            <button type="submit" class="btn btn-success w-100 driver-action-btn">
+                                <i class="bi bi-check2-all me-1"></i>
+                                Complete Incident
+                            </button>
+                        </form>
+                        @endif
+
+
+                        {{-- ARRIVED --}}
+                        @elseif(
+                        $currentDispatch->status
+                        ===
+                        \App\Models\Dispatch::STATUS_ARRIVED
+                        )
+
+                        @if($currentDispatch->incident?->at_patient_at === null)
+                        <form method="POST" action="{{ route('driver.incidents.at-patient', $currentDispatch->incident) }}" class="flex-fill">
+                            @csrf
+                            <button type="submit" class="btn btn-primary w-100 driver-action-btn">
+                                <i class="bi bi-person-heart me-1"></i>
+                                Mark At Patient
+                            </button>
+                        </form>
+                        @elseif($currentDispatch->incident?->depart_scene_at === null)
+                        <form method="POST" action="{{ route('driver.incidents.depart-scene', $currentDispatch->incident) }}" class="flex-fill">
+                            @csrf
+                            <button type="submit" class="btn btn-info w-100 driver-action-btn">
+                                <i class="bi bi-truck-front me-1"></i>
+                                Depart Scene
+                            </button>
+                        </form>
+                        @elseif($currentDispatch->incident?->at_hospital_at === null)
+                        <form method="POST" action="{{ route('driver.incidents.at-hospital', $currentDispatch->incident) }}" class="flex-fill">
+                            @csrf
+                            <button type="submit" class="btn btn-success w-100 driver-action-btn">
+                                <i class="bi bi-hospital me-1"></i>
+                                Mark At Hospital
+                            </button>
+                        </form>
+                        @else
+                        <form method="POST" action="{{ route('driver.incidents.completed', $currentDispatch->incident) }}" class="flex-fill">
+                            @csrf
+                            <button type="submit" class="btn btn-success w-100 driver-action-btn">
+                                <i class="bi bi-check2-all me-1"></i>
+                                Complete Incident
+                            </button>
+                        </form>
+                        @endif
+
+                        @endif
+
+
+                        {{-- ASSIGNMENT --}}
+                        <a
+                            href="{{ route(
+                                    'driver.assignment'
+                                ) }}"
+                            class="btn btn-outline-primary
+                                       driver-action-btn
+                                       flex-fill">
+
+                            <i
+                                class="bi bi-list-task me-1">
+                            </i>
+
+                            View Assignment
+
+                        </a>
+
+                    </div>
 
 
                     {{-- =================================================
                          REPORTABLE DISPATCH
                     ================================================== --}}
 
-                    @elseif(isset($reportableDispatch) && $reportableDispatch?->incident)
+                    @elseif(
+                    isset($reportableDispatch)
+                    &&
+                    $reportableDispatch?->incident
+                    )
 
-                        <div class="map-shell">
-                            <div id="map"></div>
+                    <div class="info-grid mt-3">
+
+                        <div class="info-box">
+
+                            <div class="info-label">
+                                Reportable Incident
+                            </div>
+
+                            <div class="info-value">
+
+                                {{
+                                        $reportableDispatch
+                                        ->incident
+                                        ->incident_number
+                                    }}
+
+                            </div>
+
                         </div>
 
 
-                        <div class="mb-3 p-3 rounded-3 bg-secondary bg-opacity-10">
+                        <div class="info-box">
 
-                            <div class="small text-muted text-uppercase">
-                                Incident #
-                            </div>
-
-                            <div class="fw-semibold">
-                                {{ $reportableDispatch->incident->incident_number }}
-                            </div>
-
-                        </div>
-
-
-                        <div class="mb-3">
-
-                            <div class="small text-muted text-uppercase">
+                            <div class="info-label">
                                 Location
                             </div>
 
-                            <div class="fw-semibold">
-                                {{ $reportableDispatch->incident->location }}
-                            </div>
-
-                        </div>
-
-
-                        <div class="mb-3">
-
-                            <div class="small text-muted text-uppercase">
-                                Vehicle
-                            </div>
-
-                            <div class="fw-semibold">
+                            <div class="info-value">
 
                                 {{
-                                    $reportableDispatch->vehicle?->vehicle_name
-                                    ??
-                                    $reportableDispatch->ambulance?->vehicle_name
-                                    ??
-                                    $assignedVehicle?->vehicle_name
-                                    ??
-                                    'Not assigned'
-                                }}
+                                        $reportableDispatch
+                                        ->incident
+                                        ->location
+                                    }}
 
                             </div>
 
                         </div>
 
-
-                        <div class="mb-3">
-
-                            <div class="small text-muted text-uppercase">
-                                Status
-                            </div>
-
-                            <div class="mt-1">
-
-                                <span class="badge bg-dark">
-                                    Completed
-                                </span>
-
-                            </div>
-
-                        </div>
+                    </div>
 
 
-                        <div class="d-flex flex-column flex-sm-row gap-2 flex-wrap">
+                    <div class="mt-3">
 
-                            <a href="{{ route('driver.report.create', $reportableDispatch->incident) }}"
-                               class="btn btn-outline-primary btn-lg driver-action-btn flex-fill">
+                        <a
+                            href="{{ route(
+                                    'driver.report.create',
+                                    $reportableDispatch->incident
+                                ) }}"
+                            class="btn btn-primary
+                                       driver-action-btn">
 
-                                <i class="bi bi-file-earmark-text"></i>
-                                Submit Report
+                            <i
+                                class="bi bi-file-earmark-text me-1">
+                            </i>
 
-                            </a>
+                            Submit Report
 
-                        </div>
+                        </a>
+
+                    </div>
 
 
                     {{-- =================================================
@@ -715,39 +1197,31 @@
 
                     @else
 
-                        <div class="map-shell">
-                            <div id="map"></div>
-                        </div>
+                    <div class="empty-state">
 
+                        <div class="empty-icon">
 
-                        <div class="mb-3 p-3 rounded-3 bg-secondary bg-opacity-10">
-
-                            <div class="small text-muted text-uppercase">
-                                Vehicle
-                            </div>
-
-                            <div class="fw-semibold">
-                                {{ $assignedVehicleLabel ?? 'Not assigned' }}
-                            </div>
+                            <i class="bi bi-inbox"></i>
 
                         </div>
 
 
-                        <div class="mb-3">
+                        <h6 class="fw-bold mb-1">
 
-                            <div class="small text-muted text-uppercase">
-                                Status
-                            </div>
+                            No Active Dispatch
 
-                            <div class="mt-1">
+                        </h6>
 
-                                <span class="badge bg-secondary">
-                                    No Active Dispatch
-                                </span>
 
-                            </div>
+                        <p
+                            class="small text-muted mb-0">
 
-                        </div>
+                            Your dashboard will update
+                            when a dispatch is assigned.
+
+                        </p>
+
+                    </div>
 
                     @endif
 
@@ -760,22 +1234,42 @@
                  ASSIGNED INCIDENTS
             ================================================== --}}
 
-            <div class="card border-0 shadow-sm rounded-4 mt-4">
+            <div
+                class="card
+                       rounded-4
+                       shadow-sm
+                       mt-4">
 
                 <div class="card-body">
 
-                    <h6 class="fw-bold mb-2">
-                        Assigned Incidents
-                    </h6>
+                    <div class="mb-3">
 
-                    <p class="small text-muted mb-3">
-                        Recent assignments and activity for this driver.
-                    </p>
+                        <h5
+                            class="fw-bold mb-1">
+
+                            Assigned Incidents
+
+                        </h5>
+
+
+                        <p
+                            class="small text-muted mb-0">
+
+                            Recent assignments and activity
+                            for this driver.
+
+                        </p>
+
+                    </div>
 
 
                     <div class="table-responsive">
 
-                        <table class="table table-sm align-middle mb-0">
+                        <table
+                            class="table
+                                   table-sm
+                                   align-middle
+                                   mb-0">
 
                             <thead>
 
@@ -796,49 +1290,113 @@
 
                             <tbody>
 
-                                @foreach($incidents->take(5) as $incident)
+                                @forelse(
+                                $incidents->take(5)
+                                as $incident
+                                )
 
-                                    <tr>
+                                <tr>
 
-                                        <td>
+                                    <td>
 
-                                            <div class="fw-semibold">
-                                                {{ $incident->incident_number }}
-                                            </div>
+                                        <div
+                                            class="fw-semibold">
 
-                                            <div class="small text-muted">
-                                                {{ $incident->location }}
-                                            </div>
+                                            {{
+                                                    $incident
+                                                    ->incident_number
+                                                }}
 
-                                        </td>
-
-                                        <td>
-
-                                            <span class="badge bg-secondary text-white">
-                                                {{ str_replace('_', ' ', ucfirst($incident->status)) }}
-                                            </span>
-
-                                        </td>
-
-                                    </tr>
-
-                                @endforeach
+                                        </div>
 
 
-                                @if($incidents->isEmpty())
+                                        <div
+                                            class="small
+                                                       text-muted">
 
-                                    <tr>
+                                            {{
+                                                    $incident
+                                                    ->location
+                                                }}
 
-                                        <td colspan="2"
-                                            class="text-center text-muted py-3">
+                                        </div>
 
-                                            No recent activity
+                                    </td>
 
-                                        </td>
 
-                                    </tr>
+                                    <td>
 
-                                @endif
+                                        @php
+
+                                        $incidentBadge =
+                                        match(
+                                        $incident->status
+                                        ) {
+
+                                        'pending'
+                                        => 'bg-secondary',
+
+                                        'assigned'
+                                        => 'bg-primary',
+
+                                        'accepted'
+                                        => 'bg-success',
+
+                                        'en_route'
+                                        => 'bg-warning text-dark',
+
+                                        'arrived',
+                                        'on_scene'
+                                        => 'bg-info text-dark',
+
+                                        'completed',
+                                        'closed'
+                                        => 'bg-dark',
+
+                                        default
+                                        => 'bg-secondary',
+                                        };
+
+                                        @endphp
+
+
+                                        <span
+                                            class="badge
+                                                       {{ $incidentBadge }}">
+
+                                            {{
+                                                    strtoupper(
+                                                        str_replace(
+                                                            '_',
+                                                            ' ',
+                                                            $incident->status
+                                                        )
+                                                    )
+                                                }}
+
+                                        </span>
+
+                                    </td>
+
+                                </tr>
+
+                                @empty
+
+                                <tr>
+
+                                    <td
+                                        colspan="2"
+                                        class="text-center
+                                                   text-muted
+                                                   py-4">
+
+                                        No recent activity
+
+                                    </td>
+
+                                </tr>
+
+                                @endforelse
 
                             </tbody>
 
@@ -852,1341 +1410,1515 @@
 
         </div>
 
+
+        {{-- =====================================================
+             RIGHT COLUMN
+        ====================================================== --}}
+
+        <div class="col-12 col-xl-4">
+
+
+            {{-- QUICK ACTIONS --}}
+            <div
+                class="card
+                       rounded-4
+                       shadow-sm
+                       mb-4">
+
+                <div class="card-body">
+
+                    <h5
+                        class="fw-bold mb-3">
+
+                        <i
+                            class="bi bi-lightning-charge me-1">
+                        </i>
+
+                        Quick Actions
+
+                    </h5>
+
+
+                    <div class="d-grid gap-2">
+
+                        <a
+                            href="{{ route(
+                                'driver.navigation'
+                            ) }}"
+                            class="btn btn-outline-primary
+                                   driver-action-btn">
+
+                            <i
+                                class="bi bi-geo-alt me-1">
+                            </i>
+
+                            Open Navigation
+
+                        </a>
+
+
+                        <a
+                            href="{{ route(
+                                'driver.assignment'
+                            ) }}"
+                            class="btn btn-outline-primary
+                                   driver-action-btn">
+
+                            <i
+                                class="bi bi-list-check me-1">
+                            </i>
+
+                            My Assignment
+
+                        </a>
+
+
+                        <a
+                            href="{{ route(
+                                'driver.history'
+                            ) }}"
+                            class="btn btn-outline-primary
+                                   driver-action-btn">
+
+                            <i
+                                class="bi bi-clock-history me-1">
+                            </i>
+
+                            Dispatch History
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {{-- VEHICLE --}}
+            <div
+                class="card
+                       rounded-4
+                       shadow-sm">
+
+                <div class="card-body">
+
+                    <h5
+                        class="fw-bold mb-3">
+
+                        <i
+                            class="bi bi-info-circle me-1">
+                        </i>
+
+                        Current Vehicle
+
+                    </h5>
+
+
+                    <div class="vehicle-display">
+
+                        <div class="vehicle-icon">
+
+                            <i class="bi bi-truck"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <div class="fw-bold">
+
+                                {{ $vehicleName }}
+
+                            </div>
+
+
+                            @if($vehiclePlate)
+
+                            <div
+                                class="small text-muted">
+
+                                {{ $vehiclePlate }}
+
+                            </div>
+
+                            @endif
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 
 </div>
 
+@endsection
 
-{{-- =====================================================
-     CSS
-===================================================== --}}
 
-<style>
+{{-- =========================================================
+     JAVASCRIPT
+========================================================== --}}
 
-body {
-    padding-bottom: 80px;
-}
-
-@media (min-width: 992px) {
-    body {
-        padding-bottom: 0;
-    }
-}
-
-.driver-dashboard-shell {
-    display: block;
-    padding: .75rem;
-}
-
-
-/* =====================================================
-   HERO
-===================================================== */
-
-.hero-panel {
-    background: linear-gradient(
-        90deg,
-        #06243a 0%,
-        #083b57 60%
-    );
-
-    color: #f6f8fb;
-    border: none !important;
-}
-
-.hero-panel-body {
-    padding: 1rem;
-}
-
-.hero-side-panel {
-    padding: 1rem;
-    background: rgba(255,255,255,.08);
-    margin-top: 1rem;
-}
-
-.hero-eyebrow {
-    letter-spacing: .16em;
-    opacity: .78;
-    font-size: .7rem;
-    font-weight: 700;
-}
-
-.hero-copy {
-    color: rgba(255,255,255,.82);
-    line-height: 1.6;
-    font-size: .9rem;
-}
-
-.hero-summary-card {
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.16);
-    border-radius: 1rem;
-    padding: 1rem;
-    height: 100%;
-}
-
-.hero-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    background: rgba(255,255,255,.2);
-    font-size: 1rem;
-    flex-shrink: 0;
-    color: #fff;
-}
-
-.hero-panel h2 {
-    font-size: 1.25rem;
-    margin-bottom: .5rem;
-    font-weight: 700;
-    color: #f8fafc;
-}
-
-
-/* =====================================================
-   BUTTONS
-===================================================== */
-
-.driver-action-btn {
-    min-height: 46px;
-    border-radius: 999px;
-    padding: .6rem 1rem;
-    font-size: .95rem;
-    font-weight: 600;
-    white-space: nowrap;
-    transition: all .2s ease;
-    touch-action: manipulation;
-}
-
-.btn {
-    min-height: 44px;
-    touch-action: manipulation;
-    font-weight: 600;
-}
-
-.btn-lg {
-    min-height: 46px;
-    font-size: .95rem;
-    padding: .6rem 1rem;
-}
-
-.btn-danger {
-    background: linear-gradient(
-        135deg,
-        #dc3545 0%,
-        #c82333 100%
-    ) !important;
-
-    border: none !important;
-}
-
-.btn-warning {
-    background: linear-gradient(
-        135deg,
-        #ffc107 0%,
-        #ffb300 100%
-    ) !important;
-
-    border: none !important;
-    color: #000 !important;
-}
-
-.btn-outline-light {
-    color: #f8fafc !important;
-    border-color: rgba(255,255,255,.3) !important;
-}
-
-
-/* =====================================================
-   STAT CARDS
-===================================================== */
-
-.stat-card {
-    border: 1px solid rgba(0,0,0,.06);
-    margin-bottom: .75rem;
-
-    background: rgba(
-        7,
-        18,
-        38,
-        .92
-    ) !important;
-
-    transition: all .3s ease;
-}
-
-.stat-card:hover {
-    box-shadow:
-        0 4px 12px rgba(
-            59,
-            105,
-            255,
-            .15
-        ) !important;
-
-    transform: translateY(-2px);
-}
-
-.stat-card .card-body {
-    padding: 1rem;
-}
-
-.stat-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    font-size: 1.1rem;
-    flex-shrink: 0;
-}
-
-.stat-card .small {
-    font-size: .75rem;
-    color: rgba(255,255,255,.7);
-}
-
-.stat-card .fw-bold {
-    font-size: .95rem;
-    color: #eef4ff;
-}
-
-
-/* =====================================================
-   MAP
-===================================================== */
-
-.map-shell {
-    min-height: 260px;
-    border-radius: 1rem;
-    overflow: hidden;
-    border: 1px solid rgba(0,0,0,.06);
-    margin-bottom: 1rem;
-    background: linear-gradient(
-        135deg,
-        rgba(59,105,255,.1),
-        rgba(0,0,0,.2)
-    );
-}
-
-#map {
-    width: 100%;
-    height: 260px;
-}
-
-
-/* =====================================================
-   GPS
-===================================================== */
-
-#gpsStatus {
-    font-size: .85rem;
-    font-weight: 600;
-    display: inline-block;
-    padding: .3rem .75rem;
-    border-radius: .5rem;
-    background: rgba(255,255,255,.1);
-    color: #eef4ff;
-}
-
-#gpsStatus.status-live {
-    background: rgba(76,175,80,.2);
-    color: #4CAF50;
-}
-
-#gpsStatus.status-offline {
-    background: rgba(244,67,54,.2);
-    color: #F44336;
-}
-
-#gpsStatus.status-permission {
-    background: rgba(255,152,0,.2);
-    color: #FF9800;
-}
-
-#gpsStatus.status-unavailable {
-    background: rgba(158,158,158,.2);
-    color: #9E9E9E;
-}
-
-
-/* =====================================================
-   CARDS
-===================================================== */
-
-.card {
-    background: rgba(
-        7,
-        18,
-        38,
-        .92
-    ) !important;
-
-    border: 1px solid rgba(
-        255,
-        255,
-        255,
-        .08
-    ) !important;
-
-    margin-bottom: 1rem;
-    color: #eef4ff;
-}
-
-.card-body {
-    color: #eef4ff;
-}
-
-h5.fw-bold {
-    font-size: 1rem;
-    color: #eef4ff;
-    font-weight: 700;
-}
-
-.text-muted {
-    color: rgba(
-        255,
-        255,
-        255,
-        .72
-    ) !important;
-}
-
-
-/* =====================================================
-   TABLE
-===================================================== */
-
-.table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-.table-responsive table {
-    font-size: .8rem;
-    background: rgba(
-        7,
-        18,
-        38,
-        .92
-    ) !important;
-}
-
-.table-responsive thead th {
-    background: rgba(
-        11,
-        26,
-        49,
-        .92
-    ) !important;
-
-    color: rgba(
-        255,
-        255,
-        255,
-        .72
-    );
-
-    border-color: rgba(
-        255,
-        255,
-        255,
-        .08
-    ) !important;
-}
-
-.table-responsive tbody td {
-    background: rgba(
-        7,
-        18,
-        38,
-        .92
-    ) !important;
-
-    border-color: rgba(
-        255,
-        255,
-        255,
-        .08
-    ) !important;
-
-    color: #eef4ff;
-}
-
-.table-responsive th,
-.table-responsive td {
-    padding: .6rem .5rem;
-}
-
-
-/* =====================================================
-   BADGES
-===================================================== */
-
-.badge {
-    font-weight: 600;
-    font-size: .8rem;
-    padding: .35rem .6rem !important;
-}
-
-.badge.bg-success {
-    background: linear-gradient(
-        135deg,
-        #20c997,
-        #17a2b8
-    ) !important;
-}
-
-.badge.bg-danger {
-    background: linear-gradient(
-        135deg,
-        #dc3545,
-        #c82333
-    ) !important;
-}
-
-.badge.bg-warning {
-    background: linear-gradient(
-        135deg,
-        #ffc107,
-        #ffb300
-    ) !important;
-
-    color: #000 !important;
-}
-
-.badge.bg-info {
-    background: linear-gradient(
-        135deg,
-        #17a2b8,
-        #138496
-    ) !important;
-}
-
-.badge.bg-primary {
-    background: linear-gradient(
-        135deg,
-        #0d6efd,
-        #0a58ca
-    ) !important;
-}
-
-
-/* =====================================================
-   RESPONSIVE
-===================================================== */
-
-@media (max-width: 425px) {
-
-    .driver-dashboard-shell {
-        padding: .5rem;
-    }
-
-    .hero-panel-body {
-        padding: .75rem;
-    }
-
-    .hero-side-panel {
-        padding: .75rem;
-        margin-top: .75rem;
-    }
-
-    .hero-panel h2 {
-        font-size: 1.1rem;
-    }
-
-    .hero-copy {
-        font-size: .85rem;
-    }
-
-    .driver-action-btn {
-        min-height: 40px;
-        font-size: .85rem;
-        padding: .4rem .75rem;
-    }
-
-    .map-shell {
-        min-height: 220px;
-    }
-
-    #map {
-        height: 220px;
-    }
-
-    .btn-lg {
-        min-height: 42px;
-        font-size: .85rem;
-        padding: .4rem .75rem;
-    }
-}
-
-
-@media (min-width: 576px) {
-
-    .driver-dashboard-shell {
-        padding: 1rem;
-    }
-
-    body {
-        padding-bottom: 0;
-    }
-
-    .hero-panel-body {
-        padding: 1.25rem;
-    }
-
-    .hero-side-panel {
-        padding: 1.25rem;
-        margin-top: 0;
-    }
-
-    .hero-panel h2 {
-        font-size: 1.4rem;
-    }
-
-    .map-shell {
-        min-height: 320px;
-    }
-
-    #map {
-        height: 320px;
-    }
-
-}
-
-
-@media (min-width: 768px) {
-
-    .hero-panel-body {
-        padding: 1.75rem;
-    }
-
-    .hero-side-panel {
-        padding: 1.75rem;
-    }
-
-    .hero-panel h2 {
-        font-size: 1.6rem;
-    }
-
-    .map-shell {
-        min-height: 400px;
-    }
-
-    #map {
-        height: 400px;
-    }
-
-    .stat-card .card-body {
-        padding: 1.5rem;
-    }
-
-    .driver-action-btn {
-        min-height: 48px;
-        font-size: 1rem;
-        padding: .75rem 1.25rem;
-    }
-
-}
-
-
-@media (min-width: 992px) {
-
-    body {
-        padding-bottom: 0 !important;
-    }
-
-    .driver-dashboard-shell {
-        padding: 1.5rem;
-    }
-
-    .hero-panel-body {
-        padding: 2rem;
-    }
-
-    .hero-side-panel {
-        padding: 2rem;
-    }
-
-    .hero-panel h2 {
-        font-size: 1.75rem;
-    }
-
-    .map-shell {
-        min-height: 450px;
-    }
-
-    #map {
-        height: 450px;
-    }
-
-}
-
-
-@media (min-width: 1200px) {
-
-    .map-shell {
-        min-height: 500px;
-    }
-
-    #map {
-        height: 500px;
-    }
-
-}
-
-</style>
-
-
-{{-- =====================================================
-     LEAFLET JS
-===================================================== --}}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+@section('scripts')
 
 <script>
-
-document.addEventListener('DOMContentLoaded', function () {
-
-    /* =====================================================
-       VARIABLES
-    ===================================================== */
-
-    let gpsIntervalId = null;
-
-    let isPageVisible = true;
-
-    let map = null;
-
-    let driverMarker = null;
-
-    let incidentMarker = null;
-
-
-    /* =====================================================
-       CSRF TOKEN
-    ===================================================== */
-
-    const csrfToken = '{{ csrf_token() }}';
-
-
-    /* =====================================================
-       INCIDENT LOCATION
-    ===================================================== */
-
-    const incidentLat = @if(
-        $currentDispatch &&
-        $currentDispatch->incident &&
-        $currentDispatch->incident->latitude !== null
-    )
-        {{ (float) $currentDispatch->incident->latitude }}
-    @else
-        null
-    @endif;
-
-    const incidentLng = @if(
-        $currentDispatch &&
-        $currentDispatch->incident &&
-        $currentDispatch->incident->longitude !== null
-    )
-        {{ (float) $currentDispatch->incident->longitude }}
-    @else
-        null
-    @endif;
-
-
-    /* =====================================================
-       MAP INITIALIZATION
-    ===================================================== */
-
-    function initMap() {
-
-        const mapElement = document.getElementById('map');
-
-        if (!mapElement) {
-            console.warn('Map element not found.');
-            return;
-        }
-
-        if (typeof L === 'undefined') {
-            console.error('Leaflet is not loaded.');
-            return;
-        }
-
-        map = L.map('map').setView(
-            [15.9800, 120.5700],
-            13
-        );
-
-
-        L.tileLayer(
-            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            {
-                maxZoom: 19,
-                attribution:
-                    '&copy; OpenStreetMap contributors'
-            }
-        ).addTo(map);
-
-
-        /* =============================================
-           INCIDENT MARKER
-        ============================================== */
-
-        if (
-            incidentLat !== null &&
-            incidentLng !== null &&
-            !isNaN(incidentLat) &&
-            !isNaN(incidentLng)
-        ) {
-
-            incidentMarker = L.marker(
-                [incidentLat, incidentLng],
-                {
-                    title: 'Incident Location'
-                }
-            )
-            .addTo(map)
-            .bindPopup('Incident Location');
-
-        }
-
-    }
-
-
-    /* =====================================================
-       GET GPS POSITION
-    ===================================================== */
-
-    function getPosition() {
-
-        return new Promise(function (resolve, reject) {
-
-            if (!navigator.geolocation) {
-
-                reject({
-                    code: 2,
-                    message: 'Geolocation is not supported.'
-                });
-
-                return;
-            }
-
-
-            navigator.geolocation.getCurrentPosition(
-
-                function (position) {
-
-                    resolve({
-                        latitude:
-                            position.coords.latitude,
-
-                        longitude:
-                            position.coords.longitude,
-
-                        accuracy:
-                            position.coords.accuracy
-                    });
-
-                },
-
-                function (error) {
-
-                    reject(error);
-
-                },
-
-                {
-                    enableHighAccuracy: true,
-
-                    timeout: 10000,
-
-                    maximumAge: 5000
-                }
-
-            );
-
-        });
-
-    }
-
-
-    /* =====================================================
-       UPDATE GPS STATUS
-    ===================================================== */
-
-    function updateGPSStatus(status) {
-
-        const gpsEl =
-            document.getElementById('gpsStatus');
-
-        if (!gpsEl) {
-            return;
-        }
-
-
-        const statusMap = {
-
-            live:
-                '🟢 Live Tracking',
-
-            offline:
-                '🔴 Offline',
-
-            permission:
-                '🟠 Permission Denied',
-
-            unavailable:
-                '⚪ Position Unavailable'
-
-        };
-
-
-        gpsEl.textContent =
-            statusMap[status] || 'Unknown';
-
-
-        gpsEl.className =
-            'fw-bold status-' + status;
-
-    }
-
-
-    /* =====================================================
-       UPDATE MAP DRIVER MARKER
-    ===================================================== */
-
-    function updateDriverMarker(
-        latitude,
-        longitude
-    ) {
-
-        if (!map) {
-            return;
-        }
-
-
-        const driverPosition =
-            [latitude, longitude];
-
-
-        /* =============================================
-           CREATE DRIVER MARKER
-        ============================================== */
-
-        if (!driverMarker) {
-
-            driverMarker =
-                L.marker(
-                    driverPosition,
-                    {
-                        title: 'Your Position'
-                    }
-                )
-                .addTo(map)
-                .bindPopup('Your Current Position');
-
-        }
-
-        else {
-
-            driverMarker.setLatLng(
-                driverPosition
-            );
-
-        }
-
-
-        /* =============================================
-           FIT MAP
-        ============================================== */
-
-        if (
-            incidentMarker &&
-            driverMarker
-        ) {
-
-            const group =
-                L.featureGroup([
-                    driverMarker,
-                    incidentMarker
-                ]);
-
-
-            map.fitBounds(
-                group.getBounds(),
-                {
-                    padding: [50, 50]
-                }
-            );
-
-        }
-
-        else {
-
-            map.setView(
-                driverPosition,
-                15
-            );
-
-        }
-
-    }
-
-
-    /* =====================================================
-       SEND GPS LOCATION TO SERVER
-    ===================================================== */
-
-    async function sendLocation() {
-
-        if (!isPageVisible) {
-            return;
-        }
-
-
-        try {
-
-            /* =============================================
-               GET BROWSER GPS
-            ============================================== */
-
-            const coords =
-                await getPosition();
-
-
-            /* =============================================
-               SEND TO LARAVEL
-            ============================================== */
-
-            const response =
-                await fetch(
-                    '{{ route("driver.gps.update") }}',
-                    {
-                        method: 'POST',
-
-                        headers: {
-
-                            'Content-Type':
-                                'application/json',
-
-                            'X-CSRF-TOKEN':
-                                csrfToken,
-
-                            'Accept':
-                                'application/json'
-
-                        },
-
-                        body: JSON.stringify({
-
-                            latitude:
-                                coords.latitude,
-
-                            longitude:
-                                coords.longitude,
-
-                            accuracy:
-                                coords.accuracy
-
-                        })
-
-                    }
-                );
-
-
-            if (!response.ok) {
-
-                throw new Error(
-                    'GPS update failed: HTTP ' +
-                    response.status
-                );
-
-            }
-
-
-            /* =============================================
-               SERVER RESPONSE
-            ============================================== */
-
-            let data = null;
-
-            try {
-
-                data =
-                    await response.json();
-
-            }
-
-            catch (jsonError) {
-
-                console.warn(
-                    'GPS endpoint returned no JSON response.'
-                );
-
-            }
-
-
-            console.log(
-                'GPS updated:',
-                data
-            );
-
-
-            /* =============================================
-               UI
-            ============================================== */
-
-            updateGPSStatus('live');
-
-
-            /* =============================================
-               MAP
-            ============================================== */
-
-            updateDriverMarker(
-                coords.latitude,
-                coords.longitude
-            );
-
-        }
-
-
-        catch (error) {
-
-            console.error(
-                'GPS Error:',
-                error
-            );
-
-
-            if (
-                error &&
-                error.code === 1
-            ) {
-
-                updateGPSStatus(
-                    'permission'
-                );
-
-            }
-
-            else if (
-                error &&
-                error.code === 2
-            ) {
-
-                updateGPSStatus(
-                    'unavailable'
-                );
-
-            }
-
-            else if (
-                error &&
-                error.code === 3
-            ) {
-
-                updateGPSStatus(
-                    'offline'
-                );
-
-            }
-
-            else {
-
-                updateGPSStatus(
-                    'offline'
-                );
-
-            }
-
-        }
-
-    }
-
-
-    /* =====================================================
-       START GPS
-    ===================================================== */
-
-    function startGPS() {
-
-        if (!isPageVisible) {
-            return;
-        }
-
-
-        /* =============================================
-           SEND IMMEDIATELY
-        ============================================== */
-
-        sendLocation();
-
-
-        /* =============================================
-           CLEAR OLD INTERVAL
-        ============================================== */
-
-        if (gpsIntervalId) {
-
-            clearInterval(
-                gpsIntervalId
-            );
-
-        }
-
-
-        /* =============================================
-           SEND EVERY 15 SECONDS
-        ============================================== */
-
-        gpsIntervalId =
-            setInterval(
-                function () {
-
-                    if (isPageVisible) {
-
-                        sendLocation();
-
-                    }
-
-                },
-                15000
-            );
-
-    }
-
-
-    /* =====================================================
-       STOP GPS
-    ===================================================== */
-
-    function stopGPS() {
-
-        if (gpsIntervalId) {
-
-            clearInterval(
-                gpsIntervalId
-            );
-
-            gpsIntervalId = null;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       PAGE VISIBILITY
-    ===================================================== */
-
     document.addEventListener(
-        'visibilitychange',
-        function () {
-
-            isPageVisible =
-                !document.hidden;
+        'DOMContentLoaded',
+        function() {
 
 
-            if (!isPageVisible) {
+            /* =====================================================
+               LARAVEL CONNECTIONS
+            ====================================================== */
 
-                stopGPS();
-
-            }
-
-            else {
-
-                startGPS();
-
-            }
-
-        }
-    );
+            const csrfToken =
+                @json(csrf_token());
 
 
-    /* =====================================================
-       PAGE HIDE
-    ===================================================== */
-
-    window.addEventListener(
-        'pagehide',
-        function () {
-
-            stopGPS();
-
-        }
-    );
+            const gpsUpdateUrl =
+                @json(route('driver.gps.update'));
 
 
-    /* =====================================================
-       PANIC BUTTON
-    ===================================================== */
-
-    const panicBtn =
-        document.getElementById(
-            'panicBtn'
-        );
+            const panicUrl =
+                @json(route('driver.panic.trigger'));
 
 
-    if (panicBtn) {
+            const hijackUrl =
+                @json(route('driver.hijack.trigger'));
 
-        panicBtn.addEventListener(
-            'click',
-            function () {
 
-                triggerEmergency(
-                    '{{ route("driver.panic.trigger") }}',
-                    'PANIC'
+            /* =====================================================
+               INCIDENT COORDINATES
+            ====================================================== */
+
+            const incidentLat =
+                @json(
+                    $hasIncidentCoordinates ?
+                    (float) $incidentLat :
+                    null
                 );
 
-            }
-        );
 
-    }
-
-
-    /* =====================================================
-       HIJACK BUTTON
-    ===================================================== */
-
-    const hijackBtn =
-        document.getElementById(
-            'hijackBtn'
-        );
-
-
-    if (hijackBtn) {
-
-        hijackBtn.addEventListener(
-            'click',
-            function () {
-
-                triggerEmergency(
-                    '{{ route("driver.hijack.trigger") }}',
-                    'HIJACK'
+            const incidentLng =
+                @json(
+                    $hasIncidentCoordinates ?
+                    (float) $incidentLng :
+                    null
                 );
 
+
+            /* =====================================================
+               VARIABLES
+            ====================================================== */
+
+            let map = null;
+
+            let driverMarker = null;
+
+            let incidentMarker = null;
+
+            let gpsWatchId = null;
+
+            let lastGpsSent = 0;
+
+            let lastPosition = null;
+
+            let pageUnloading = false;
+
+            let pageVisible = !document.hidden;
+
+
+            const GPS_INTERVAL =
+                15000;
+
+
+            /* =====================================================
+               GPS STATUS
+            ====================================================== */
+
+            function setGpsStatus(
+                type,
+                text
+            ) {
+
+                const element =
+                    document.getElementById(
+                        'gpsStatus'
+                    );
+
+
+                if (!element) {
+                    return;
+                }
+
+
+                element.textContent =
+                    text;
+
+
+                element.className =
+                    'gps-status status-' +
+                    type;
+
             }
-        );
-
-    }
 
 
-    /* =====================================================
-       EMERGENCY TRIGGER
-    ===================================================== */
+            /* =====================================================
+               MAP
+            ====================================================== */
 
-    async function triggerEmergency(
-        url,
-        label
-    ) {
+            function initMap() {
 
-        const confirmed =
-            confirm(
-                `Trigger ${label} alert? This will notify dispatch immediately.`
-            );
+                const mapElement =
+                    document.getElementById(
+                        'map'
+                    );
 
 
-        if (!confirmed) {
-            return;
-        }
+                if (!mapElement) {
+                    return;
+                }
+
+                if (map) {
+                    map.invalidateSize();
+                    return;
+                }
 
 
-        try {
+                if (typeof L === 'undefined') {
 
-            const response =
-                await fetch(
-                    url,
-                    {
-                        method: 'POST',
+                    console.error(
+                        'Leaflet is not loaded.'
+                    );
 
-                        headers: {
+                    return;
+                }
 
-                            'X-CSRF-TOKEN':
-                                csrfToken,
 
-                            'Accept':
-                                'application/json'
+                map =
+                    L.map(
+                        mapElement
+                    ).setView(
+                        [
+                            15.9800,
+                            120.5700
+                        ],
+                        13
+                    );
+
+
+                L.tileLayer(
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+
+                        attribution: '&copy; OpenStreetMap contributors'
+                    }
+                ).addTo(map);
+
+
+                /* INCIDENT MARKER */
+
+                if (
+                    incidentLat !== null &&
+                    incidentLng !== null
+                ) {
+
+                    incidentMarker =
+                        L.marker(
+                            [
+                                Number(incidentLat),
+                                Number(incidentLng)
+                            ], {
+                                title: 'Incident Location'
+                            }
+                        )
+                        .addTo(map)
+                        .bindPopup(
+                            '<strong>Incident Location</strong>'
+                        );
+
+                }
+
+
+                setTimeout(
+                    function() {
+
+                        if (map) {
+
+                            map.invalidateSize();
 
                         }
 
+                    },
+                    300
+                );
+
+            }
+
+
+            /* =====================================================
+               DRIVER MARKER
+            ====================================================== */
+
+            function updateDriverMarker(
+                latitude,
+                longitude
+            ) {
+
+                if (!map) {
+                    return;
+                }
+
+
+                const position = [
+                    Number(latitude),
+                    Number(longitude)
+                ];
+
+
+                if (!driverMarker) {
+
+                    driverMarker =
+                        L.marker(
+                            position, {
+                                title: 'Your Current Position'
+                            }
+                        )
+                        .addTo(map)
+                        .bindPopup(
+                            '<strong>Your Current Position</strong>'
+                        );
+
+                } else {
+
+                    driverMarker.setLatLng(
+                        position
+                    );
+
+                }
+
+
+                /* FIT MAP */
+
+                if (incidentMarker) {
+
+                    const group =
+                        L.featureGroup([
+                            driverMarker,
+                            incidentMarker
+                        ]);
+
+
+                    map.fitBounds(
+                        group.getBounds(), {
+                            padding: [
+                                40,
+                                40
+                            ],
+
+                            maxZoom: 16
+                        }
+                    );
+
+                } else {
+
+                    map.setView(
+                        position,
+                        15
+                    );
+
+                }
+
+            }
+
+
+            /* =====================================================
+               SEND GPS TO LARAVEL
+            ====================================================== */
+
+            async function sendLocation(
+                position
+            ) {
+
+                if (
+                    !position ||
+                    !pageVisible
+                ) {
+
+                    return;
+
+                }
+
+
+                const now =
+                    Date.now();
+
+
+                /*
+                 * Prevent sending more than
+                 * once every 15 seconds.
+                 */
+
+                if (
+                    now - lastGpsSent <
+                    GPS_INTERVAL
+                ) {
+
+                    updateDriverMarker(
+                        position.coords.latitude,
+                        position.coords.longitude
+                    );
+
+                    return;
+
+                }
+
+
+                lastGpsSent =
+                    now;
+
+
+                const latitude =
+                    position.coords.latitude;
+
+
+                const longitude =
+                    position.coords.longitude;
+
+
+                const accuracy =
+                    position.coords.accuracy ??
+                    null;
+
+                const speedKmh = Number.isFinite(position.coords.speed) && position.coords.speed >= 0 ?
+                    position.coords.speed * 3.6 :
+                    null;
+
+                const speedElement = document.getElementById('currentSpeed');
+                if (speedElement) speedElement.textContent = speedKmh === null ? 'Speed: unavailable | Speed limit unavailable | UNRATED' : `Speed: ${speedKmh.toFixed(1)} km/h | Speed limit unavailable | UNRATED`;
+
+                lastPosition = position;
+
+
+                /*
+                 * Update map immediately.
+                 */
+
+                updateDriverMarker(
+                    latitude,
+                    longitude
+                );
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            gpsUpdateUrl, {
+                                method: 'POST',
+
+                                credentials: 'same-origin',
+
+                                headers: {
+
+                                    'Content-Type': 'application/json',
+
+                                    'X-CSRF-TOKEN': csrfToken,
+
+                                    'Accept': 'application/json'
+
+                                },
+
+                                body: JSON.stringify({
+
+                                    latitude: latitude,
+
+                                    longitude: longitude,
+
+                                    accuracy: accuracy,
+                                    speed_kmh: speedKmh
+
+                                })
+
+                            }
+                        );
+
+
+                    let data = null;
+
+
+                    try {
+
+                        data =
+                            await response.json();
+
+                    } catch (_) {
+
+                        /*
+                         * Endpoint may return
+                         * an empty response.
+                         */
+
+                    }
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            data?.message ??
+                            'GPS update failed. HTTP ' +
+                            response.status
+                        );
+
+                    }
+
+
+                    console.log(
+                        'GPS updated:',
+                        data
+                    );
+
+
+                    setGpsStatus(
+                        'live',
+                        '🟢 Live Tracking'
+                    );
+
+
+                } catch (error) {
+
+                    console.error(
+                        'GPS server error:',
+                        error
+                    );
+
+
+                    setGpsStatus(
+                        'offline',
+                        '🔴 Server Update Failed'
+                    );
+
+                }
+
+            }
+
+
+            /* =====================================================
+               START GPS
+            ====================================================== */
+
+            function startGPS() {
+
+                if (
+                    pageUnloading ||
+                    gpsWatchId !== null
+                ) {
+                    return;
+                }
+
+                if (
+                    !navigator.geolocation
+                ) {
+
+                    setGpsStatus(
+                        'unavailable',
+                        '⚪ GPS Not Supported'
+                    );
+
+                    return;
+
+                }
+
+
+                /*
+                 * Remove previous watcher.
+                 */
+
+                if (
+                    gpsWatchId !== null
+                ) {
+
+                    navigator.geolocation.clearWatch(
+                        gpsWatchId
+                    );
+
+                    gpsWatchId = null;
+
+                }
+
+
+                setGpsStatus(
+                    'waiting',
+                    '🟠 Waiting for GPS...'
+                );
+
+
+                gpsWatchId =
+                    navigator.geolocation.watchPosition(
+
+                        function(position) {
+
+                            lastPosition = position;
+
+                            if (!pageVisible) {
+                                return;
+                            }
+
+
+                            sendLocation(
+                                position
+                            );
+
+                        },
+
+
+                        function(error) {
+
+                            console.error(
+                                'GPS Error:',
+                                error
+                            );
+
+
+                            switch (
+                                error.code
+                            ) {
+
+                                case 1:
+
+                                    setGpsStatus(
+                                        'permission',
+                                        '🟠 Permission Denied'
+                                    );
+
+                                    break;
+
+
+                                case 2:
+
+                                    setGpsStatus(
+                                        'unavailable',
+                                        '⚪ Position Unavailable'
+                                    );
+
+                                    break;
+
+
+                                case 3:
+
+                                    /*
+                                     * Do not call this
+                                     * "server offline".
+                                     * Code 3 means the browser
+                                     * could not get a GPS fix
+                                     * before the timeout.
+                                     */
+
+                                    setGpsStatus(
+                                        'waiting',
+                                        '🟠 Waiting for GPS...'
+                                    );
+
+                                    break;
+
+
+                                default:
+
+                                    setGpsStatus(
+                                        'offline',
+                                        '🔴 GPS Error'
+                                    );
+
+                                    break;
+
+                            }
+
+                        },
+
+
+                        {
+                            enableHighAccuracy: true,
+
+                            timeout: 20000,
+
+                            maximumAge: 10000
+                        }
+
+                    );
+
+            }
+
+
+            /* =====================================================
+               STOP GPS
+            ====================================================== */
+
+            function stopGPS() {
+
+                if (
+                    gpsWatchId !== null &&
+                    navigator.geolocation
+                ) {
+
+                    navigator.geolocation.clearWatch(
+                        gpsWatchId
+                    );
+
+
+                    gpsWatchId =
+                        null;
+
+                }
+
+            }
+
+
+            /* =====================================================
+               PAGE VISIBILITY
+            ====================================================== */
+
+            document.addEventListener(
+                'visibilitychange',
+                function() {
+
+                    pageVisible = !document.hidden;
+
+
+                    if (pageVisible) {
+
+                        startGPS();
+
+                    } else {
+
+                        stopGPS();
+
+                    }
+
+                }
+            );
+
+
+            window.addEventListener(
+                'pagehide',
+                function() {
+
+                    pageUnloading = true;
+
+                    stopGPS();
+
+                }
+            );
+
+
+            /* =====================================================
+               EMERGENCY
+            ====================================================== */
+
+            async function triggerEmergency(
+                url,
+                label
+            ) {
+
+                const confirmed =
+                    window.confirm(
+                        'Trigger ' +
+                        label +
+                        ' alert? This will notify dispatch immediately.'
+                    );
+
+
+                if (!confirmed) {
+                    return;
+                }
+
+                let position = lastPosition;
+
+                if (!position && navigator.geolocation) {
+                    try {
+                        position = await new Promise(function(resolve, reject) {
+                            navigator.geolocation.getCurrentPosition(
+                                resolve,
+                                reject, {
+                                    enableHighAccuracy: true,
+                                    timeout: 10000,
+                                    maximumAge: 10000
+                                }
+                            );
+                        });
+                    } catch (error) {
+                        console.error(label + ' GPS error:', error);
+                    }
+                }
+
+                if (!position) {
+                    window.alert(
+                        'Unable to send ' + label + ' alert without a GPS position.'
+                    );
+                    return;
+                }
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            url, {
+                                method: 'POST',
+
+                                credentials: 'same-origin',
+
+                                headers: {
+
+                                    'Content-Type': 'application/json',
+
+                                    'X-CSRF-TOKEN': csrfToken,
+
+                                    'Accept': 'application/json'
+
+                                },
+
+                                body: JSON.stringify({
+                                    latitude: position.coords.latitude,
+                                    longitude: position.coords.longitude
+                                })
+
+                            }
+                        );
+
+
+                    let data = null;
+
+
+                    try {
+
+                        data =
+                            await response.json();
+
+                    } catch (_) {
+
+                        /*
+                         * Empty successful response
+                         * is allowed.
+                         */
+
+                    }
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            data?.message ??
+                            'HTTP ' +
+                            response.status
+                        );
+
+                    }
+
+
+                    console.log(
+                        label +
+                        ' response:',
+                        data
+                    );
+
+
+                    window.alert(
+                        label +
+                        ' alert sent successfully!'
+                    );
+
+
+                } catch (error) {
+
+                    console.error(
+                        label +
+                        ' error:',
+                        error
+                    );
+
+
+                    window.alert(
+                        'Failed to send ' +
+                        label +
+                        ' alert. Please try again.'
+                    );
+
+                }
+
+            }
+
+
+            /* =====================================================
+               PANIC
+            ====================================================== */
+
+            const panicBtn =
+                document.getElementById(
+                    'panicBtn'
+                );
+
+
+            if (panicBtn) {
+
+                panicBtn.addEventListener(
+                    'click',
+                    function() {
+
+                        triggerEmergency(
+                            panicUrl,
+                            'PANIC'
+                        );
+
                     }
                 );
 
+            }
 
-            if (!response.ok) {
 
-                throw new Error(
-                    'HTTP ' +
-                    response.status
+            /* =====================================================
+               HIJACK
+            ====================================================== */
+
+            const hijackBtn =
+                document.getElementById(
+                    'hijackBtn'
+                );
+
+
+            if (hijackBtn) {
+
+                hijackBtn.addEventListener(
+                    'click',
+                    function() {
+
+                        triggerEmergency(
+                            hijackUrl,
+                            'HIJACK'
+                        );
+
+                    }
                 );
 
             }
 
 
-            let data = null;
+            /* =====================================================
+               START
+            ====================================================== */
+
+            initMap();
+
+            startGPS();
+
+        });
+</script>
+
+@endsection
 
 
-            try {
+{{-- =========================================================
+     DASHBOARD CSS
+========================================================== --}}
 
-                data =
-                    await response.json();
+@push('styles')
 
-            }
-
-            catch (e) {
-
-                console.log(
-                    'Emergency request completed.'
-                );
-
-            }
+<style>
+    .driver-dashboard-shell {
+        width: 100%;
+    }
 
 
-            console.log(
-                label +
-                ' response:',
-                data
-            );
+    /* =====================================================
+       HERO
+    ====================================================== */
+
+    .hero-panel {
+
+        background:
+            linear-gradient(90deg,
+                #06243a 0%,
+                #083b57 65%);
+
+        color: #fff;
+
+    }
 
 
-            alert(
-                `${label} alert sent successfully!`
-            );
+    .hero-panel-body {
 
-        }
+        padding: 2rem;
 
-
-        catch (error) {
-
-            console.error(
-                `${label} error:`,
-                error
-            );
+    }
 
 
-            alert(
-                `Failed to send ${label} alert. Please try again.`
-            );
+    .hero-side-panel {
 
-        }
+        padding: 2rem;
+
+        background:
+            rgba(255, 255, 255, .07);
+
+    }
+
+
+    .hero-summary-card {
+
+        height: 100%;
+
+        padding: 1.25rem;
+
+        border:
+            1px solid rgba(255, 255, 255, .14);
+
+        border-radius: 1rem;
+
+        background:
+            rgba(255, 255, 255, .10);
+
+    }
+
+
+    .hero-eyebrow {
+
+        font-size: .72rem;
+
+        font-weight: 700;
+
+        letter-spacing: .16em;
+
+        opacity: .78;
+
+        margin-bottom: .5rem;
+
+    }
+
+
+    .hero-title {
+
+        margin: 0 0 .65rem;
+
+        font-size:
+            clamp(1.35rem,
+                2.5vw,
+                2rem);
+
+        font-weight: 700;
+
+    }
+
+
+    .hero-copy {
+
+        max-width: 760px;
+
+        margin-bottom: 1.5rem;
+
+        color:
+            rgba(255, 255, 255, .82);
+
+        line-height: 1.6;
+
+    }
+
+
+    .hero-icon {
+
+        width: 48px;
+        height: 48px;
+
+        display: grid;
+
+        place-items: center;
+
+        border-radius: 50%;
+
+        background:
+            rgba(255, 255, 255, .18);
+
+        font-size: 1.2rem;
 
     }
 
 
     /* =====================================================
-       INITIALIZE
-    ===================================================== */
+       STAT CARDS
+    ====================================================== */
 
-    initMap();
+    .stat-card {
 
-    startGPS();
+        transition:
+            transform .2s ease,
+            box-shadow .2s ease;
 
-});
+    }
 
-</script>
 
-@endsection
+    .stat-card:hover {
+
+        transform:
+            translateY(-2px);
+
+        box-shadow:
+            0 10px 30px rgba(0, 0, 0, .18);
+
+    }
+
+
+    .stat-card .card-body {
+
+        min-height: 100px;
+
+        padding: 1.15rem;
+
+    }
+
+
+    .stat-icon {
+
+        width: 44px;
+        height: 44px;
+
+        display: grid;
+
+        place-items: center;
+
+        border-radius: 50%;
+
+        color: #fff;
+
+        flex-shrink: 0;
+
+    }
+
+
+    .stat-value {
+
+        font-size: 1rem;
+
+        font-weight: 700;
+
+        color: #eef4ff;
+
+    }
+
+
+    /* =====================================================
+       GPS
+    ====================================================== */
+
+    .gps-status {
+
+        display: inline-block;
+
+        padding:
+            .3rem .65rem;
+
+        border-radius:
+            .5rem;
+
+        font-size:
+            .78rem;
+
+        font-weight: 700;
+
+        background:
+            rgba(255, 255, 255, .08);
+
+    }
+
+
+    .gps-status.status-live {
+
+        color:
+            #5ee7b7;
+
+        background:
+            rgba(32, 201, 151, .14);
+
+    }
+
+
+    .gps-status.status-waiting {
+
+        color:
+            #ffc107;
+
+        background:
+            rgba(255, 193, 7, .12);
+
+    }
+
+
+    .gps-status.status-permission {
+
+        color:
+            #ffb74d;
+
+        background:
+            rgba(255, 152, 0, .12);
+
+    }
+
+
+    .gps-status.status-unavailable,
+    .gps-status.status-offline {
+
+        color:
+            #ff8a80;
+
+        background:
+            rgba(244, 67, 54, .12);
+
+    }
+
+
+    /* =====================================================
+       MAP
+    ====================================================== */
+
+    .map-shell {
+
+        min-height: 360px;
+
+        overflow: hidden;
+
+        border-radius: 1rem;
+
+        border:
+            1px solid rgba(255, 255, 255, .08);
+
+    }
+
+
+    #map {
+
+        width: 100%;
+
+        height: 360px;
+
+    }
+
+
+    /* =====================================================
+       INFO
+    ====================================================== */
+
+    .info-grid {
+
+        display: grid;
+
+        grid-template-columns:
+            repeat(2,
+                minmax(0, 1fr));
+
+        gap: .75rem;
+
+    }
+
+
+    .info-box {
+
+        padding: .9rem;
+
+        border-radius: .85rem;
+
+        background:
+            rgba(255, 255, 255, .045);
+
+        border:
+            1px solid rgba(255, 255, 255, .07);
+
+    }
+
+
+    .info-label {
+
+        margin-bottom: .2rem;
+
+        font-size: .68rem;
+
+        font-weight: 700;
+
+        letter-spacing: .08em;
+
+        text-transform: uppercase;
+
+        color:
+            rgba(255, 255, 255, .55);
+
+    }
+
+
+    .info-value {
+
+        font-weight: 600;
+
+        color: #eef4ff;
+
+        word-break: break-word;
+
+    }
+
+
+    /* =====================================================
+       DISPATCH ACTIONS
+    ====================================================== */
+
+    .dispatch-actions {
+
+        display: flex;
+
+        flex-wrap: wrap;
+
+        gap: .6rem;
+
+    }
+
+
+    /* =====================================================
+       EMPTY STATE
+    ====================================================== */
+
+    .empty-state {
+
+        margin-top: 1rem;
+
+        padding: 2rem 1rem;
+
+        text-align: center;
+
+        border:
+            1px dashed rgba(255, 255, 255, .12);
+
+        border-radius: 1rem;
+
+        background:
+            rgba(255, 255, 255, .025);
+
+    }
+
+
+    .empty-icon {
+
+        width: 52px;
+        height: 52px;
+
+        margin:
+            0 auto .75rem;
+
+        display: grid;
+
+        place-items: center;
+
+        border-radius: 50%;
+
+        background:
+            rgba(255, 255, 255, .07);
+
+        font-size: 1.25rem;
+
+    }
+
+
+    /* =====================================================
+       VEHICLE
+    ====================================================== */
+
+    .vehicle-display {
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 1rem;
+
+        padding: 1rem;
+
+        border-radius: 1rem;
+
+        background:
+            rgba(255, 255, 255, .045);
+
+    }
+
+
+    .vehicle-icon {
+
+        width: 48px;
+        height: 48px;
+
+        display: grid;
+
+        place-items: center;
+
+        border-radius: 50%;
+
+        background:
+            rgba(13, 110, 253, .18);
+
+        color:
+            #7fb0ff;
+
+        font-size: 1.2rem;
+
+    }
+
+
+    /* =====================================================
+       MOBILE
+    ====================================================== */
+
+    @media (max-width: 767.98px) {
+
+        .hero-panel-body,
+        .hero-side-panel {
+
+            padding: 1rem;
+
+        }
+
+
+        .info-grid {
+
+            grid-template-columns: 1fr;
+
+        }
+
+
+        .dispatch-actions {
+
+            flex-direction: column;
+
+        }
+
+
+        .dispatch-actions>* {
+
+            width: 100%;
+
+        }
+
+
+        .map-shell {
+
+            min-height: 300px;
+
+        }
+
+
+        #map {
+
+            height: 300px;
+
+        }
+
+    }
+</style>
+
+@endpush

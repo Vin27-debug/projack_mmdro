@@ -295,6 +295,78 @@
             border-color: rgba(255, 255, 255, 0.08) !important;
             background-color: transparent !important;
         }
+
+        /* =========================================
+   SUPER ADMIN SIDEBAR NAVIGATION
+========================================= */
+
+        .superadmin-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+
+            width: 100%;
+            padding: 14px 18px;
+
+            margin-bottom: 6px;
+
+            color: #f4f7ff !important;
+            text-decoration: none !important;
+
+            border-radius: 14px;
+
+            font-size: 15px;
+            font-weight: 600;
+
+            background: transparent;
+
+            border: 1px solid transparent;
+
+            transition:
+                background .2s ease,
+                border-color .2s ease,
+                transform .2s ease;
+        }
+
+        .superadmin-nav-link:hover {
+            color: #ffffff !important;
+            background: rgba(37, 99, 235, 0.14);
+
+            border-color: rgba(59, 130, 246, 0.25);
+
+            transform: translateX(2px);
+        }
+
+        .superadmin-nav-link.active {
+            color: #ffffff !important;
+
+            background: linear-gradient(135deg,
+                    rgba(37, 99, 235, 0.32),
+                    rgba(30, 64, 175, 0.24));
+
+            border-color: rgba(59, 130, 246, 0.55);
+
+            box-shadow:
+                0 8px 20px rgba(0, 0, 0, 0.12),
+                inset 0 0 20px rgba(59, 130, 246, 0.04);
+        }
+
+        .superadmin-nav-icon {
+            width: 24px;
+            min-width: 24px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 17px;
+
+            color: #dbeafe;
+        }
+
+        .superadmin-nav-link.active .superadmin-nav-icon {
+            color: #ffffff;
+        }
     </style>
 </head>
 
@@ -316,6 +388,16 @@
                         </a>
                         <a href="{{ route('superadmin.drivers') }}" class="nav-link {{ request()->routeIs('superadmin.drivers') ? 'active' : '' }}">
                             <i class="bi bi-people"></i> Drivers
+                        </a>
+                        <a href="{{ route('admins.index') }}"
+                            class="superadmin-nav-link {{ request()->routeIs('admins.*') ? 'active' : '' }}">
+
+                            <span class="superadmin-nav-icon">
+                                <i class="bi bi-person-plus"></i>
+                            </span>
+
+                            <span>Create Admin</span>
+
                         </a>
                         <a href="{{ route('superadmin.ambulances.index') }}" class="nav-link {{ request()->routeIs('superadmin.ambulances.*') ? 'active' : '' }}">
                             <i class="bi bi-truck"></i> Ambulances

@@ -26,7 +26,7 @@ class ReportsCenterController extends Controller
         $monthlyTrends = $this->reportsService->getMonthlyIncidentTrends($filters);
 
         $incidents = Incident::query()
-            ->with(['driver.user', 'ambulance'])
+            ->with(['driver.user', 'ambulance', 'dispatches'])
             ->when($filters['start_date'] ?? null, function ($query, $date): void {
                 $query->whereDate('created_at', '>=', $date);
             })
@@ -55,7 +55,7 @@ class ReportsCenterController extends Controller
         $vehicleUtilization = $this->reportsService->getVehicleUtilization($filters);
         $responseTimeMetrics = $this->reportsService->getResponseTimeMetrics($filters);
         $incidents = Incident::query()
-            ->with(['driver.user', 'ambulance'])
+            ->with(['driver.user', 'ambulance', 'dispatches'])
             ->when($filters['start_date'] ?? null, function ($query, $date): void {
                 $query->whereDate('created_at', '>=', $date);
             })
@@ -81,7 +81,7 @@ class ReportsCenterController extends Controller
     {
         $filters = $this->normalizeFilters($request);
         $incidents = Incident::query()
-            ->with(['driver.user', 'ambulance'])
+            ->with(['driver.user', 'ambulance', 'dispatches'])
             ->when($filters['start_date'] ?? null, function ($query, $date): void {
                 $query->whereDate('created_at', '>=', $date);
             })
@@ -92,13 +92,32 @@ class ReportsCenterController extends Controller
             ->get();
 
         $rows = $incidents->map(function (Incident $incident): array {
+            $dispatch = $incident->dispatches->sortByDesc('created_at')->first();
             return [
                 $incident->incident_number,
                 $incident->reporter_name,
                 $incident->incident_type,
                 $incident->location,
+                $incident->house_number,
+                $incident->street,
+                $incident->barangay,
+                $incident->city,
+                $incident->province,
                 $incident->status,
+                optional($incident->call_received_at)->format('Y-m-d H:i:s'),
+                optional($incident->response_at)->format('Y-m-d H:i:s'),
+                optional($incident->at_scene_at)->format('Y-m-d H:i:s'),
+                optional($incident->at_patient_at)->format('Y-m-d H:i:s'),
+                optional($incident->depart_scene_at)->format('Y-m-d H:i:s'),
+                optional($incident->at_hospital_at)->format('Y-m-d H:i:s'),
                 optional($incident->created_at)->format('Y-m-d H:i:s'),
+                optional($dispatch?->created_at)->format('Y-m-d H:i:s'),
+                optional($dispatch?->accepted_at)->format('Y-m-d H:i:s'),
+                optional($dispatch?->declined_at)->format('Y-m-d H:i:s'),
+                optional($dispatch?->en_route_at)->format('Y-m-d H:i:s'),
+                optional($dispatch?->arrived_at)->format('Y-m-d H:i:s'),
+                optional($incident->completed_at)->format('Y-m-d H:i:s'),
+                optional($incident->closed_at)->format('Y-m-d H:i:s'),
             ];
         })->toArray();
 
@@ -117,8 +136,26 @@ class ReportsCenterController extends Controller
                     'Reporter',
                     'Incident Type',
                     'Location',
+                    'House Number',
+                    'Street',
+                    'Barangay',
+                    'City / Municipality',
+                    'Province',
                     'Status',
+                    'Call Received At',
+                    'Response At',
+                    'At Scene At',
+                    'At Patient At',
+                    'Depart Scene At',
+                    'At Hospital At',
                     'Created At',
+                    'Dispatch Created At',
+                    'Accepted At',
+                    'Declined At',
+                    'En Route At',
+                    'Arrived At',
+                    'Completed At',
+                    'Closed At',
                 ];
             }
         }, 'muniresq-reports-center.xlsx');

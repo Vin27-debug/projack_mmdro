@@ -1,0 +1,88 @@
+flowchart TD
+    Start([🟢 MuniResQ Start])
+    
+    Start --> Login["🔐 User Login"]
+    Login --> CheckRole{User<br/>Role?}
+    
+    CheckRole -->|Super Admin| SADash["👨‍💼 SUPER ADMIN"]
+    CheckRole -->|Admin| AdminDash["👨‍💼 ADMIN"]
+    CheckRole -->|Driver| DriverDash["🚗 DRIVER"]
+    
+    %% ============================================================
+    %% SUPER ADMIN FLOW
+    %% ============================================================
+    SADash --> SA1["📋 Approve/Reject Users"]
+    SA1 --> SA2["👤 Manage Drivers"]
+    SA2 --> SA3["🚑 Manage Ambulances"]
+    SA3 --> SA4["💾 System Backup/Restore"]
+    SA4 --> Logout1([🚪 Logout])
+    
+    %% ============================================================
+    %% ADMIN FLOW
+    %% ============================================================
+    AdminDash --> AD1["📍 Receive Emergency Incident"]
+    AD1 --> AD2["🚨 Dispatch Ambulance<br/>Select Driver & Vehicle"]
+    AD2 --> AD3["📡 Monitor GPS Location<br/>Track Ambulance in Real-time"]
+    AD3 --> AD4["🆘 Receive Emergency Alerts<br/>Panic / Hijack"]
+    AD4 --> AD5["📝 Approve Incident Report<br/>Driver-submitted Report"]
+    AD5 --> AD6["📊 View Analytics & Reports<br/>Performance, Response Time"]
+    AD6 --> Logout2([🚪 Logout])
+    
+    %% ============================================================
+    %% DRIVER FLOW
+    %% ============================================================
+    DriverDash --> DR1["📋 Receive Dispatch Assignment"]
+    DR1 --> DR2{Accept or<br/>Decline?}
+    DR2 -->|Decline| DR2a["❌ Assignment Declined<br/>Wait for Next Assignment"]
+    DR2a --> Logout3([🚪 Logout])
+    
+    DR2 -->|Accept| DR3["✅ Assignment Accepted"]
+    DR3 --> DR4["🗺️ Navigate to Incident"]
+    DR4 --> DR5["📍 Arrive at Location"]
+    DR5 --> DR6["👨‍⚕️ Respond to Incident"]
+    DR6 --> DR7["✔️ Incident Complete"]
+    DR7 --> DR8["📝 Submit Incident Report"]
+    DR8 --> DR9["✅ Return to Available Status"]
+    DR9 --> Logout3
+    
+    %% ============================================================
+    %% MAIN INCIDENT LIFECYCLE
+    %% ============================================================
+    Inc1["🔴 Emergency Incident Reported"] --> Inc2["👨‍💼 Admin Receives & Reviews"]
+    Inc2 --> Inc3["🚨 Dispatch Ambulance<br/>Assign Driver & Vehicle"]
+    Inc3 --> Inc4{Driver<br/>Accepts?}
+    Inc4 -->|No| Inc4a["🔄 Reassign to Another Driver"]
+    Inc4a --> Inc4
+    Inc4 -->|Yes| Inc5["🚗 Ambulance En Route"]
+    Inc5 --> Inc6["📍 Ambulance Arrives"]
+    Inc6 --> Inc7["👨‍⚕️ Provide Emergency Response"]
+    Inc7 --> Inc8["✔️ Incident Complete"]
+    Inc8 --> Inc9["📝 Driver Submits Report"]
+    Inc9 --> Inc10["✅ Admin Approves Report"]
+    Inc10 --> Inc11["🏁 Incident Closed"]
+    
+    %% ============================================================
+    %% EMERGENCY ALERT FLOW
+    %% ============================================================
+    Alert1["⚠️ Driver Emergency"] --> Alert2{Alert Type?}
+    Alert2 -->|Personal Danger| Alert3["🆘 Panic Alert"]
+    Alert2 -->|Vehicle Hijacked| Alert4["🔴 Hijack Alert"]
+    
+    Alert3 --> Alert5["📍 Driver Location Sent"]
+    Alert4 --> Alert5
+    
+    Alert5 --> Alert6["📢 Admin Receives Alert"]
+    Alert6 --> Alert7["👨‍💼 Admin Responds<br/>Take Immediate Action"]
+    Alert7 --> Alert8["✅ Situation Resolved"]
+    
+    %% Styling
+    classDef start fill:#4CAF50,stroke:#2E7D32,color:#fff,font-weight:bold
+    classDef process fill:#2196F3,stroke:#1565c0,color:#fff
+    classDef decision fill:#FFC107,stroke:#F57F17,color:#000,font-weight:bold
+    classDef end fill:#4CAF50,stroke:#2E7D32,color:#fff,font-weight:bold
+    classDef roleBox fill:#9C27B0,stroke:#6a1b9a,color:#fff,font-weight:bold
+    
+    class Start start
+    class Logout1,Logout2,Logout3,Inc11,Alert8 end
+    class CheckRole,DR2,Alert2,Inc4,Inc4a decision
+    class SADash,AdminDash,DriverDash roleBox
