@@ -24,7 +24,7 @@ class DashboardController extends Controller
         $recentIncidents = Incident::latest()->take(5)->get();
 
         $activePanicAlerts = PanicAlert::with('driver.user')
-            ->where('status', 'active')
+            ->where('resolved', false)
             ->latest()
             ->get();
 
