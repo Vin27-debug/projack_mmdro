@@ -10,11 +10,12 @@ class PanicAlert extends Model
         'driver_id',
         'latitude',
         'longitude',
-        'status',
+        'resolved',
         'triggered_at',
     ];
 
     protected $casts = [
+        'resolved' => 'boolean',
         'triggered_at' => 'datetime',
     ];
 

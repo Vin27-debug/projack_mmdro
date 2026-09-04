@@ -88,7 +88,7 @@ class DashboardController extends Controller
         $activePanicAlerts = PanicAlert::with(
             'driver.user'
         )
-            ->where('status', 'active')
+            ->where('resolved', false)
             ->latest()
             ->get();
 
@@ -220,7 +220,7 @@ class DashboardController extends Controller
             'maintenanceVehicles' => Ambulance::where('status', 'maintenance')->count(),
             'activeDispatches' => Dispatch::whereNotIn('status', ['completed', 'cancelled'])->count(),
             'completedDispatches' => Dispatch::where('status', 'completed')->count(),
-            'panicCount' => PanicAlert::where('status', 'active')->count(),
+            'panicCount' => PanicAlert::where('resolved', false)->count(),
             'responseTime' => (int) round($responseTime ?? 0),
         ]);
     }

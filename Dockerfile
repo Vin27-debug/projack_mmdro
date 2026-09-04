@@ -37,6 +37,9 @@ RUN composer install \
     --prefer-dist \
     --optimize-autoloader
 
+RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \
+    && chmod -R ug+rwX storage bootstrap/cache
+
 EXPOSE 8080
 
-CMD ["sh", "-c", "php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"]
+CMD ["sh", "-c", "set -e; if [ -z \"${APP_KEY:-}\" ]; then echo 'APP_KEY is required for production.' >&2; exit 1; fi; php artisan migrate --force; php artisan optimize; exec php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"]

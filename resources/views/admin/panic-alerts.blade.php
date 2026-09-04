@@ -41,7 +41,7 @@
                 </td>
 
                 <td>
-                    {{ $alert->status }}
+                    {{ $alert->resolved ? 'resolved' : 'active' }}
                 </td>
 
                 <td>

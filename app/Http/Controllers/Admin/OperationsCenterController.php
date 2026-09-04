@@ -117,7 +117,7 @@ class OperationsCenterController extends Controller
                 ->count(),
 
             'panic_alerts' => $panicAlerts
-                ->where('status', 'active')
+                ->where('resolved', false)
                 ->count(),
 
             'hijack_alerts' => $hijackAlerts
@@ -275,8 +275,7 @@ class OperationsCenterController extends Controller
 
                         'title' => 'Panic Alert',
 
-                        'status' => $alert->status
-                            ?? 'active',
+                        'status' => $alert->resolved ? 'resolved' : 'active',
 
                         'latitude' => (float) $alert->latitude,
 

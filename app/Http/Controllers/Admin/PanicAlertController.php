@@ -10,7 +10,7 @@ class PanicAlertController extends Controller
     public function resolve(PanicAlert $panicAlert)
     {
         $panicAlert->update([
-            'status' => 'resolved'
+            'resolved' => true,
         ]);
 
         return back()->with(

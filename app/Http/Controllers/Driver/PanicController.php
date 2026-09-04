@@ -39,7 +39,7 @@ class PanicController extends Controller
                 'driver_id' => $driver->id,
                 'latitude' => $validated['latitude'],
                 'longitude' => $validated['longitude'],
-                'status' => 'active',
+                'resolved' => false,
                 'triggered_at' => now(),
             ]);
 

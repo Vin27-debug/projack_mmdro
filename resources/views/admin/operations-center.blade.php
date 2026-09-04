@@ -349,7 +349,7 @@
 
                 <div class="card-body">
 
-                    @forelse($panicAlerts->where('status', 'active') as $alert)
+                    @forelse($panicAlerts->where('resolved', false) as $alert)
 
                     <div class="border rounded p-2 mb-2">
 
@@ -647,23 +647,19 @@
         */
 
         const incidents = Array.isArray(mapData?.incidents) ?
-            mapData.incidents :
-            [];
+            mapData.incidents : [];
 
 
         const vehicles = Array.isArray(mapData?.vehicles) ?
-            mapData.vehicles :
-            [];
+            mapData.vehicles : [];
 
 
         const panicAlerts = Array.isArray(mapData?.panicAlerts) ?
-            mapData.panicAlerts :
-            [];
+            mapData.panicAlerts : [];
 
 
         const hijackAlerts = Array.isArray(mapData?.hijackAlerts) ?
-            mapData.hijackAlerts :
-            [];
+            mapData.hijackAlerts : [];
 
 
         /*
