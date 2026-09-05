@@ -175,12 +175,12 @@ class IncidentController extends Controller
     {
         $request->validate([
             'driver_id' => 'required|exists:drivers,id',
-            'vehicle_id' => 'required|exists:ambulances,id',
+            'vehicle_id' => ['nullable', 'exists:ambulances,id'],
             'status' => ['nullable', Rule::in(Dispatch::validStatuses())],
         ]);
 
         $driverId = (int) $request->driver_id;
-        $vehicleId = (int) $request->vehicle_id;
+        $vehicleId = $request->filled('vehicle_id') ? (int) $request->vehicle_id : null;
         $dispatchStatus = $request->input('status', Dispatch::STATUS_ASSIGNED);
 
         if (Dispatch::active()->where('incident_id', $incident->id)->exists()) {
@@ -189,7 +189,7 @@ class IncidentController extends Controller
         if (Dispatch::active()->where('driver_id', $driverId)->exists()) {
             return back()->with('error', 'This driver already has an active dispatch.');
         }
-        if (Dispatch::active()->where('vehicle_id', $vehicleId)->exists()) {
+        if ($vehicleId && Dispatch::active()->where('vehicle_id', $vehicleId)->exists()) {
             return back()->with('error', 'This ambulance already has an active dispatch.');
         }
 
@@ -201,15 +201,32 @@ class IncidentController extends Controller
         };
 
         DB::transaction(function () use ($incident, $driverId, $vehicleId, $dispatchStatus, $driverStatus) {
-            Dispatch::updateOrCreate(
-                ['incident_id' => $incident->id, 'driver_id' => $driverId, 'vehicle_id' => $vehicleId, 'status' => $dispatchStatus],
-                ['assigned_at' => now()]
-            );
+            $dispatch = Dispatch::query()->where('incident_id', $incident->id)
+                ->where('driver_id', $driverId)
+                ->first();
+
+            if ($dispatch) {
+                $dispatch->update([
+                    'vehicle_id' => $vehicleId,
+                    'status' => $dispatchStatus,
+                    'assigned_at' => $dispatch->assigned_at ?? now(),
+                ]);
+            } else {
+                $dispatch = Dispatch::create([
+                    'incident_id' => $incident->id,
+                    'driver_id' => $driverId,
+                    'vehicle_id' => $vehicleId,
+                    'status' => $dispatchStatus,
+                    'assigned_at' => now(),
+                ]);
+            }
 
             $driver = Driver::find($driverId);
-            $ambulance = Ambulance::find($vehicleId);
+            $ambulance = $vehicleId ? Ambulance::find($vehicleId) : null;
             $driver?->update(['status' => $driverStatus]);
-            $ambulance?->update(['status' => Ambulance::STATUS_ON_DUTY]);
+            if ($ambulance) {
+                $ambulance->update(['status' => Ambulance::STATUS_ON_DUTY]);
+            }
 
             if ($driver && $ambulance) {
                 VehicleDriverAssignment::assignDriverToAmbulance($driver, $ambulance);
@@ -222,7 +239,7 @@ class IncidentController extends Controller
             ]);
         });
 
-        return redirect()->route('admin.incidents.index')->with('success', 'Vehicle dispatched successfully.');
+        return redirect()->route('admin.incidents.index')->with('success', 'Driver dispatched successfully.');
     }
 
     protected function validateIncident(Request $request): array

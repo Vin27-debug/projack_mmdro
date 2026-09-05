@@ -134,40 +134,11 @@
 
     </div>
 
-    <div class="mb-3">
-
-        <label>Ambulance</label>
-
-        <select name="vehicle_id"
-            class="form-control"
-            @if($vehicles->isEmpty()) disabled @endif>
-
-            @if($vehicles->isEmpty())
-            <option value="">No available ambulances</option>
-            @else
-            @foreach($vehicles as $vehicle)
-
-            <option value="{{ $vehicle->id }}"
-                {{ isset($nearestAmbulance) && $nearestAmbulance?->id == $vehicle->id ? 'selected' : '' }}>
-                @if(isset($nearestAmbulance) && $nearestAmbulance?->id == $vehicle->id)
-
-                ⭐ {{ $vehicle->plate_number }} - {{ $vehicle->vehicle_name }}
-
-                @else
-
-                {{ $vehicle->plate_number }} - {{ $vehicle->vehicle_name }}
-
-                @endif
-            </option>
-
-            @endforeach
-            @endif
-
-        </select>
-
+    <div class="alert alert-info mb-3">
+        The assigned driver will select the vehicle when accepting the dispatch. Admin vehicle records remain available for management and monitoring.
     </div>
 
-    <button class="btn btn-primary" @if($drivers->isEmpty() || $vehicles->isEmpty()) disabled @endif>
+    <button class="btn btn-primary" @if($drivers->isEmpty()) disabled @endif>
         Dispatch Incident
     </button>
 

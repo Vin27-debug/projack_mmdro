@@ -111,11 +111,13 @@ class DispatchController extends Controller
             ],
 
             'ambulance_id' => [
+                'nullable',
                 'required_without:vehicle_id',
                 'exists:ambulances,id',
             ],
 
             'vehicle_id' => [
+                'nullable',
                 'required_without:ambulance_id',
                 'exists:ambulances,id',
             ],
@@ -125,6 +127,10 @@ class DispatchController extends Controller
         $ambulanceId =
             $request->input('ambulance_id')
             ?? $request->input('vehicle_id');
+
+        if ($ambulanceId !== null) {
+            $ambulanceId = (int) $ambulanceId;
+        }
 
         $driverId =
             (int) $request->driver_id;
@@ -155,18 +161,20 @@ class DispatchController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $ambulance = Ambulance::findOrFail(
-            $ambulanceId
-        );
-
-        if (
-            $ambulance->status !== Ambulance::STATUS_AVAILABLE
-        ) {
-
-            return back()->with(
-                'error',
-                'This ambulance is currently not available.'
+        if ($ambulanceId !== null) {
+            $ambulance = Ambulance::findOrFail(
+                $ambulanceId
             );
+
+            if (
+                $ambulance->status !== Ambulance::STATUS_AVAILABLE
+            ) {
+
+                return back()->with(
+                    'error',
+                    'This ambulance is currently not available.'
+                );
+            }
         }
 
 
@@ -196,7 +204,8 @@ class DispatchController extends Controller
         */
 
         if (
-            Dispatch::active()
+            $ambulanceId !== null
+            && Dispatch::active()
             ->where('vehicle_id', $ambulanceId)
             ->exists()
         ) {
@@ -282,13 +291,15 @@ class DispatchController extends Controller
             |--------------------------------------------------------------------------
             */
 
-            $ambulance = Ambulance::findOrFail(
-                $ambulanceId
-            );
+            if ($ambulanceId !== null) {
+                $ambulance = Ambulance::findOrFail(
+                    $ambulanceId
+                );
 
-            $ambulance->update([
-                'status' => Ambulance::STATUS_ON_DUTY,
-            ]);
+                $ambulance->update([
+                    'status' => Ambulance::STATUS_ON_DUTY,
+                ]);
+            }
         });
 
 

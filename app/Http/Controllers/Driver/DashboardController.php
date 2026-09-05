@@ -7,6 +7,7 @@ use App\Models\Ambulance;
 use App\Models\Dispatch;
 use App\Models\Driver;
 use App\Models\Incident;
+use App\Models\Notification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -182,6 +183,13 @@ class DashboardController extends Controller
                     'vehicle_id' => $vehicle->id,
                     'status' => Dispatch::STATUS_ACCEPTED,
                     'accepted_at' => now(),
+                ]);
+
+                Notification::create([
+                    'title' => 'Vehicle Selected for Dispatch',
+                    'message' => 'Driver ' . ($driver->user?->name ?? 'Unknown driver') . ' selected ' . $vehicle->plate_number . ' - ' . $vehicle->vehicle_name . ' for incident #' . ($dispatch->incident?->incident_number ?? $dispatch->incident_id) . '.',
+                    'type' => 'dispatch',
+                    'is_read' => false,
                 ]);
 
                 if ($oldVehicleId && (int) $oldVehicleId !== (int) $vehicle->id) {

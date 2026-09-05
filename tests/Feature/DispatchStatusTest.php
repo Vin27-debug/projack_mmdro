@@ -19,6 +19,8 @@ class DispatchStatusTest extends TestCase
 
     public function test_admin_can_assign_a_dispatch_with_a_supported_status(): void
     {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
         $role = Role::firstOrCreate(['name' => 'admin']);
         $user = User::factory()->create(['status' => 'approved']);
         $user->assignRole($role);
@@ -71,6 +73,8 @@ class DispatchStatusTest extends TestCase
 
     public function test_driver_dashboard_shows_accept_and_decline_actions_for_assigned_dispatches(): void
     {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
         $role = Role::firstOrCreate(['name' => 'driver']);
         $user = User::factory()->create(['status' => 'approved']);
         $user->assignRole($role);
@@ -121,6 +125,8 @@ class DispatchStatusTest extends TestCase
 
     public function test_driver_dashboard_shows_next_emergency_action_in_sequence(): void
     {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
         $role = Role::firstOrCreate(['name' => 'driver']);
         $user = User::factory()->create(['status' => 'approved']);
         $user->assignRole($role);
@@ -174,6 +180,8 @@ class DispatchStatusTest extends TestCase
 
     public function test_driver_gps_update_syncs_ambulance_coordinates_via_active_dispatch(): void
     {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
         $role = Role::firstOrCreate(['name' => 'driver']);
         $user = User::factory()->create(['status' => 'approved']);
         $user->assignRole($role);
@@ -229,6 +237,8 @@ class DispatchStatusTest extends TestCase
 
     public function test_driver_decline_dispatch_returns_the_incident_to_pending(): void
     {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
         $role = Role::firstOrCreate(['name' => 'driver']);
         $user = User::factory()->create(['status' => 'approved']);
         $user->assignRole($role);
@@ -424,8 +434,108 @@ class DispatchStatusTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_dispatch_a_driver_without_forcing_a_vehicle_choice(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
+        $role = Role::firstOrCreate(['name' => 'admin']);
+        $user = User::factory()->create(['status' => 'approved']);
+        $user->assignRole($role);
+
+        $driver = Driver::create([
+            'user_id' => $user->id,
+            'badge_id' => 'AMB-110',
+            'contact_number' => '09123456798',
+            'license_number' => 'LIC-110',
+            'license_expiry' => '2030-01-01',
+            'status' => Driver::STATUS_AVAILABLE,
+        ]);
+
+        $incident = Incident::create([
+            'incident_number' => 'INC-0110',
+            'reporter_name' => 'Vehicle Delay Test',
+            'contact_number' => '09120000010',
+            'incident_type' => 'Medical',
+            'location' => 'Test Location',
+            'description' => 'Driver chooses vehicle later',
+            'status' => Incident::STATUS_PENDING,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('admin.incidents.dispatch', $incident), [
+            'driver_id' => $driver->id,
+        ]);
+
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('dispatches', [
+            'incident_id' => $incident->id,
+            'driver_id' => $driver->id,
+            'vehicle_id' => null,
+            'status' => Dispatch::STATUS_ASSIGNED,
+        ]);
+    }
+
+    public function test_driver_accept_dispatch_creates_notification_with_selected_vehicle_details(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
+        Role::firstOrCreate(['name' => 'driver']);
+        $user = User::factory()->create(['status' => 'approved']);
+        $user->assignRole('driver');
+
+        $driver = Driver::create([
+            'user_id' => $user->id,
+            'badge_id' => 'AMB-111',
+            'contact_number' => '09123456799',
+            'license_number' => 'LIC-111',
+            'license_expiry' => '2030-01-01',
+            'status' => Driver::STATUS_AVAILABLE,
+        ]);
+
+        $vehicle = Ambulance::create([
+            'plate_number' => 'ABC-111',
+            'vehicle_name' => 'Selected Rescue',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_AVAILABLE,
+        ]);
+
+        $incident = Incident::create([
+            'incident_number' => 'INC-0111',
+            'reporter_name' => 'Notification Driver',
+            'contact_number' => '09120000011',
+            'incident_type' => 'Medical',
+            'location' => 'Test Road',
+            'description' => 'Vehicle selected by driver',
+            'status' => Incident::STATUS_DISPATCHED,
+            'driver_id' => $driver->id,
+        ]);
+
+        $dispatch = Dispatch::create([
+            'incident_id' => $incident->id,
+            'driver_id' => $driver->id,
+            'status' => Dispatch::STATUS_ASSIGNED,
+            'assigned_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->post(route('driver.dispatch.accept', $dispatch), [
+            'vehicle_id' => $vehicle->id,
+        ]);
+
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('notifications', [
+            'type' => 'dispatch',
+            'is_read' => false,
+        ]);
+
+        $notification = \App\Models\Notification::query()->latest()->first();
+        $this->assertNotNull($notification);
+        $this->assertStringContainsString('INC-0111', $notification->message);
+        $this->assertStringContainsString('Selected Rescue', $notification->message);
+    }
+
     public function test_admin_report_approval_closes_the_incident_and_completes_the_dispatch(): void
     {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
         $role = Role::firstOrCreate(['name' => 'admin']);
         $user = User::factory()->create(['status' => 'approved']);
         $user->assignRole($role);
