@@ -8,6 +8,7 @@ use App\Models\Dispatch;
 use App\Models\Driver;
 use App\Models\Incident;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -66,6 +67,10 @@ class DashboardController extends Controller
             ->latest('completed_at')
             ->first();
 
+        $availableVehicles = Ambulance::available()
+            ->orderBy('vehicle_name')
+            ->get();
+
         /*
         |--------------------------------------------------------------------------
         | Driver's incidents
@@ -86,7 +91,8 @@ class DashboardController extends Controller
                 'driver',
                 'currentDispatch',
                 'reportableDispatch',
-                'incidents'
+                'incidents',
+                'availableVehicles'
             )
         );
     }
@@ -96,6 +102,7 @@ class DashboardController extends Controller
      * Accept Dispatch
      */
     public function acceptDispatch(
+        Request $request,
         Dispatch $dispatch
     ): RedirectResponse {
 
@@ -131,57 +138,89 @@ class DashboardController extends Controller
             );
         }
 
-        DB::transaction(function () use (
-            $dispatch,
-            $driver
-        ) {
+        $requestedVehicleId = $request->validate([
+            'vehicle_id' => ['required', 'integer', 'exists:ambulances,id'],
+        ])['vehicle_id'];
 
-            /*
-            |------------------------------------------------------------------
-            | Dispatch
-            |------------------------------------------------------------------
-            */
+        try {
+            DB::transaction(function () use (
+                $dispatch,
+                $driver,
+                $requestedVehicleId
+            ) {
+                $dispatch = Dispatch::query()
+                    ->whereKey($dispatch->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-            $dispatch->update([
-                'status' => Dispatch::STATUS_ACCEPTED,
-                'accepted_at' => now(),
-            ]);
+                if ($dispatch->status !== Dispatch::STATUS_ASSIGNED) {
+                    throw new \RuntimeException('This dispatch is no longer waiting for acceptance.');
+                }
 
-            /*
+                $vehicle = Ambulance::query()
+                    ->whereKey($requestedVehicleId)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $vehicleIsAlreadyUsed = Dispatch::active()
+                    ->where('vehicle_id', $vehicle->id)
+                    ->where('id', '!=', $dispatch->id)
+                    ->exists();
+
+                $isCurrentVehicle = (int) $dispatch->vehicle_id === (int) $vehicle->id;
+
+                $vehicleCanBeAccepted = $vehicle->status === Ambulance::STATUS_AVAILABLE
+                    || ($isCurrentVehicle && $vehicle->status === Ambulance::STATUS_ON_DUTY);
+
+                if ($vehicleIsAlreadyUsed || !$vehicleCanBeAccepted) {
+                    throw new \DomainException('This vehicle is no longer available. Please select another vehicle.');
+                }
+
+                $oldVehicleId = $dispatch->vehicle_id;
+
+                $dispatch->update([
+                    'vehicle_id' => $vehicle->id,
+                    'status' => Dispatch::STATUS_ACCEPTED,
+                    'accepted_at' => now(),
+                ]);
+
+                if ($oldVehicleId && (int) $oldVehicleId !== (int) $vehicle->id) {
+                    $this->releaseVehicleIfUnused((int) $oldVehicleId, $dispatch->id);
+                }
+
+                $vehicle->update([
+                    'status' => Ambulance::STATUS_ON_DUTY,
+                ]);
+
+                /*
             |------------------------------------------------------------------
             | Incident
             |------------------------------------------------------------------
             */
 
-            if ($dispatch->incident) {
-                $dispatch->incident->update([
-                    'status' => Incident::STATUS_DISPATCHED,
-                    'call_received_at' => $dispatch->incident->call_received_at ?? now(),
-                ]);
-            }
+                if ($dispatch->incident) {
+                    $dispatch->incident->update([
+                        'status' => Incident::STATUS_DISPATCHED,
+                        'ambulance_id' => $vehicle->id,
+                        'call_received_at' => $dispatch->incident->call_received_at ?? now(),
+                    ]);
+                }
 
-            /*
+                /*
             |------------------------------------------------------------------
             | Driver
             |------------------------------------------------------------------
             */
 
-            $driver->update([
-                'status' => Driver::STATUS_ASSIGNED,
-            ]);
-
-            /*
-            |------------------------------------------------------------------
-            | Ambulance
-            |------------------------------------------------------------------
-            */
-
-            if ($dispatch->vehicle) {
-                $dispatch->vehicle->update([
-                    'status' => Ambulance::STATUS_ON_DUTY,
+                $driver->update([
+                    'status' => Driver::STATUS_ASSIGNED,
                 ]);
-            }
-        });
+            });
+        } catch (\DomainException $exception) {
+            return back()->with('error', $exception->getMessage())->withInput();
+        } catch (\RuntimeException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
         return back()->with(
             'success',
@@ -271,11 +310,8 @@ class DashboardController extends Controller
             |------------------------------------------------------------------
             */
 
-            if ($dispatch->vehicle) {
-
-                $dispatch->vehicle->update([
-                    'status' => Ambulance::STATUS_AVAILABLE,
-                ]);
+            if ($dispatch->vehicle_id) {
+                $this->releaseVehicleIfUnused((int) $dispatch->vehicle_id, $dispatch->id);
             }
 
             /*
@@ -642,10 +678,8 @@ class DashboardController extends Controller
                 'status' => Driver::STATUS_RETURNING,
             ]);
 
-            if ($dispatch->vehicle) {
-                $dispatch->vehicle->update([
-                    'status' => Ambulance::STATUS_AVAILABLE,
-                ]);
+            if ($dispatch->vehicle_id) {
+                $this->releaseVehicleIfUnused((int) $dispatch->vehicle_id, $dispatch->id);
             }
         });
 
@@ -653,7 +687,30 @@ class DashboardController extends Controller
     }
 
 
-    protected function getDriverDispatchForIncident(Incident $incident, $driver, array $statuses = null): ?Dispatch
+    protected function releaseVehicleIfUnused(int $vehicleId, int $dispatchId): void
+    {
+        $vehicle = Ambulance::query()
+            ->whereKey($vehicleId)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$vehicle) {
+            return;
+        }
+
+        $hasOtherActiveDispatch = Dispatch::active()
+            ->where('vehicle_id', $vehicleId)
+            ->where('id', '!=', $dispatchId)
+            ->exists();
+
+        if (!$hasOtherActiveDispatch) {
+            $vehicle->update([
+                'status' => Ambulance::STATUS_AVAILABLE,
+            ]);
+        }
+    }
+
+    protected function getDriverDispatchForIncident(Incident $incident, $driver, ?array $statuses = null): ?Dispatch
     {
         $query = Dispatch::where('incident_id', $incident->id)
             ->where('driver_id', $driver->id)

@@ -39,6 +39,12 @@ $vehiclePlate =
 $assignedVehicle?->plate_number
 ?? null;
 
+$vehicleOptions = collect($availableVehicles ?? [])
+->prepend($assignedVehicle)
+->filter()
+->unique('id')
+->values();
+
 
 /*
 |--------------------------------------------------------------------------
@@ -429,7 +435,7 @@ is_numeric($incidentLng);
          STAT CARDS
     ========================================================== --}}
 
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4 dashboard-stat-cards">
 
 
         {{-- ACTIVE DISPATCH --}}
@@ -657,7 +663,7 @@ is_numeric($incidentLng);
          MAIN ROW
     ========================================================== --}}
 
-    <div class="row g-4">
+    <div class="row g-4 dashboard-main-content">
 
 
         {{-- =====================================================
@@ -674,191 +680,196 @@ is_numeric($incidentLng);
             <div
                 class="card
                        rounded-4
-                       shadow-sm">
+                       shadow-sm
+                       dashboard-assignment-card">
 
                 <div class="card-body">
 
+                    <div class="mission-map-section">
 
-                    <div
-                        class="d-flex
+                        <div
+                            class="d-flex
                                flex-column
                                flex-md-row
                                justify-content-between
                                gap-2 mb-3">
 
-                        <div>
+                            <div>
 
-                            <h5
-                                class="fw-bold mb-1">
+                                <h5
+                                    class="fw-bold mb-1">
 
-                                <i
-                                    class="bi bi-map me-1">
-                                </i>
+                                    <i
+                                        class="bi bi-map me-1">
+                                    </i>
 
-                                Mission Map
+                                    Mission Map
 
-                            </h5>
-
-
-                            <p
-                                class="small text-muted mb-0">
-
-                                Your current position
-                                and assigned incident location.
-
-                            </p>
-
-                        </div>
+                                </h5>
 
 
-                        <span
-                            class="badge
+                                <p
+                                    class="small text-muted mb-0">
+
+                                    Your current position
+                                    and assigned incident location.
+
+                                </p>
+
+                            </div>
+
+
+                            <span
+                                class="badge
                                    rounded-pill
                                    bg-danger-subtle
                                    text-danger
                                    align-self-start">
 
-                            Live Tracking
+                                Live Tracking
 
-                        </span>
+                            </span>
+
+                        </div>
+
+
+                        {{-- MAP --}}
+                        <div class="map-shell">
+
+                            <div id="map"></div>
+
+                        </div>
 
                     </div>
 
+                    <div class="current-assignment-section">
 
-                    {{-- MAP --}}
-                    <div class="map-shell">
-
-                        <div id="map"></div>
-
-                    </div>
-
-
-                    {{-- =================================================
-                         ACTIVE DISPATCH
+                        {{-- =================================================
+                         CURRENT ASSIGNMENT
                     ================================================== --}}
 
-                    @if(
-                    $currentDispatch
-                    &&
-                    $currentDispatch->incident
-                    )
+                        @if(
+                        $currentDispatch
+                        &&
+                        $currentDispatch->incident
+                        )
 
 
-                    <div class="info-grid">
+                        <div class="info-grid">
 
 
-                        {{-- INCIDENT --}}
-                        <div class="info-box">
+                            {{-- INCIDENT --}}
+                            <div class="info-box">
 
-                            <div class="info-label">
-                                Incident
-                            </div>
+                                <div class="info-label">
+                                    Incident
+                                </div>
 
-                            <div class="info-value">
+                                <div class="info-value">
 
-                                {{
+                                    {{
                                         $currentDispatch
                                         ->incident
                                         ->incident_number
                                     }}
 
+                                </div>
+
                             </div>
 
-                        </div>
 
+                            {{-- LOCATION --}}
+                            <div class="info-box">
 
-                        {{-- LOCATION --}}
-                        <div class="info-box">
+                                <div class="info-label">
+                                    Location
+                                </div>
 
-                            <div class="info-label">
-                                Location
-                            </div>
+                                <div class="info-value">
 
-                            <div class="info-value">
-
-                                {{
+                                    {{
                                         $currentDispatch
                                         ->incident
                                         ->location
                                     }}
-                                <div class="small text-muted">{{ collect([$currentDispatch->incident->house_number, $currentDispatch->incident->street, $currentDispatch->incident->barangay, $currentDispatch->incident->city, $currentDispatch->incident->province])->filter()->implode(', ') }}</div>
+                                    <div class="small text-muted">{{ collect([$currentDispatch->incident->house_number, $currentDispatch->incident->street, $currentDispatch->incident->barangay, $currentDispatch->incident->city, $currentDispatch->incident->province])->filter()->implode(', ') }}</div>
+
+                                </div>
 
                             </div>
 
-                        </div>
-
-                        <div class="info-box">
-                            <div class="info-label">Classification</div>
-                            <div class="info-value">{{ $currentDispatch->incident->incident_type }}</div>
-                        </div>
-
-
-                        {{-- VEHICLE --}}
-                        <div class="info-box">
-
-                            <div class="info-label">
-                                Vehicle
+                            <div class="info-box">
+                                <div class="info-label">Classification</div>
+                                <div class="info-value">{{ $currentDispatch->incident->incident_type }}</div>
                             </div>
 
-                            <div class="info-value">
 
-                                {{ $vehicleName }}
+                            {{-- VEHICLE --}}
+                            <div class="info-box">
 
-                                @if($vehiclePlate)
+                                <div class="info-label">
+                                    Vehicle
+                                </div>
 
-                                <span
-                                    class="text-muted">
+                                <div class="info-value">
 
-                                    • {{ $vehiclePlate }}
+                                    {{ $vehicleName }}
 
-                                </span>
+                                    @if($vehiclePlate)
 
-                                @endif
+                                    <span
+                                        class="text-muted">
+
+                                        • {{ $vehiclePlate }}
+
+                                    </span>
+
+                                    @endif
+
+                                </div>
 
                             </div>
 
-                        </div>
+
+                            {{-- STATUS --}}
+                            <div class="info-box">
+
+                                <div class="info-label">
+                                    Dispatch Status
+                                </div>
+
+                                <div class="info-value">
+
+                                    @php
+
+                                    $dispatchBadge =
+                                    match($dispatchStatus) {
+
+                                    \App\Models\Dispatch::STATUS_PENDING,
+                                    \App\Models\Dispatch::STATUS_ASSIGNED
+                                    => 'bg-primary',
+
+                                    \App\Models\Dispatch::STATUS_ACCEPTED
+                                    => 'bg-success',
+
+                                    \App\Models\Dispatch::STATUS_EN_ROUTE
+                                    => 'bg-warning text-dark',
+
+                                    \App\Models\Dispatch::STATUS_ARRIVED
+                                    => 'bg-info text-dark',
+
+                                    default
+                                    => 'bg-secondary',
+                                    };
+
+                                    @endphp
 
 
-                        {{-- STATUS --}}
-                        <div class="info-box">
-
-                            <div class="info-label">
-                                Dispatch Status
-                            </div>
-
-                            <div class="info-value">
-
-                                @php
-
-                                $dispatchBadge =
-                                match($dispatchStatus) {
-
-                                \App\Models\Dispatch::STATUS_PENDING,
-                                \App\Models\Dispatch::STATUS_ASSIGNED
-                                => 'bg-primary',
-
-                                \App\Models\Dispatch::STATUS_ACCEPTED
-                                => 'bg-success',
-
-                                \App\Models\Dispatch::STATUS_EN_ROUTE
-                                => 'bg-warning text-dark',
-
-                                \App\Models\Dispatch::STATUS_ARRIVED
-                                => 'bg-info text-dark',
-
-                                default
-                                => 'bg-secondary',
-                                };
-
-                                @endphp
-
-
-                                <span
-                                    class="badge
+                                    <span
+                                        class="badge
                                                {{ $dispatchBadge }}">
 
-                                    {{
+                                        {{
                                             strtoupper(
                                                 str_replace(
                                                     '_',
@@ -869,361 +880,384 @@ is_numeric($incidentLng);
                                             )
                                         }}
 
-                                </span>
+                                    </span>
 
+                                </div>
+
+                            </div>
+
+                            <div class="info-box">
+                                <div class="info-label">Event Times</div>
+                                <div class="info-value small">
+                                    Created: {{ $currentDispatch->created_at?->format('M d, Y h:i A') ?? 'N/A' }}<br>
+                                    Accepted: {{ $currentDispatch->accepted_at?->format('M d, Y h:i A') ?? 'Pending' }}<br>
+                                    En route: {{ $currentDispatch->en_route_at?->format('M d, Y h:i A') ?? 'Pending' }}<br>
+                                    Arrived: {{ $currentDispatch->arrived_at?->format('M d, Y h:i A') ?? 'Pending' }}<br>
+                                    Completed: {{ $currentDispatch->completed_at?->format('M d, Y h:i A') ?? 'Pending' }}
+                                </div>
                             </div>
 
                         </div>
 
-                        <div class="info-box">
-                            <div class="info-label">Event Times</div>
-                            <div class="info-value small">
-                                Created: {{ $currentDispatch->created_at?->format('M d, Y h:i A') ?? 'N/A' }}<br>
-                                Accepted: {{ $currentDispatch->accepted_at?->format('M d, Y h:i A') ?? 'Pending' }}<br>
-                                En route: {{ $currentDispatch->en_route_at?->format('M d, Y h:i A') ?? 'Pending' }}<br>
-                                Arrived: {{ $currentDispatch->arrived_at?->format('M d, Y h:i A') ?? 'Pending' }}<br>
-                                Completed: {{ $currentDispatch->completed_at?->format('M d, Y h:i A') ?? 'Pending' }}
-                            </div>
-                        </div>
 
-                    </div>
-
-
-                    {{-- =================================================
+                        {{-- =================================================
                              ACTIONS
                         ================================================== --}}
 
-                    <div
-                        class="dispatch-actions mt-3">
+                        <div
+                            class="dispatch-actions mt-3">
 
 
-                        {{-- ACCEPT / DECLINE --}}
-                        @if(
-                        in_array(
-                        $currentDispatch->status,
-                        [
-                        \App\Models\Dispatch::STATUS_PENDING,
-                        \App\Models\Dispatch::STATUS_ASSIGNED
-                        ],
-                        true
-                        )
-                        )
+                            {{-- ACCEPT / DECLINE --}}
+                            @if(
+                            in_array(
+                            $currentDispatch->status,
+                            [
+                            \App\Models\Dispatch::STATUS_PENDING,
+                            \App\Models\Dispatch::STATUS_ASSIGNED
+                            ],
+                            true
+                            )
+                            )
 
-                        <form
-                            method="POST"
-                            action="{{ route(
+                            <form
+                                method="POST"
+                                action="{{ route(
                                         'driver.dispatch.accept',
                                         $currentDispatch
                                     ) }}"
-                            class="flex-fill">
+                                class="flex-fill">
 
-                            @csrf
+                                @csrf
 
-                            <button
-                                type="submit"
-                                class="btn btn-primary
+                                <label for="vehicle_id" class="form-label fw-semibold mb-1">
+                                    Select Vehicle
+                                </label>
+                                <select
+                                    id="vehicle_id"
+                                    name="vehicle_id"
+                                    class="form-select mb-2"
+                                    required
+                                    {{ $vehicleOptions->isEmpty() ? 'disabled' : '' }}>
+                                    <option value="">Choose an available vehicle</option>
+                                    @foreach($vehicleOptions as $vehicle)
+                                    <option value="{{ $vehicle->id }}" @selected((int) $currentDispatch->vehicle_id === (int) $vehicle->id)>
+                                        {{ $vehicle->vehicle_name }} — {{ ucfirst(str_replace('_', ' ', $vehicle->vehicle_type)) }} — {{ ucfirst(str_replace('_', ' ', $vehicle->status)) }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                                @if($vehicleOptions->isEmpty())
+                                <div class="small text-danger mb-2">No available vehicle at this time.</div>
+                                @endif
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary
                                                w-100
-                                               driver-action-btn">
+                                               driver-action-btn"
+                                    {{ $vehicleOptions->isEmpty() ? 'disabled' : '' }}>
 
-                                <i
-                                    class="bi bi-check-circle me-1">
-                                </i>
+                                    <i
+                                        class="bi bi-check-circle me-1">
+                                    </i>
 
-                                Accept Dispatch
+                                    Accept Dispatch
 
-                            </button>
+                                </button>
 
-                        </form>
+                            </form>
 
 
-                        <form
-                            method="POST"
-                            action="{{ route(
+                            <form
+                                method="POST"
+                                action="{{ route(
                                         'driver.dispatch.decline',
                                         $currentDispatch
                                     ) }}"
-                            class="flex-fill">
+                                class="flex-fill">
 
-                            @csrf
+                                @csrf
 
-                            <button
-                                type="submit"
-                                class="btn btn-outline-danger
+                                <button
+                                    type="submit"
+                                    class="btn btn-outline-danger
                                                w-100
                                                driver-action-btn">
 
-                                <i
-                                    class="bi bi-x-circle me-1">
-                                </i>
+                                    <i
+                                        class="bi bi-x-circle me-1">
+                                    </i>
 
-                                Decline Dispatch
+                                    Decline Dispatch
 
-                            </button>
+                                </button>
 
-                        </form>
+                            </form>
 
 
-                        {{-- ACCEPTED --}}
-                        @elseif(
-                        $currentDispatch->status
-                        ===
-                        \App\Models\Dispatch::STATUS_ACCEPTED
-                        )
+                            {{-- ACCEPTED --}}
+                            @elseif(
+                            $currentDispatch->status
+                            ===
+                            \App\Models\Dispatch::STATUS_ACCEPTED
+                            )
 
-                        @if($currentDispatch->incident?->response_at === null)
-                        <form
-                            method="POST"
-                            action="{{ route('driver.incidents.response', $currentDispatch->incident) }}"
-                            class="flex-fill">
+                            @if($currentDispatch->incident?->response_at === null)
+                            <form
+                                method="POST"
+                                action="{{ route('driver.incidents.response', $currentDispatch->incident) }}"
+                                class="flex-fill">
 
-                            @csrf
+                                @csrf
 
-                            <button
-                                type="submit"
-                                class="btn btn-primary
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary
                                                w-100
                                                driver-action-btn">
 
-                                <i
-                                    class="bi bi-check2-circle me-1">
-                                </i>
+                                    <i
+                                        class="bi bi-check2-circle me-1">
+                                    </i>
 
-                                Mark Response
+                                    Mark Response
 
-                            </button>
+                                </button>
 
-                        </form>
-                        @else
-                        <form method="POST" action="{{ route('driver.incidents.en-route', $currentDispatch->incident) }}" class="flex-fill">
-                            @csrf
-                            <button type="submit" class="btn btn-info w-100 driver-action-btn">
-                                <i class="bi bi-sign-turn-right-fill me-1"></i>
-                                Mark En Route
-                            </button>
-                        </form>
-                        @endif
-
-
-                        {{-- EN ROUTE --}}
-                        @elseif(
-                        $currentDispatch->status
-                        ===
-                        \App\Models\Dispatch::STATUS_EN_ROUTE
-                        )
-
-                        @if($currentDispatch->incident?->at_scene_at === null)
-                        <form method="POST" action="{{ route('driver.incidents.at-scene', $currentDispatch->incident) }}" class="flex-fill">
-                            @csrf
-                            <button type="submit" class="btn btn-warning w-100 driver-action-btn">
-                                <i class="bi bi-geo-alt-fill me-1"></i>
-                                Mark At Scene
-                            </button>
-                        </form>
-                        @elseif($currentDispatch->incident?->at_patient_at === null)
-                        <form method="POST" action="{{ route('driver.incidents.at-patient', $currentDispatch->incident) }}" class="flex-fill">
-                            @csrf
-                            <button type="submit" class="btn btn-primary w-100 driver-action-btn">
-                                <i class="bi bi-person-heart me-1"></i>
-                                Mark At Patient
-                            </button>
-                        </form>
-                        @elseif($currentDispatch->incident?->depart_scene_at === null)
-                        <form method="POST" action="{{ route('driver.incidents.depart-scene', $currentDispatch->incident) }}" class="flex-fill">
-                            @csrf
-                            <button type="submit" class="btn btn-info w-100 driver-action-btn">
-                                <i class="bi bi-truck-front me-1"></i>
-                                Depart Scene
-                            </button>
-                        </form>
-                        @elseif($currentDispatch->incident?->at_hospital_at === null)
-                        <form method="POST" action="{{ route('driver.incidents.at-hospital', $currentDispatch->incident) }}" class="flex-fill">
-                            @csrf
-                            <button type="submit" class="btn btn-success w-100 driver-action-btn">
-                                <i class="bi bi-hospital me-1"></i>
-                                Mark At Hospital
-                            </button>
-                        </form>
-                        @else
-                        <form method="POST" action="{{ route('driver.incidents.completed', $currentDispatch->incident) }}" class="flex-fill">
-                            @csrf
-                            <button type="submit" class="btn btn-success w-100 driver-action-btn">
-                                <i class="bi bi-check2-all me-1"></i>
-                                Complete Incident
-                            </button>
-                        </form>
-                        @endif
+                            </form>
+                            @else
+                            <form method="POST" action="{{ route('driver.incidents.en-route', $currentDispatch->incident) }}" class="flex-fill">
+                                @csrf
+                                <button type="submit" class="btn btn-info w-100 driver-action-btn">
+                                    <i class="bi bi-sign-turn-right-fill me-1"></i>
+                                    Mark En Route
+                                </button>
+                            </form>
+                            @endif
 
 
-                        {{-- ARRIVED --}}
-                        @elseif(
-                        $currentDispatch->status
-                        ===
-                        \App\Models\Dispatch::STATUS_ARRIVED
-                        )
+                            {{-- EN ROUTE --}}
+                            @elseif(
+                            $currentDispatch->status
+                            ===
+                            \App\Models\Dispatch::STATUS_EN_ROUTE
+                            )
 
-                        @if($currentDispatch->incident?->at_patient_at === null)
-                        <form method="POST" action="{{ route('driver.incidents.at-patient', $currentDispatch->incident) }}" class="flex-fill">
-                            @csrf
-                            <button type="submit" class="btn btn-primary w-100 driver-action-btn">
-                                <i class="bi bi-person-heart me-1"></i>
-                                Mark At Patient
-                            </button>
-                        </form>
-                        @elseif($currentDispatch->incident?->depart_scene_at === null)
-                        <form method="POST" action="{{ route('driver.incidents.depart-scene', $currentDispatch->incident) }}" class="flex-fill">
-                            @csrf
-                            <button type="submit" class="btn btn-info w-100 driver-action-btn">
-                                <i class="bi bi-truck-front me-1"></i>
-                                Depart Scene
-                            </button>
-                        </form>
-                        @elseif($currentDispatch->incident?->at_hospital_at === null)
-                        <form method="POST" action="{{ route('driver.incidents.at-hospital', $currentDispatch->incident) }}" class="flex-fill">
-                            @csrf
-                            <button type="submit" class="btn btn-success w-100 driver-action-btn">
-                                <i class="bi bi-hospital me-1"></i>
-                                Mark At Hospital
-                            </button>
-                        </form>
-                        @else
-                        <form method="POST" action="{{ route('driver.incidents.completed', $currentDispatch->incident) }}" class="flex-fill">
-                            @csrf
-                            <button type="submit" class="btn btn-success w-100 driver-action-btn">
-                                <i class="bi bi-check2-all me-1"></i>
-                                Complete Incident
-                            </button>
-                        </form>
-                        @endif
+                            @if($currentDispatch->incident?->at_scene_at === null)
+                            <form method="POST" action="{{ route('driver.incidents.at-scene', $currentDispatch->incident) }}" class="flex-fill">
+                                @csrf
+                                <button type="submit" class="btn btn-warning w-100 driver-action-btn">
+                                    <i class="bi bi-geo-alt-fill me-1"></i>
+                                    Mark At Scene
+                                </button>
+                            </form>
+                            @elseif($currentDispatch->incident?->at_patient_at === null)
+                            <form method="POST" action="{{ route('driver.incidents.at-patient', $currentDispatch->incident) }}" class="flex-fill">
+                                @csrf
+                                <button type="submit" class="btn btn-primary w-100 driver-action-btn">
+                                    <i class="bi bi-person-heart me-1"></i>
+                                    Mark At Patient
+                                </button>
+                            </form>
+                            @elseif($currentDispatch->incident?->depart_scene_at === null)
+                            <form method="POST" action="{{ route('driver.incidents.depart-scene', $currentDispatch->incident) }}" class="flex-fill">
+                                @csrf
+                                <button type="submit" class="btn btn-info w-100 driver-action-btn">
+                                    <i class="bi bi-truck-front me-1"></i>
+                                    Depart Scene
+                                </button>
+                            </form>
+                            @elseif($currentDispatch->incident?->at_hospital_at === null)
+                            <form method="POST" action="{{ route('driver.incidents.at-hospital', $currentDispatch->incident) }}" class="flex-fill">
+                                @csrf
+                                <button type="submit" class="btn btn-success w-100 driver-action-btn">
+                                    <i class="bi bi-hospital me-1"></i>
+                                    Mark At Hospital
+                                </button>
+                            </form>
+                            @else
+                            <form method="POST" action="{{ route('driver.incidents.completed', $currentDispatch->incident) }}" class="flex-fill">
+                                @csrf
+                                <button type="submit" class="btn btn-success w-100 driver-action-btn">
+                                    <i class="bi bi-check2-all me-1"></i>
+                                    Complete Incident
+                                </button>
+                            </form>
+                            @endif
 
-                        @endif
+
+                            {{-- ARRIVED --}}
+                            @elseif(
+                            $currentDispatch->status
+                            ===
+                            \App\Models\Dispatch::STATUS_ARRIVED
+                            )
+
+                            @if($currentDispatch->incident?->at_patient_at === null)
+                            <form method="POST" action="{{ route('driver.incidents.at-patient', $currentDispatch->incident) }}" class="flex-fill">
+                                @csrf
+                                <button type="submit" class="btn btn-primary w-100 driver-action-btn">
+                                    <i class="bi bi-person-heart me-1"></i>
+                                    Mark At Patient
+                                </button>
+                            </form>
+                            @elseif($currentDispatch->incident?->depart_scene_at === null)
+                            <form method="POST" action="{{ route('driver.incidents.depart-scene', $currentDispatch->incident) }}" class="flex-fill">
+                                @csrf
+                                <button type="submit" class="btn btn-info w-100 driver-action-btn">
+                                    <i class="bi bi-truck-front me-1"></i>
+                                    Depart Scene
+                                </button>
+                            </form>
+                            @elseif($currentDispatch->incident?->at_hospital_at === null)
+                            <form method="POST" action="{{ route('driver.incidents.at-hospital', $currentDispatch->incident) }}" class="flex-fill">
+                                @csrf
+                                <button type="submit" class="btn btn-success w-100 driver-action-btn">
+                                    <i class="bi bi-hospital me-1"></i>
+                                    Mark At Hospital
+                                </button>
+                            </form>
+                            @else
+                            <form method="POST" action="{{ route('driver.incidents.completed', $currentDispatch->incident) }}" class="flex-fill">
+                                @csrf
+                                <button type="submit" class="btn btn-success w-100 driver-action-btn">
+                                    <i class="bi bi-check2-all me-1"></i>
+                                    Complete Incident
+                                </button>
+                            </form>
+                            @endif
+
+                            @endif
 
 
-                        {{-- ASSIGNMENT --}}
-                        <a
-                            href="{{ route(
+                            {{-- ASSIGNMENT --}}
+                            <a
+                                href="{{ route(
                                     'driver.assignment'
                                 ) }}"
-                            class="btn btn-outline-primary
+                                class="btn btn-outline-primary
                                        driver-action-btn
                                        flex-fill">
 
-                            <i
-                                class="bi bi-list-task me-1">
-                            </i>
+                                <i
+                                    class="bi bi-list-task me-1">
+                                </i>
 
-                            View Assignment
+                                View Assignment
 
-                        </a>
+                            </a>
 
-                    </div>
+                        </div>
 
 
-                    {{-- =================================================
+                        {{-- =================================================
                          REPORTABLE DISPATCH
                     ================================================== --}}
 
-                    @elseif(
-                    isset($reportableDispatch)
-                    &&
-                    $reportableDispatch?->incident
-                    )
+                        @elseif(
+                        isset($reportableDispatch)
+                        &&
+                        $reportableDispatch?->incident
+                        )
 
-                    <div class="info-grid mt-3">
+                        <div class="info-grid mt-3">
 
-                        <div class="info-box">
+                            <div class="info-box">
 
-                            <div class="info-label">
-                                Reportable Incident
-                            </div>
+                                <div class="info-label">
+                                    Reportable Incident
+                                </div>
 
-                            <div class="info-value">
+                                <div class="info-value">
 
-                                {{
+                                    {{
                                         $reportableDispatch
                                         ->incident
                                         ->incident_number
                                     }}
 
+                                </div>
+
                             </div>
 
-                        </div>
 
+                            <div class="info-box">
 
-                        <div class="info-box">
+                                <div class="info-label">
+                                    Location
+                                </div>
 
-                            <div class="info-label">
-                                Location
-                            </div>
+                                <div class="info-value">
 
-                            <div class="info-value">
-
-                                {{
+                                    {{
                                         $reportableDispatch
                                         ->incident
                                         ->location
                                     }}
 
+                                </div>
+
                             </div>
 
                         </div>
 
-                    </div>
 
+                        <div class="mt-3">
 
-                    <div class="mt-3">
-
-                        <a
-                            href="{{ route(
+                            <a
+                                href="{{ route(
                                     'driver.report.create',
                                     $reportableDispatch->incident
                                 ) }}"
-                            class="btn btn-primary
+                                class="btn btn-primary
                                        driver-action-btn">
 
-                            <i
-                                class="bi bi-file-earmark-text me-1">
-                            </i>
+                                <i
+                                    class="bi bi-file-earmark-text me-1">
+                                </i>
 
-                            Submit Report
+                                Submit Report
 
-                        </a>
-
-                    </div>
-
-
-                    {{-- =================================================
-                         NO DISPATCH
-                    ================================================== --}}
-
-                    @else
-
-                    <div class="empty-state">
-
-                        <div class="empty-icon">
-
-                            <i class="bi bi-inbox"></i>
+                            </a>
 
                         </div>
 
 
-                        <h6 class="fw-bold mb-1">
+                        {{-- =================================================
+                         NO DISPATCH
+                    ================================================== --}}
 
-                            No Active Dispatch
+                        @else
 
-                        </h6>
+                        <div class="empty-state">
+
+                            <div class="empty-icon">
+
+                                <i class="bi bi-inbox"></i>
+
+                            </div>
 
 
-                        <p
-                            class="small text-muted mb-0">
+                            <h6 class="fw-bold mb-1">
 
-                            Your dashboard will update
-                            when a dispatch is assigned.
+                                No Active Dispatch
 
-                        </p>
+                            </h6>
+
+
+                            <p
+                                class="small text-muted mb-0">
+
+                                Your dashboard will update
+                                when a dispatch is assigned.
+
+                            </p>
+
+                        </div>
+
+                        @endif
 
                     </div>
-
-                    @endif
 
                 </div>
 
@@ -1557,6 +1591,46 @@ is_numeric($incidentLng);
     </div>
 
 </div>
+
+@push('styles')
+<style>
+    .driver-dashboard-shell {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dashboard-main-content {
+        order: 2;
+    }
+
+    .dashboard-stat-cards {
+        order: 3;
+    }
+
+    .dashboard-assignment-card .card-body {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .current-assignment-section {
+        order: 1;
+    }
+
+    .mission-map-section {
+        order: 2;
+    }
+
+    @media (max-width: 1199.98px) {
+        .dashboard-main-content {
+            order: 2;
+        }
+
+        .dashboard-stat-cards {
+            order: 3;
+        }
+    }
+</style>
+@endpush
 
 @endsection
 

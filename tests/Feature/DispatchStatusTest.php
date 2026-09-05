@@ -9,6 +9,7 @@ use App\Models\Incident;
 use App\Models\IncidentReport;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -278,6 +279,148 @@ class DispatchStatusTest extends TestCase
         $this->assertDatabaseHas('incidents', [
             'id' => $incident->id,
             'status' => Incident::STATUS_PENDING,
+        ]);
+    }
+
+    public function test_driver_can_switch_to_an_available_vehicle_when_accepting(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
+        Role::firstOrCreate(['name' => 'driver']);
+        $user = User::factory()->create(['status' => 'approved']);
+        $user->assignRole('driver');
+        $driver = Driver::create([
+            'user_id' => $user->id,
+            'badge_id' => 'AMB-106',
+            'contact_number' => '09123456795',
+            'license_number' => 'LIC-106',
+            'license_expiry' => '2030-01-01',
+            'status' => Driver::STATUS_ASSIGNED,
+        ]);
+
+        $oldVehicle = Ambulance::create([
+            'plate_number' => 'ABC-106',
+            'vehicle_name' => 'Old Vehicle',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_ON_DUTY,
+        ]);
+        $newVehicle = Ambulance::create([
+            'plate_number' => 'ABC-107',
+            'vehicle_name' => 'Available Vehicle',
+            'vehicle_type' => 'rescue_van',
+            'status' => Ambulance::STATUS_AVAILABLE,
+        ]);
+        $incident = Incident::create([
+            'incident_number' => 'INC-0106',
+            'reporter_name' => 'Driver Test',
+            'contact_number' => '09120000006',
+            'incident_type' => 'Medical',
+            'location' => 'Test Location',
+            'description' => 'Switch vehicle',
+            'status' => Incident::STATUS_DISPATCHED,
+            'driver_id' => $driver->id,
+            'ambulance_id' => $oldVehicle->id,
+        ]);
+        $dispatch = Dispatch::create([
+            'incident_id' => $incident->id,
+            'driver_id' => $driver->id,
+            'vehicle_id' => $oldVehicle->id,
+            'status' => Dispatch::STATUS_ASSIGNED,
+            'assigned_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->post(route('driver.dispatch.accept', $dispatch), [
+            'vehicle_id' => $newVehicle->id,
+        ]);
+
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('dispatches', [
+            'id' => $dispatch->id,
+            'vehicle_id' => $newVehicle->id,
+            'status' => Dispatch::STATUS_ACCEPTED,
+        ]);
+        $this->assertDatabaseHas('ambulances', [
+            'id' => $newVehicle->id,
+            'status' => Ambulance::STATUS_ON_DUTY,
+        ]);
+        $this->assertDatabaseHas('ambulances', [
+            'id' => $oldVehicle->id,
+            'status' => Ambulance::STATUS_AVAILABLE,
+        ]);
+    }
+
+    public function test_driver_cannot_accept_with_a_vehicle_that_became_busy(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
+        Role::firstOrCreate(['name' => 'driver']);
+        $user = User::factory()->create(['status' => 'approved']);
+        $user->assignRole('driver');
+        $driver = Driver::create([
+            'user_id' => $user->id,
+            'badge_id' => 'AMB-108',
+            'contact_number' => '09123456796',
+            'license_number' => 'LIC-108',
+            'license_expiry' => '2030-01-01',
+            'status' => Driver::STATUS_ASSIGNED,
+        ]);
+        $vehicle = Ambulance::create([
+            'plate_number' => 'ABC-108',
+            'vehicle_name' => 'Busy Vehicle',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_ON_DUTY,
+        ]);
+        $otherDriver = Driver::create([
+            'user_id' => User::factory()->create(['status' => 'approved'])->id,
+            'badge_id' => 'AMB-109',
+            'contact_number' => '09123456797',
+            'license_number' => 'LIC-109',
+            'license_expiry' => '2030-01-01',
+            'status' => Driver::STATUS_ASSIGNED,
+        ]);
+        $incident = Incident::create([
+            'incident_number' => 'INC-0108',
+            'reporter_name' => 'Driver Test',
+            'contact_number' => '09120000008',
+            'incident_type' => 'Medical',
+            'location' => 'Test Location',
+            'description' => 'Busy vehicle',
+            'status' => Incident::STATUS_DISPATCHED,
+            'driver_id' => $driver->id,
+        ]);
+        $otherIncident = Incident::create([
+            'incident_number' => 'INC-0109',
+            'reporter_name' => 'Other Driver',
+            'contact_number' => '09120000009',
+            'incident_type' => 'Medical',
+            'location' => 'Test Location',
+            'description' => 'Busy vehicle owner',
+            'status' => Incident::STATUS_DISPATCHED,
+            'driver_id' => $otherDriver->id,
+        ]);
+        $dispatch = Dispatch::create([
+            'incident_id' => $incident->id,
+            'driver_id' => $driver->id,
+            'status' => Dispatch::STATUS_ASSIGNED,
+            'assigned_at' => now(),
+        ]);
+        Dispatch::create([
+            'incident_id' => $otherIncident->id,
+            'driver_id' => $otherDriver->id,
+            'vehicle_id' => $vehicle->id,
+            'status' => Dispatch::STATUS_ACCEPTED,
+            'assigned_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->post(route('driver.dispatch.accept', $dispatch), [
+            'vehicle_id' => $vehicle->id,
+        ]);
+
+        $response->assertSessionHas('error', 'This vehicle is no longer available. Please select another vehicle.');
+        $this->assertDatabaseHas('dispatches', [
+            'id' => $dispatch->id,
+            'status' => Dispatch::STATUS_ASSIGNED,
+            'vehicle_id' => null,
         ]);
     }
 
