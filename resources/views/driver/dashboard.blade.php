@@ -804,99 +804,6 @@ is_numeric($incidentLng);
                             </div>
 
 
-                            {{-- VEHICLE --}}
-                            <div class="info-box">
-
-                                <div class="info-label">
-                                    Vehicle
-                                </div>
-
-                                <div class="info-value">
-
-                                    {{ $vehicleName }}
-
-                                    @if($vehiclePlate)
-
-                                    <span
-                                        class="text-muted">
-
-                                        • {{ $vehiclePlate }}
-
-                                    </span>
-
-                                    @endif
-
-                                </div>
-
-                            </div>
-
-
-                            {{-- STATUS --}}
-                            <div class="info-box">
-
-                                <div class="info-label">
-                                    Dispatch Status
-                                </div>
-
-                                <div class="info-value">
-
-                                    @php
-
-                                    $dispatchBadge =
-                                    match($dispatchStatus) {
-
-                                    \App\Models\Dispatch::STATUS_PENDING,
-                                    \App\Models\Dispatch::STATUS_ASSIGNED
-                                    => 'bg-primary',
-
-                                    \App\Models\Dispatch::STATUS_ACCEPTED
-                                    => 'bg-success',
-
-                                    \App\Models\Dispatch::STATUS_EN_ROUTE
-                                    => 'bg-warning text-dark',
-
-                                    \App\Models\Dispatch::STATUS_ARRIVED
-                                    => 'bg-info text-dark',
-
-                                    default
-                                    => 'bg-secondary',
-                                    };
-
-                                    @endphp
-
-
-                                    <span
-                                        class="badge
-                                               {{ $dispatchBadge }}">
-
-                                        {{
-                                            strtoupper(
-                                                str_replace(
-                                                    '_',
-                                                    ' ',
-                                                    $dispatchStatus
-                                                    ?? 'unknown'
-                                                )
-                                            )
-                                        }}
-
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-                            <div class="info-box">
-                                <div class="info-label">Event Times</div>
-                                <div class="info-value small">
-                                    Created: {{ $currentDispatch->created_at?->format('M d, Y h:i A') ?? 'N/A' }}<br>
-                                    Accepted: {{ $currentDispatch->accepted_at?->format('M d, Y h:i A') ?? 'Pending' }}<br>
-                                    En route: {{ $currentDispatch->en_route_at?->format('M d, Y h:i A') ?? 'Pending' }}<br>
-                                    Arrived: {{ $currentDispatch->arrived_at?->format('M d, Y h:i A') ?? 'Pending' }}<br>
-                                    Completed: {{ $currentDispatch->completed_at?->format('M d, Y h:i A') ?? 'Pending' }}
-                                </div>
-                            </div>
-
                         </div>
 
 
@@ -931,7 +838,7 @@ is_numeric($incidentLng);
                                 @csrf
 
                                 <label for="vehicle_id" class="form-label fw-semibold mb-1">
-                                    Select Vehicle
+                                    Choose Vehicle
                                 </label>
                                 <select
                                     id="vehicle_id"
@@ -1143,7 +1050,7 @@ is_numeric($incidentLng);
                                     class="bi bi-list-task me-1">
                                 </i>
 
-                                View Assignment
+                                View Info
 
                             </a>
 
