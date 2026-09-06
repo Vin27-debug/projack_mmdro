@@ -241,36 +241,40 @@ is_numeric($incidentLng);
                            gap-2">
 
 
-                    {{-- PANIC --}}
-                    <button
-                        id="panicBtn"
-                        type="button"
-                        class="btn btn-danger
-                               driver-action-btn">
+                    <div class="emergency-panel" aria-labelledby="emergencyHeading">
 
-                        <i
-                            class="bi bi-exclamation-triangle-fill me-1">
-                        </i>
+                        <div id="emergencyHeading" class="emergency-panel-title">
+                            <i class="bi bi-exclamation-octagon-fill me-1"></i>
+                            EMERGENCY
+                        </div>
 
-                        PANIC
+                        <div class="emergency-actions">
 
-                    </button>
+                            {{-- PANIC --}}
+                            <button
+                                id="panicBtn"
+                                type="button"
+                                class="btn btn-danger driver-action-btn">
 
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                PANIC ALERT
 
-                    {{-- HIJACK --}}
-                    <button
-                        id="hijackBtn"
-                        type="button"
-                        class="btn btn-warning
-                               driver-action-btn">
+                            </button>
 
-                        <i
-                            class="bi bi-shield-exclamation me-1">
-                        </i>
+                            {{-- HIJACK --}}
+                            <button
+                                id="hijackBtn"
+                                type="button"
+                                class="btn btn-warning driver-action-btn">
 
-                        HIJACK
+                                <i class="bi bi-shield-exclamation me-1"></i>
+                                HIJACK ALERT
 
-                    </button>
+                            </button>
+
+                        </div>
+
+                    </div>
 
 
                     {{-- REPORT --}}
@@ -2508,6 +2512,50 @@ is_numeric($incidentLng);
     }
 
 
+    .emergency-panel {
+
+        width: min(100%, 520px);
+
+        padding: .75rem;
+
+        border: 1px solid rgba(255, 255, 255, .2);
+        border-left: 4px solid #ffb000;
+        border-radius: .75rem;
+
+        background: rgba(0, 0, 0, .16);
+
+    }
+
+
+    .emergency-panel-title {
+
+        margin-bottom: .5rem;
+
+        color: #fff;
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: .12em;
+
+    }
+
+
+    .emergency-actions {
+
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .5rem;
+
+    }
+
+
+    .emergency-actions .driver-action-btn {
+
+        min-width: 0;
+        white-space: nowrap;
+
+    }
+
+
     .hero-icon {
 
         width: 48px;
@@ -2875,6 +2923,13 @@ is_numeric($incidentLng);
         .dispatch-actions {
 
             flex-direction: column;
+
+        }
+
+
+        .emergency-actions {
+
+            grid-template-columns: 1fr;
 
         }
 
