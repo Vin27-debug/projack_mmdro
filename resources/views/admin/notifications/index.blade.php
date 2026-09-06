@@ -8,9 +8,8 @@
     <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
-    <div class="notifications-header d-flex justify-content-between align-items-center gap-3 mb-4">
+    <div class="notifications-header d-flex justify-content-between align-items-center gap-3 mb-3">
         <div>
-            <div class="notifications-eyebrow"><i class="bi bi-bell-fill me-1"></i> ADMIN COMMAND CENTER</div>
             <h2 class="section-heading mb-1">Notifications</h2>
             <p class="section-excerpt mb-0">{{ $unreadNotifications ?? 0 }} unread messages</p>
         </div>
@@ -25,9 +24,17 @@
     </div>
 
     <div class="notifications-panel">
+        <div class="notifications-table-head">
+            <div>Type / Title</div>
+            <div>Message</div>
+            <div>Date</div>
+            <div>Status</div>
+            <div>Action</div>
+        </div>
+
         <div class="notifications-list">
             @forelse($notifications as $notification)
-            <article class="notification-card {{ $notification->is_read ? 'notification-card-read' : 'notification-card-unread' }}">
+            <div class="notification-row {{ $notification->is_read ? 'notification-row-read' : 'notification-row-unread' }}">
                 <form method="POST" action="{{ route('admin.notifications.open', $notification) }}" class="notification-open-form">
                     @csrf
                     <button type="submit" class="notification-open text-start">
@@ -59,12 +66,22 @@
 
                         <span class="notification-copy">
                             <span class="notification-title">{{ $notification->title }}</span>
-                            <span class="notification-message">{{ $notification->message }}</span>
-                            <span class="notification-date">
-                                <i class="bi bi-clock me-1"></i>
-                                {{ $notification->created_at?->format('F j, Y') }} · {{ $notification->created_at?->format('h:i A') }}
-                            </span>
                         </span>
+                    </button>
+                </form>
+
+                <form method="POST" action="{{ route('admin.notifications.open', $notification) }}" class="notification-message-form">
+                    @csrf
+                    <button type="submit" class="notification-cell-link text-start">
+                        {{ $notification->message }}
+                    </button>
+                </form>
+
+                <form method="POST" action="{{ route('admin.notifications.open', $notification) }}" class="notification-date-form">
+                    @csrf
+                    <button type="submit" class="notification-cell-link text-start">
+                        {{ $notification->created_at?->format('M j, Y') }}<br>
+                        <span>{{ $notification->created_at?->format('h:i A') }}</span>
                     </button>
                 </form>
 
@@ -73,15 +90,19 @@
                         <span class="notification-status-dot"></span>
                         {{ $notification->is_read ? 'Read' : 'Unread' }}
                     </span>
+                </div>
 
+                <div class="notification-action">
                     @if(!$notification->is_read)
                     <form method="POST" action="{{ route('admin.notifications.read', $notification) }}" class="notification-read-form">
                         @csrf
                         <button type="submit" class="btn btn-sm btn-outline-primary">Mark Read</button>
                     </form>
+                    @else
+                    <span class="notification-dash">—</span>
                     @endif
                 </div>
-            </article>
+            </div>
             @empty
             <div class="notifications-empty">
                 <i class="bi bi-bell-slash"></i>
@@ -104,14 +125,6 @@
         max-width: 1080px;
     }
 
-    .notifications-eyebrow {
-        color: #014cfd;
-        font-size: .72rem;
-        font-weight: 800;
-        letter-spacing: .14em;
-        margin-bottom: .35rem;
-    }
-
     .notifications-list {
         border-top: 1px solid #263e59;
         border-bottom: 1px solid #263e59;
@@ -123,28 +136,42 @@
         border-radius: 4px;
     }
 
-    .notification-card {
+    .notifications-table-head,
+    .notification-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: .9rem;
+        grid-template-columns: minmax(180px, 1.25fr) minmax(240px, 2fr) 120px 90px 108px;
+        gap: .75rem;
         align-items: center;
-        padding: .8rem .9rem .8rem .75rem;
+    }
+
+    .notifications-table-head {
+        padding: .55rem .8rem;
+        border-bottom: 1px solid #263e59;
+        color: #aab8c8;
+        font-size: .7rem;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+
+    .notification-row {
+        min-height: 76px;
+        padding: .65rem .8rem;
         border-bottom: 1px solid #263e59;
         border-left: 3px solid transparent;
         background: #0d1d33;
-        transition: border-color .18s ease, background .18s ease;
     }
 
-    .notification-card:last-child {
+    .notification-row:last-child {
         border-bottom: 0;
     }
 
-    .notification-card:hover {
+    .notification-row:hover {
         border-left-color: #014cfd;
         background: #10243d;
     }
 
-    .notification-card-unread {
+    .notification-row-unread {
         border-left-color: #ff6b4a;
         background: #10243d;
     }
@@ -155,7 +182,7 @@
 
     .notification-open {
         display: grid;
-        grid-template-columns: 2rem minmax(0, 1fr);
+        grid-template-columns: 1.75rem minmax(0, 1fr);
         gap: .7rem;
         width: 100%;
         padding: 0;
@@ -164,7 +191,8 @@
         color: #f4f8fb;
     }
 
-    .notification-open:hover .notification-title {
+    .notification-open:hover .notification-title,
+    .notification-cell-link:hover {
         color: #014cfd;
     }
 
@@ -179,7 +207,7 @@
         font-size: 1rem;
     }
 
-    .notification-card-unread .notification-icon {
+    .notification-row-unread .notification-icon {
         color: #ff8a78;
     }
 
@@ -198,29 +226,42 @@
         transition: color .18s ease;
     }
 
-    .notification-card-read .notification-title {
+    .notification-row-read .notification-title {
         color: #d5e0e8;
     }
 
-    .notification-date {
-        margin-top: .3rem;
-        color: #86a2b6;
+    .notification-message-form,
+    .notification-date-form {
+        min-width: 0;
+    }
+
+    .notification-cell-link {
+        display: block;
+        width: 100%;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: #c4d0dc;
+        font-size: .8rem;
+        line-height: 1.35;
+    }
+
+    .notification-cell-link span,
+    .notification-date-form .notification-cell-link {
+        color: #8698ab;
         font-size: .72rem;
     }
 
     .notification-meta {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: .45rem;
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
     }
 
     .notification-status {
         display: inline-flex;
         align-items: center;
-        gap: .4rem;
-        padding: 0;
-        border-radius: 0;
+        gap: .35rem;
         font-size: .72rem;
         font-weight: 800;
         letter-spacing: .04em;
@@ -275,16 +316,32 @@
     }
 
     @media (max-width: 767.98px) {
-        .notification-card {
+        .notifications-table-head {
+            display: none;
+        }
+
+        .notification-row {
             grid-template-columns: 1fr;
             gap: .55rem;
             padding-left: .65rem;
+        }
+
+        .notification-open,
+        .notification-message-form,
+        .notification-date-form,
+        .notification-meta,
+        .notification-action {
+            width: 100%;
         }
 
         .notification-meta {
             align-items: flex-start;
             flex-direction: row;
             justify-content: space-between;
+        }
+
+        .notification-action {
+            text-align: left;
         }
     }
 </style>
