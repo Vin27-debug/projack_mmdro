@@ -105,7 +105,7 @@
     }
 
     .notifications-eyebrow {
-        color: #66d9ef;
+        color: #014cfd;
         font-size: .72rem;
         font-weight: 800;
         letter-spacing: .14em;
@@ -115,6 +115,12 @@
     .notifications-list {
         border-top: 1px solid #263e59;
         border-bottom: 1px solid #263e59;
+    }
+
+    .notifications-panel {
+        background: #0d1d33;
+        border: 1px solid #263e59;
+        border-radius: 4px;
     }
 
     .notification-card {
@@ -134,7 +140,7 @@
     }
 
     .notification-card:hover {
-        border-left-color: #8eb9ff;
+        border-left-color: #014cfd;
         background: #10243d;
     }
 
@@ -159,7 +165,7 @@
     }
 
     .notification-open:hover .notification-title {
-        color: #8eb9ff;
+        color: #014cfd;
     }
 
     .notification-icon {
@@ -169,7 +175,7 @@
         height: 1.75rem;
         border-radius: 3px;
         background: transparent;
-        color: #8eb9ff;
+        color: #014cfd;
         font-size: 1rem;
     }
 
@@ -239,7 +245,16 @@
     }
 
     .notification-read-form .btn {
+        border-color: #014cfd;
+        color: #014cfd;
         white-space: nowrap;
+    }
+
+    .notification-read-form .btn:hover,
+    .notification-read-form .btn:focus-visible {
+        background: #014cfd;
+        border-color: #003399;
+        color: #fff;
     }
 
     .notifications-empty {
@@ -247,15 +262,15 @@
         justify-items: center;
         gap: .35rem;
         padding: 2rem 1rem;
-        border: 1px dashed rgba(102, 217, 239, .24);
-        border-radius: .85rem;
+        border: 1px solid #263e59;
+        border-radius: 4px;
         color: #a7bdcb;
         text-align: center;
     }
 
     .notifications-empty i {
         margin-bottom: .35rem;
-        color: #66d9ef;
+        color: #014cfd;
         font-size: 1.8rem;
     }
 
