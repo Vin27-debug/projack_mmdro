@@ -5,12 +5,16 @@ namespace App\Http\Controllers\Driver;
 use App\Http\Controllers\Controller;
 use App\Models\Dispatch;
 use App\Models\GpsLocation;
+use App\Services\IncidentGeofenceService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class GpsController extends Controller
 {
+    public function __construct(private IncidentGeofenceService $geofenceService) {}
+
     /**
      * Update driver's current GPS location.
      *
@@ -75,6 +79,7 @@ class GpsController extends Controller
                     'numeric',
                     'min:0',
                 ],
+                'recorded_at' => ['nullable', 'date'],
                 'speed_kmh' => ['nullable', 'numeric', 'min:0', 'max:500'],
                 'speed_limit_kmh' => ['nullable', 'numeric', 'gt:0', 'max:300'],
                 'road_type' => ['nullable', 'string', 'max:50'],
@@ -99,6 +104,12 @@ class GpsController extends Controller
 
         $latitude = (float) $validated['latitude'];
         $longitude = (float) $validated['longitude'];
+        $accuracy = array_key_exists('accuracy', $validated) && $validated['accuracy'] !== null
+            ? (float) $validated['accuracy']
+            : null;
+        $recordedAt = isset($validated['recorded_at'])
+            ? CarbonImmutable::parse($validated['recorded_at'])
+            : CarbonImmutable::now();
         $speedKmh = array_key_exists('speed_kmh', $validated) && $validated['speed_kmh'] !== null
             ? (float) $validated['speed_kmh']
             : null;
@@ -137,6 +148,14 @@ class GpsController extends Controller
             'latitude' => $latitude,
             'longitude' => $longitude,
         ]);
+
+        $this->geofenceService->process(
+            $driver,
+            $latitude,
+            $longitude,
+            $accuracy,
+            $recordedAt
+        );
 
         /*
         |--------------------------------------------------------------------------

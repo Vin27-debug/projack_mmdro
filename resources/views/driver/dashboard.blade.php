@@ -254,7 +254,7 @@ is_numeric($incidentLng);
                             <button
                                 id="panicBtn"
                                 type="button"
-                                class="btn btn-danger driver-action-btn">
+                                class="btn btn-sm btn-danger driver-action-btn">
 
                                 <i class="bi bi-exclamation-triangle-fill me-1"></i>
                                 PANIC ALERT
@@ -265,7 +265,7 @@ is_numeric($incidentLng);
                             <button
                                 id="hijackBtn"
                                 type="button"
-                                class="btn btn-warning driver-action-btn">
+                                class="btn btn-sm btn-warning driver-action-btn">
 
                                 <i class="bi bi-shield-exclamation me-1"></i>
                                 HIJACK ALERT
@@ -914,36 +914,15 @@ is_numeric($incidentLng);
                             )
 
                             @if($currentDispatch->incident?->response_at === null)
-                            <form
-                                method="POST"
-                                action="{{ route('driver.incidents.response', $currentDispatch->incident) }}"
-                                class="flex-fill">
-
-                                @csrf
-
-                                <button
-                                    type="submit"
-                                    class="btn btn-primary
-                                               w-100
-                                               driver-action-btn">
-
-                                    <i
-                                        class="bi bi-check2-circle me-1">
-                                    </i>
-
-                                    Mark Response
-
-                                </button>
-
-                            </form>
+                            <div class="alert alert-info mb-0 flex-fill">
+                                <i class="bi bi-sign-turn-right-fill me-1"></i>
+                                Dispatch accepted. GPS tracking will record En Route automatically.
+                            </div>
                             @else
-                            <form method="POST" action="{{ route('driver.incidents.en-route', $currentDispatch->incident) }}" class="flex-fill">
-                                @csrf
-                                <button type="submit" class="btn btn-info w-100 driver-action-btn">
-                                    <i class="bi bi-sign-turn-right-fill me-1"></i>
-                                    Mark En Route
-                                </button>
-                            </form>
+                            <div class="alert alert-info mb-0 flex-fill">
+                                <i class="bi bi-sign-turn-right-fill me-1"></i>
+                                En Route is recorded automatically from dispatch acceptance.
+                            </div>
                             @endif
 
 
@@ -955,13 +934,10 @@ is_numeric($incidentLng);
                             )
 
                             @if($currentDispatch->incident?->at_scene_at === null)
-                            <form method="POST" action="{{ route('driver.incidents.at-scene', $currentDispatch->incident) }}" class="flex-fill">
-                                @csrf
-                                <button type="submit" class="btn btn-warning w-100 driver-action-btn">
-                                    <i class="bi bi-geo-alt-fill me-1"></i>
-                                    Mark At Scene
-                                </button>
-                            </form>
+                            <div class="alert alert-warning mb-0 flex-fill">
+                                <i class="bi bi-geo-alt-fill me-1"></i>
+                                En Route. GPS will record At Scene when you enter the incident area.
+                            </div>
                             @elseif($currentDispatch->incident?->at_patient_at === null)
                             <form method="POST" action="{{ route('driver.incidents.at-patient', $currentDispatch->incident) }}" class="flex-fill">
                                 @csrf
@@ -971,13 +947,10 @@ is_numeric($incidentLng);
                                 </button>
                             </form>
                             @elseif($currentDispatch->incident?->depart_scene_at === null)
-                            <form method="POST" action="{{ route('driver.incidents.depart-scene', $currentDispatch->incident) }}" class="flex-fill">
-                                @csrf
-                                <button type="submit" class="btn btn-info w-100 driver-action-btn">
-                                    <i class="bi bi-truck-front me-1"></i>
-                                    Depart Scene
-                                </button>
-                            </form>
+                            <div class="alert alert-info mb-0 flex-fill">
+                                <i class="bi bi-truck-front me-1"></i>
+                                At Patient. GPS will record Depart Scene after you leave the incident area.
+                            </div>
                             @elseif($currentDispatch->incident?->at_hospital_at === null)
                             <form method="POST" action="{{ route('driver.incidents.at-hospital', $currentDispatch->incident) }}" class="flex-fill">
                                 @csrf
@@ -1013,13 +986,10 @@ is_numeric($incidentLng);
                                 </button>
                             </form>
                             @elseif($currentDispatch->incident?->depart_scene_at === null)
-                            <form method="POST" action="{{ route('driver.incidents.depart-scene', $currentDispatch->incident) }}" class="flex-fill">
-                                @csrf
-                                <button type="submit" class="btn btn-info w-100 driver-action-btn">
-                                    <i class="bi bi-truck-front me-1"></i>
-                                    Depart Scene
-                                </button>
-                            </form>
+                            <div class="alert alert-info mb-0 flex-fill">
+                                <i class="bi bi-truck-front me-1"></i>
+                                At Patient. GPS will record Depart Scene after you leave the incident area.
+                            </div>
                             @elseif($currentDispatch->incident?->at_hospital_at === null)
                             <form method="POST" action="{{ route('driver.incidents.at-hospital', $currentDispatch->incident) }}" class="flex-fill">
                                 @csrf
@@ -2516,7 +2486,7 @@ is_numeric($incidentLng);
 
         width: min(100%, 520px);
 
-        padding: .75rem;
+        padding: .5rem .625rem;
 
         border: 1px solid rgba(255, 255, 255, .2);
         border-left: 4px solid #ffb000;
@@ -2529,7 +2499,7 @@ is_numeric($incidentLng);
 
     .emergency-panel-title {
 
-        margin-bottom: .5rem;
+        margin-bottom: .25rem;
 
         color: #fff;
         font-size: .72rem;
@@ -2543,7 +2513,7 @@ is_numeric($incidentLng);
 
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: .5rem;
+        gap: .375rem;
 
     }
 
@@ -2551,6 +2521,8 @@ is_numeric($incidentLng);
     .emergency-actions .driver-action-btn {
 
         min-width: 0;
+        min-height: 38px;
+        padding: .35rem .6rem;
         white-space: nowrap;
 
     }

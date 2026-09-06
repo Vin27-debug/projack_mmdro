@@ -347,8 +347,9 @@ class DispatchStatusTest extends TestCase
         $this->assertDatabaseHas('dispatches', [
             'id' => $dispatch->id,
             'vehicle_id' => $newVehicle->id,
-            'status' => Dispatch::STATUS_ACCEPTED,
+            'status' => Dispatch::STATUS_EN_ROUTE,
         ]);
+        $this->assertNotNull($dispatch->fresh()->en_route_at);
         $this->assertDatabaseHas('ambulances', [
             'id' => $newVehicle->id,
             'status' => Ambulance::STATUS_ON_DUTY,
@@ -530,6 +531,212 @@ class DispatchStatusTest extends TestCase
         $this->assertNotNull($notification);
         $this->assertStringContainsString('INC-0111', $notification->message);
         $this->assertStringContainsString('Selected Rescue', $notification->message);
+    }
+
+    public function test_gps_inside_incident_radius_automatically_marks_at_scene(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+        [$user, $driver, $incident, $dispatch] = $this->createGeofencedDispatch([
+            'latitude' => 15.0000000,
+            'longitude' => 120.0000000,
+        ]);
+
+        $response = $this->actingAs($user)->json('POST', route('driver.gps.update'), [
+            'latitude' => 15.0005000,
+            'longitude' => 120.0000000,
+            'accuracy' => 5,
+        ]);
+
+        $response->assertOk();
+        $this->assertNotNull($incident->fresh()->at_scene_at);
+        $this->assertDatabaseHas('dispatches', [
+            'id' => $dispatch->id,
+            'status' => Dispatch::STATUS_ARRIVED,
+        ]);
+        $this->assertSame(Driver::STATUS_ON_SCENE, $driver->fresh()->status);
+    }
+
+    public function test_gps_outside_incident_radius_does_not_mark_at_scene(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+        [$user,, $incident, $dispatch] = $this->createGeofencedDispatch([
+            'latitude' => 15.0000000,
+            'longitude' => 120.0000000,
+        ]);
+
+        $response = $this->actingAs($user)->json('POST', route('driver.gps.update'), [
+            'latitude' => 15.0030000,
+            'longitude' => 120.0000000,
+            'accuracy' => 5,
+        ]);
+
+        $response->assertOk();
+        $this->assertNull($incident->fresh()->at_scene_at);
+        $this->assertSame(Dispatch::STATUS_EN_ROUTE, $dispatch->fresh()->status);
+    }
+
+    public function test_gps_does_not_mark_at_scene_without_incident_coordinates(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+        [$user,, $incident, $dispatch] = $this->createGeofencedDispatch([
+            'latitude' => null,
+            'longitude' => null,
+        ]);
+
+        $response = $this->actingAs($user)->json('POST', route('driver.gps.update'), [
+            'latitude' => 15.0000000,
+            'longitude' => 120.0000000,
+            'accuracy' => 5,
+        ]);
+
+        $response->assertOk();
+        $this->assertNull($incident->fresh()->at_scene_at);
+        $this->assertSame(Dispatch::STATUS_EN_ROUTE, $dispatch->fresh()->status);
+    }
+
+    public function test_poor_or_stale_gps_does_not_trigger_geofence_transitions(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+        [$user,, $incident, $dispatch] = $this->createGeofencedDispatch([
+            'latitude' => 15.0000000,
+            'longitude' => 120.0000000,
+        ]);
+
+        $poorAccuracy = $this->actingAs($user)->json('POST', route('driver.gps.update'), [
+            'latitude' => 15.0005000,
+            'longitude' => 120.0000000,
+            'accuracy' => 100,
+        ]);
+        $poorAccuracy->assertOk();
+
+        $stale = $this->actingAs($user)->json('POST', route('driver.gps.update'), [
+            'latitude' => 15.0005000,
+            'longitude' => 120.0000000,
+            'accuracy' => 5,
+            'recorded_at' => now()->subMinutes(10)->toISOString(),
+        ]);
+        $stale->assertOk();
+
+        $this->assertNull($incident->fresh()->at_scene_at);
+        $this->assertSame(Dispatch::STATUS_EN_ROUTE, $dispatch->fresh()->status);
+    }
+
+    public function test_repeated_gps_does_not_overwrite_at_scene_timestamp(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+        [$user,, $incident] = $this->createGeofencedDispatch([
+            'latitude' => 15.0000000,
+            'longitude' => 120.0000000,
+        ]);
+
+        $payload = [
+            'latitude' => 15.0005000,
+            'longitude' => 120.0000000,
+            'accuracy' => 5,
+        ];
+
+        $this->actingAs($user)->json('POST', route('driver.gps.update'), $payload)->assertOk();
+        $firstTimestamp = $incident->fresh()->at_scene_at;
+        $this->actingAs($user)->json('POST', route('driver.gps.update'), $payload)->assertOk();
+
+        $this->assertTrue($firstTimestamp->equalTo($incident->fresh()->at_scene_at));
+    }
+
+    public function test_automatic_departure_requires_at_patient_and_uses_larger_radius(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+        [$user,, $incident, $dispatch] = $this->createGeofencedDispatch([
+            'latitude' => 15.0000000,
+            'longitude' => 120.0000000,
+        ], Dispatch::STATUS_ARRIVED);
+
+        $betweenRadii = [
+            'latitude' => 15.0020000,
+            'longitude' => 120.0000000,
+            'accuracy' => 5,
+        ];
+
+        $this->actingAs($user)->json('POST', route('driver.gps.update'), $betweenRadii)
+            ->assertOk();
+        $this->assertNull($incident->fresh()->depart_scene_at);
+
+        $incident->update(['at_patient_at' => now()]);
+
+        $outsideBothRadii = [
+            'latitude' => 15.0040000,
+            'longitude' => 120.0000000,
+            'accuracy' => 5,
+        ];
+
+        $this->actingAs($user)->json('POST', route('driver.gps.update'), $outsideBothRadii)
+            ->assertOk();
+        $this->assertNotNull($incident->fresh()->depart_scene_at);
+        $this->assertSame(Dispatch::STATUS_ARRIVED, $dispatch->fresh()->status);
+    }
+
+    public function test_manual_at_patient_action_remains_available(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+        [$user,, $incident] = $this->createGeofencedDispatch([
+            'latitude' => 15.0000000,
+            'longitude' => 120.0000000,
+        ], Dispatch::STATUS_ARRIVED);
+
+        $response = $this->actingAs($user)->post(route('driver.incidents.at-patient', $incident));
+
+        $response->assertSessionHas('success');
+        $this->assertNotNull($incident->fresh()->at_patient_at);
+    }
+
+    private function createGeofencedDispatch(array $coordinates, string $status = Dispatch::STATUS_EN_ROUTE): array
+    {
+        Role::firstOrCreate(['name' => 'driver']);
+        $user = User::factory()->create(['status' => 'approved']);
+        $user->assignRole('driver');
+
+        $driver = Driver::create([
+            'user_id' => $user->id,
+            'badge_id' => 'GEO-' . random_int(100, 999),
+            'contact_number' => '09123450000',
+            'license_number' => 'LIC-GEO',
+            'license_expiry' => '2030-01-01',
+            'status' => $status === Dispatch::STATUS_ARRIVED ? Driver::STATUS_ON_SCENE : Driver::STATUS_EN_ROUTE,
+        ]);
+
+        $vehicle = Ambulance::create([
+            'plate_number' => 'GEO-' . random_int(100, 999),
+            'vehicle_name' => 'Geofence Ambulance',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_ON_DUTY,
+        ]);
+
+        $incident = Incident::create([
+            'incident_number' => 'GEO-' . random_int(1000, 9999),
+            'reporter_name' => 'Geofence Test',
+            'contact_number' => '09123450000',
+            'incident_type' => 'Medical',
+            'location' => 'Geofence Road',
+            'description' => 'Geofence test incident',
+            'status' => Incident::STATUS_RESPONDING,
+            'driver_id' => $driver->id,
+            'ambulance_id' => $vehicle->id,
+            'latitude' => $coordinates['latitude'],
+            'longitude' => $coordinates['longitude'],
+            'at_scene_at' => $status === Dispatch::STATUS_ARRIVED ? now()->subMinute() : null,
+        ]);
+
+        $dispatch = Dispatch::create([
+            'incident_id' => $incident->id,
+            'driver_id' => $driver->id,
+            'vehicle_id' => $vehicle->id,
+            'status' => $status,
+            'assigned_at' => now(),
+            'accepted_at' => now(),
+            'en_route_at' => $status === Dispatch::STATUS_EN_ROUTE ? now() : now()->subMinute(),
+            'arrived_at' => $status === Dispatch::STATUS_ARRIVED ? now() : null,
+        ]);
+
+        return [$user, $driver, $incident, $dispatch];
     }
 
     public function test_admin_report_approval_closes_the_incident_and_completes_the_dispatch(): void

@@ -7,6 +7,12 @@ return [
             'red_over_limit_percent' => (float) env('MUNIRESQ_SPEED_RED_OVER_LIMIT_PERCENT', 20),
             'road_limits_kmh' => json_decode(env('MUNIRESQ_ROAD_SPEED_LIMITS', '{}'), true) ?: [],
         ],
+        'geofence' => [
+            'arrival_radius_km' => (float) env('MUNIRESQ_ARRIVAL_RADIUS_KM', 0.15),
+            'departure_radius_km' => (float) env('MUNIRESQ_DEPARTURE_RADIUS_KM', 0.30),
+            'max_accuracy_meters' => (float) env('MUNIRESQ_GEOFENCE_MAX_ACCURACY_METERS', 50),
+            'max_age_seconds' => (int) env('MUNIRESQ_GEOFENCE_MAX_AGE_SECONDS', 120),
+        ],
     ],
 
     /*

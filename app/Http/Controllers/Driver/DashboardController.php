@@ -181,8 +181,9 @@ class DashboardController extends Controller
 
                 $dispatch->update([
                     'vehicle_id' => $vehicle->id,
-                    'status' => Dispatch::STATUS_ACCEPTED,
+                    'status' => Dispatch::STATUS_EN_ROUTE,
                     'accepted_at' => now(),
+                    'en_route_at' => now(),
                 ]);
 
                 Notification::create([
@@ -221,7 +222,7 @@ class DashboardController extends Controller
             */
 
                 $driver->update([
-                    'status' => Driver::STATUS_ASSIGNED,
+                    'status' => Driver::STATUS_EN_ROUTE,
                 ]);
             });
         } catch (\DomainException $exception) {
