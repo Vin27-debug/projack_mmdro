@@ -43,11 +43,21 @@
                         <tr>
 
                             <td>
-                                {{ $notification->title }}
+                                <form method="POST" action="{{ route('admin.notifications.open', $notification) }}" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-link p-0 text-start {{ $notification->is_read ? 'text-muted' : 'fw-semibold' }}">
+                                        {{ $notification->title }}
+                                    </button>
+                                </form>
                             </td>
 
                             <td>
-                                {{ $notification->message }}
+                                <form method="POST" action="{{ route('admin.notifications.open', $notification) }}" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-link p-0 text-start text-body">
+                                        {{ $notification->message }}
+                                    </button>
+                                </form>
                             </td>
 
                             <td>

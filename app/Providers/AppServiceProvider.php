@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Notification;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -22,7 +23,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         View::composer('layouts.admin', function ($view) {
-            $view->with('unreadNotifications', Notification::where('is_read', false)->count());
+            $view->with(
+                'unreadNotifications',
+                Notification::visibleTo(Auth::id())->where('is_read', false)->count()
+            );
         });
     }
 }

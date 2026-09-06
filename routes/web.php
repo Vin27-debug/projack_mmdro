@@ -277,6 +277,9 @@ Route::middleware([
     Route::post('/admin/notifications/read-all', [NotificationController::class, 'markAllRead'])
         ->name('admin.notifications.read-all');
 
+    Route::post('/admin/notifications/{notification}/open', [NotificationController::class, 'open'])
+        ->name('admin.notifications.open');
+
     Route::post('/admin/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])
         ->name('admin.notifications.read');
 

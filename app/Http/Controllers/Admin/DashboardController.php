@@ -14,6 +14,7 @@ use App\Models\Notification;
 use App\Models\AuditLog;
 use App\Models\GpsLocation;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -117,12 +118,11 @@ class DashboardController extends Controller
 
         $responseTime = (int) round($averageResponseTime ?? 0);
 
-        $unreadNotifications = Notification::where(
-            'is_read',
-            false
-        )->count();
+        $unreadNotifications = Notification::visibleTo(Auth::id())
+            ->where('is_read', false)
+            ->count();
 
-        $recentNotifications = Notification::latest()
+        $recentNotifications = Notification::visibleTo(Auth::id())->latest()
             ->take(5)
             ->get();
 
