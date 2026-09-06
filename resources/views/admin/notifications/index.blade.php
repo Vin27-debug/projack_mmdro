@@ -10,7 +10,7 @@
 
     <div class="notifications-header d-flex justify-content-between align-items-center gap-3 mb-4">
         <div>
-            <div class="notifications-eyebrow">ADMIN COMMAND CENTER</div>
+            <div class="notifications-eyebrow"><i class="bi bi-bell-fill me-1"></i> ADMIN COMMAND CENTER</div>
             <h2 class="section-heading mb-1">Notifications</h2>
             <p class="section-excerpt mb-0">{{ $unreadNotifications ?? 0 }} unread messages</p>
         </div>
@@ -40,6 +40,10 @@
                         @break
                         @case('maintenance')
                         <i class="bi bi-tools"></i>
+                        @break
+                        @case('vehicle')
+                        @case('dispatch')
+                        <i class="bi bi-truck-front-fill"></i>
                         @break
                         @case('report')
                         <i class="bi bi-file-earmark-text"></i>
@@ -113,11 +117,11 @@
         grid-template-columns: minmax(0, 1fr) auto;
         gap: 1rem;
         align-items: center;
-        padding: 1rem 1.1rem;
+        padding: .85rem 1rem;
         border: 1px solid rgba(102, 217, 239, .16);
         border-left: 3px solid transparent;
         border-radius: .85rem;
-        background: #102b45;
+        background: rgba(16, 43, 69, .86);
         box-shadow: 0 8px 22px rgba(2, 18, 32, .16);
         transition: border-color .18s ease, transform .18s ease, background .18s ease;
     }
@@ -129,7 +133,7 @@
 
     .notification-card-unread {
         border-left-color: #ff6b4a;
-        background: #143652;
+        background: rgba(20, 54, 82, .96);
     }
 
     .notification-open-form {
