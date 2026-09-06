@@ -20,23 +20,23 @@ use Illuminate\Support\Facades\Route;
             --blue: #014cfd;
             --green: #00994d;
             --red: #e31b23;
-            --ink: #eef4ff;
-            --ink-soft: #a8b8cb;
-            --paper: #08172f;
-            --line: rgba(255, 255, 255, .13);
-            --focus: #66b7ff;
+            --ink: #f4f7fb;
+            --ink-soft: #aab8c8;
+            --paper: #071426;
+            --line: #263e59;
+            --focus: #014cfd;
         }
 
         body {
             margin: 0;
             min-height: 100vh;
-            background: radial-gradient(circle at 15% 0%, rgba(1, 76, 253, .16), transparent 32%), linear-gradient(180deg, var(--navy) 0%, var(--paper) 100%);
+            background: var(--paper);
             display: flex;
             flex-direction: column;
         }
 
         .gov-strip {
-            background: rgba(3, 16, 34, .86);
+            background: #06152e;
             color: rgba(255, 255, 255, 0.85);
             font-size: 0.72rem;
             letter-spacing: 0.03em;
@@ -49,8 +49,8 @@ use Illuminate\Support\Facades\Route;
         }
 
         .gov-header {
-            background: rgba(6, 21, 46, .92);
-            border-bottom: 1px solid rgba(102, 183, 255, .22);
+            background: #06152e;
+            border-bottom: 1px solid #263e59;
             padding: 0.9rem 1.25rem;
             display: flex;
             align-items: center;
@@ -60,9 +60,9 @@ use Illuminate\Support\Facades\Route;
         .gov-seal {
             width: 44px;
             height: 44px;
-            border-radius: 12px;
-            background: linear-gradient(145deg, var(--blue), #003399);
-            border: 1px solid rgba(255, 255, 255, .28);
+            border-radius: 6px;
+            background: #014cfd;
+            border: 1px solid rgba(255, 255, 255, .2);
             flex: none;
             display: flex;
             align-items: center;
@@ -71,7 +71,7 @@ use Illuminate\Support\Facades\Route;
             font-size: .65rem;
             letter-spacing: .08em;
             color: #fff;
-            box-shadow: 0 8px 22px rgba(1, 76, 253, .28);
+            box-shadow: none;
         }
 
         .gov-header .titles {
@@ -100,10 +100,10 @@ use Illuminate\Support\Facades\Route;
         .login-panel {
             width: 100%;
             max-width: 430px;
-            background: rgba(10, 31, 61, .94);
-            border: 1px solid var(--line);
-            border-radius: 18px;
-            box-shadow: 0 24px 70px rgba(0, 0, 0, .28);
+            background: #0d1d33;
+            border: 1px solid #263e59;
+            border-radius: 6px;
+            box-shadow: none;
         }
 
         .panel-head {
@@ -161,9 +161,9 @@ use Illuminate\Support\Facades\Route;
             box-sizing: border-box;
             padding: 0.6rem 0.7rem;
             font-size: 0.9rem;
-            border: 1px solid rgba(255, 255, 255, .2);
-            border-radius: 9px;
-            background: rgba(3, 16, 34, .42);
+            border: 1px solid #263e59;
+            border-radius: 4px;
+            background: #071426;
             color: var(--ink);
         }
 
@@ -199,7 +199,7 @@ use Illuminate\Support\Facades\Route;
         }
 
         .row-between a {
-            color: #8ec5ff;
+            color: #014cfd;
             text-decoration: none;
         }
 
@@ -224,7 +224,7 @@ use Illuminate\Support\Facades\Route;
         }
 
         .btn-submit:focus-visible {
-            outline: 2px solid #66b7ff;
+            outline: 2px solid #014cfd;
             outline-offset: 2px;
         }
 

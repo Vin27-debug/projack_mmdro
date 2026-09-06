@@ -24,70 +24,72 @@
         </form>
     </div>
 
-    <div class="notifications-list">
-        @forelse($notifications as $notification)
-        <article class="notification-card {{ $notification->is_read ? 'notification-card-read' : 'notification-card-unread' }}">
-            <form method="POST" action="{{ route('admin.notifications.open', $notification) }}" class="notification-open-form">
-                @csrf
-                <button type="submit" class="notification-open text-start">
-                    <span class="notification-icon" aria-hidden="true">
-                        @switch($notification->type)
-                        @case('panic')
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        @break
-                        @case('hijack')
-                        <i class="bi bi-shield-exclamation"></i>
-                        @break
-                        @case('incident')
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        @break
-                        @case('maintenance')
-                        <i class="bi bi-tools"></i>
-                        @break
-                        @case('vehicle')
-                        @case('dispatch')
-                        <i class="bi bi-truck-front-fill"></i>
-                        @break
-                        @case('report')
-                        <i class="bi bi-file-earmark-text"></i>
-                        @break
-                        @default
-                        <i class="bi bi-bell-fill"></i>
-                        @endswitch
-                    </span>
-
-                    <span class="notification-copy">
-                        <span class="notification-title">{{ $notification->title }}</span>
-                        <span class="notification-message">{{ $notification->message }}</span>
-                        <span class="notification-date">
-                            <i class="bi bi-clock me-1"></i>
-                            {{ $notification->created_at?->format('F j, Y') }} · {{ $notification->created_at?->format('h:i A') }}
-                        </span>
-                    </span>
-                </button>
-            </form>
-
-            <div class="notification-meta">
-                <span class="notification-status {{ $notification->is_read ? 'notification-status-read' : 'notification-status-unread' }}">
-                    <span class="notification-status-dot"></span>
-                    {{ $notification->is_read ? 'Read' : 'Unread' }}
-                </span>
-
-                @if(!$notification->is_read)
-                <form method="POST" action="{{ route('admin.notifications.read', $notification) }}" class="notification-read-form">
+    <div class="notifications-panel">
+        <div class="notifications-list">
+            @forelse($notifications as $notification)
+            <article class="notification-card {{ $notification->is_read ? 'notification-card-read' : 'notification-card-unread' }}">
+                <form method="POST" action="{{ route('admin.notifications.open', $notification) }}" class="notification-open-form">
                     @csrf
-                    <button type="submit" class="btn btn-sm btn-outline-primary">Mark Read</button>
+                    <button type="submit" class="notification-open text-start">
+                        <span class="notification-icon" aria-hidden="true">
+                            @switch($notification->type)
+                            @case('panic')
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            @break
+                            @case('hijack')
+                            <i class="bi bi-shield-exclamation"></i>
+                            @break
+                            @case('incident')
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            @break
+                            @case('maintenance')
+                            <i class="bi bi-tools"></i>
+                            @break
+                            @case('vehicle')
+                            @case('dispatch')
+                            <i class="bi bi-truck-front-fill"></i>
+                            @break
+                            @case('report')
+                            <i class="bi bi-file-earmark-text"></i>
+                            @break
+                            @default
+                            <i class="bi bi-bell-fill"></i>
+                            @endswitch
+                        </span>
+
+                        <span class="notification-copy">
+                            <span class="notification-title">{{ $notification->title }}</span>
+                            <span class="notification-message">{{ $notification->message }}</span>
+                            <span class="notification-date">
+                                <i class="bi bi-clock me-1"></i>
+                                {{ $notification->created_at?->format('F j, Y') }} · {{ $notification->created_at?->format('h:i A') }}
+                            </span>
+                        </span>
+                    </button>
                 </form>
-                @endif
+
+                <div class="notification-meta">
+                    <span class="notification-status {{ $notification->is_read ? 'notification-status-read' : 'notification-status-unread' }}">
+                        <span class="notification-status-dot"></span>
+                        {{ $notification->is_read ? 'Read' : 'Unread' }}
+                    </span>
+
+                    @if(!$notification->is_read)
+                    <form method="POST" action="{{ route('admin.notifications.read', $notification) }}" class="notification-read-form">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Mark Read</button>
+                    </form>
+                    @endif
+                </div>
+            </article>
+            @empty
+            <div class="notifications-empty">
+                <i class="bi bi-bell-slash"></i>
+                <strong>No notifications yet</strong>
+                <span>New command alerts will appear here.</span>
             </div>
-        </article>
-        @empty
-        <div class="notifications-empty">
-            <i class="bi bi-bell-slash"></i>
-            <strong>No notifications yet</strong>
-            <span>New command alerts will appear here.</span>
+            @endforelse
         </div>
-        @endforelse
     </div>
 
     @if($notifications->hasPages())
@@ -99,7 +101,7 @@
 </div>
 <style>
     .admin-notifications-page {
-        max-width: 1120px;
+        max-width: 1080px;
     }
 
     .notifications-eyebrow {
@@ -111,8 +113,8 @@
     }
 
     .notifications-list {
-        border-top: 1px solid rgba(102, 217, 239, .18);
-        border-bottom: 1px solid rgba(102, 217, 239, .18);
+        border-top: 1px solid #263e59;
+        border-bottom: 1px solid #263e59;
     }
 
     .notification-card {
@@ -120,10 +122,10 @@
         grid-template-columns: minmax(0, 1fr) auto;
         gap: .9rem;
         align-items: center;
-        padding: .7rem .35rem .7rem .75rem;
-        border-bottom: 1px solid rgba(102, 217, 239, .12);
+        padding: .8rem .9rem .8rem .75rem;
+        border-bottom: 1px solid #263e59;
         border-left: 3px solid transparent;
-        background: rgba(16, 43, 69, .32);
+        background: #0d1d33;
         transition: border-color .18s ease, background .18s ease;
     }
 
@@ -132,13 +134,13 @@
     }
 
     .notification-card:hover {
-        border-left-color: rgba(102, 217, 239, .72);
-        background: rgba(22, 55, 83, .62);
+        border-left-color: #8eb9ff;
+        background: #10243d;
     }
 
     .notification-card-unread {
         border-left-color: #ff6b4a;
-        background: rgba(20, 54, 82, .5);
+        background: #10243d;
     }
 
     .notification-open-form {
@@ -157,23 +159,22 @@
     }
 
     .notification-open:hover .notification-title {
-        color: #7de5f4;
+        color: #8eb9ff;
     }
 
     .notification-icon {
         display: grid;
         place-items: center;
-        width: 2rem;
-        height: 2rem;
-        border-radius: .45rem;
-        background: rgba(102, 217, 239, .14);
-        color: #66d9ef;
-        font-size: .9rem;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 3px;
+        background: transparent;
+        color: #8eb9ff;
+        font-size: 1rem;
     }
 
     .notification-card-unread .notification-icon {
-        background: rgba(255, 107, 74, .15);
-        color: #ff9a78;
+        color: #ff8a78;
     }
 
     .notification-copy,
@@ -195,12 +196,6 @@
         color: #d5e0e8;
     }
 
-    .notification-message {
-        color: #c0d0dc;
-        font-size: .82rem;
-        line-height: 1.35;
-    }
-
     .notification-date {
         margin-top: .3rem;
         color: #86a2b6;
@@ -218,8 +213,8 @@
         display: inline-flex;
         align-items: center;
         gap: .4rem;
-        padding: .2rem .45rem;
-        border-radius: 999px;
+        padding: 0;
+        border-radius: 0;
         font-size: .72rem;
         font-weight: 800;
         letter-spacing: .04em;
@@ -234,13 +229,13 @@
     }
 
     .notification-status-read {
-        background: rgba(25, 135, 84, .18);
-        color: #6fe0a7;
+        background: transparent;
+        color: #75c795;
     }
 
     .notification-status-unread {
-        background: rgba(255, 107, 74, .16);
-        color: #ff9a78;
+        background: transparent;
+        color: #ff8a78;
     }
 
     .notification-read-form .btn {
@@ -265,15 +260,6 @@
     }
 
     @media (max-width: 767.98px) {
-        .notifications-header {
-            align-items: flex-start !important;
-            flex-direction: column;
-        }
-
-        .notifications-read-all {
-            width: 100%;
-        }
-
         .notification-card {
             grid-template-columns: 1fr;
             gap: .55rem;
