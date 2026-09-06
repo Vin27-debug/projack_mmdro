@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Notification extends Model
 {
+    protected $casts = [
+        'is_read' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
     protected $fillable = [
 
         'user_id',

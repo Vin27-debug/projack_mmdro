@@ -40,7 +40,7 @@ class NotificationCenterTest extends TestCase
         $this->assertNotNull($notification);
         $this->assertSame('New Incident Reported', $notification->title);
         $this->assertStringContainsString($incident->incident_number, $notification->message);
-        $this->assertSame(0, $notification->is_read);
+        $this->assertFalse($notification->is_read);
 
         $markAllReadResponse = $this->post(route('admin.notifications.read-all'));
 
@@ -190,8 +190,32 @@ class NotificationCenterTest extends TestCase
 
         $response = $this->actingAs($admin)->get(route('admin.notifications.index'));
 
-        $response->assertOk()->assertSee('Read Alert')->assertSee('This remains visible')->assertSee('Done');
+        $response->assertOk()
+            ->assertSee('Read Alert')
+            ->assertSee('This remains visible')
+            ->assertSee('Read');
         $this->assertDatabaseHas('notifications', ['id' => $notification->id]);
+    }
+
+    public function test_opening_a_read_notification_keeps_it_read_without_changing_it(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+        $admin = $this->createAdmin();
+        $notification = Notification::create([
+            'title' => 'Already Read Alert',
+            'message' => 'Open without changing state',
+            'type' => 'report',
+            'is_read' => true,
+        ]);
+        $updatedAt = $notification->updated_at;
+
+        $response = $this->actingAs($admin)
+            ->post(route('admin.notifications.open', $notification));
+
+        $response->assertRedirect(route('admin.notifications.index'));
+        $notification = $notification->fresh();
+        $this->assertTrue((bool) $notification->is_read);
+        $this->assertTrue($updatedAt->equalTo($notification->updated_at));
     }
 
     private function createAdmin(): User

@@ -37,9 +37,11 @@ class NotificationController extends Controller
     {
         $this->authorizeNotification($notification);
 
-        $notification->update([
-            'is_read' => true,
-        ]);
+        if (!$notification->is_read) {
+            $notification->update([
+                'is_read' => true,
+            ]);
+        }
 
         return back()->with('success', 'Notification marked as read.');
     }
@@ -48,9 +50,11 @@ class NotificationController extends Controller
     {
         $this->authorizeNotification($notification);
 
-        $notification->update([
-            'is_read' => true,
-        ]);
+        if (!$notification->is_read) {
+            $notification->update([
+                'is_read' => true,
+            ]);
+        }
 
         return redirect()->route('admin.notifications.index');
     }
