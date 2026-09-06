@@ -199,7 +199,7 @@ use Illuminate\Support\Facades\Route;
         }
 
         .row-between a {
-            color: var(--navy);
+            color: #8ec5ff;
             text-decoration: none;
         }
 
@@ -224,7 +224,7 @@ use Illuminate\Support\Facades\Route;
         }
 
         .btn-submit:focus-visible {
-            outline: 2px solid var(--gold);
+            outline: 2px solid #66b7ff;
             outline-offset: 2px;
         }
 

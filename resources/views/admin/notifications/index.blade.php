@@ -38,6 +38,9 @@
                         @case('hijack')
                         <i class="bi bi-shield-exclamation"></i>
                         @break
+                        @case('incident')
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        @break
                         @case('maintenance')
                         <i class="bi bi-tools"></i>
                         @break
@@ -108,32 +111,34 @@
     }
 
     .notifications-list {
-        display: grid;
-        gap: .75rem;
+        border-top: 1px solid rgba(102, 217, 239, .18);
+        border-bottom: 1px solid rgba(102, 217, 239, .18);
     }
 
     .notification-card {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
-        gap: 1rem;
+        gap: .9rem;
         align-items: center;
-        padding: .85rem 1rem;
-        border: 1px solid rgba(102, 217, 239, .16);
+        padding: .7rem .35rem .7rem .75rem;
+        border-bottom: 1px solid rgba(102, 217, 239, .12);
         border-left: 3px solid transparent;
-        border-radius: .85rem;
-        background: rgba(16, 43, 69, .86);
-        box-shadow: 0 8px 22px rgba(2, 18, 32, .16);
-        transition: border-color .18s ease, transform .18s ease, background .18s ease;
+        background: rgba(16, 43, 69, .32);
+        transition: border-color .18s ease, background .18s ease;
+    }
+
+    .notification-card:last-child {
+        border-bottom: 0;
     }
 
     .notification-card:hover {
-        border-color: rgba(102, 217, 239, .46);
-        transform: translateY(-1px);
+        border-left-color: rgba(102, 217, 239, .72);
+        background: rgba(22, 55, 83, .62);
     }
 
     .notification-card-unread {
         border-left-color: #ff6b4a;
-        background: rgba(20, 54, 82, .96);
+        background: rgba(20, 54, 82, .5);
     }
 
     .notification-open-form {
@@ -142,8 +147,8 @@
 
     .notification-open {
         display: grid;
-        grid-template-columns: 2.6rem minmax(0, 1fr);
-        gap: .85rem;
+        grid-template-columns: 2rem minmax(0, 1fr);
+        gap: .7rem;
         width: 100%;
         padding: 0;
         border: 0;
@@ -158,12 +163,12 @@
     .notification-icon {
         display: grid;
         place-items: center;
-        width: 2.6rem;
-        height: 2.6rem;
-        border-radius: .7rem;
+        width: 2rem;
+        height: 2rem;
+        border-radius: .45rem;
         background: rgba(102, 217, 239, .14);
         color: #66d9ef;
-        font-size: 1.1rem;
+        font-size: .9rem;
     }
 
     .notification-card-unread .notification-icon {
@@ -179,9 +184,9 @@
     }
 
     .notification-title {
-        margin-bottom: .2rem;
+        margin-bottom: .1rem;
         color: #fff;
-        font-size: .98rem;
+        font-size: .9rem;
         font-weight: 700;
         transition: color .18s ease;
     }
@@ -192,28 +197,28 @@
 
     .notification-message {
         color: #c0d0dc;
-        font-size: .9rem;
-        line-height: 1.45;
+        font-size: .82rem;
+        line-height: 1.35;
     }
 
     .notification-date {
-        margin-top: .45rem;
+        margin-top: .3rem;
         color: #86a2b6;
-        font-size: .78rem;
+        font-size: .72rem;
     }
 
     .notification-meta {
         display: flex;
         flex-direction: column;
         align-items: flex-end;
-        gap: .65rem;
+        gap: .45rem;
     }
 
     .notification-status {
         display: inline-flex;
         align-items: center;
         gap: .4rem;
-        padding: .28rem .55rem;
+        padding: .2rem .45rem;
         border-radius: 999px;
         font-size: .72rem;
         font-weight: 800;
@@ -246,7 +251,7 @@
         display: grid;
         justify-items: center;
         gap: .35rem;
-        padding: 3rem 1rem;
+        padding: 2rem 1rem;
         border: 1px dashed rgba(102, 217, 239, .24);
         border-radius: .85rem;
         color: #a7bdcb;
@@ -271,7 +276,8 @@
 
         .notification-card {
             grid-template-columns: 1fr;
-            gap: .8rem;
+            gap: .55rem;
+            padding-left: .65rem;
         }
 
         .notification-meta {
