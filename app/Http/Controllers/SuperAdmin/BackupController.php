@@ -6,14 +6,23 @@ use App\Http\Controllers\Controller;
 use App\Models\BackupLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Symfony\Component\Process\Process;
 
 class BackupController extends Controller
 {
     public function index()
     {
-        $files = File::files(
-            storage_path('app/backups')
-        );
+        $backupDir = storage_path('app/backups');
+
+        $files = File::exists($backupDir)
+            ? collect(File::files($backupDir))
+            ->sortByDesc(fn($file) => filemtime($file))
+            ->values()
+            ->all()
+            : [];
+
         $logs = BackupLog::latest()->get();
 
         return view(
@@ -24,49 +33,52 @@ class BackupController extends Controller
 
     public function create()
     {
-        if (!File::exists(storage_path('app/backups'))) {
-            File::makeDirectory(
-                storage_path('app/backups'),
-                0755,
-                true
-            );
+        if ($this->isUnsupportedDatabase()) {
+            return back()->with('error', 'Database backups are only supported for MySQL databases.');
         }
 
-        $database = env('DB_DATABASE');
-        $username = env('DB_USERNAME');
-        $password = env('DB_PASSWORD');
-        $host = env('DB_HOST', 'localhost');
+        $backupDir = storage_path('app/backups');
+
+        if (!File::exists($backupDir)) {
+            File::makeDirectory($backupDir, 0755, true);
+        }
 
         $filename = 'backup_' . now()->format('Y_m_d_His') . '.sql';
-        $path = storage_path('app/backups/' . $filename);
+        $path = $backupDir . DIRECTORY_SEPARATOR . $filename;
+        $connection = config('database.connections.mysql');
 
-        // Use which command to find mysqldump executable
-        if (PHP_OS_FAMILY === 'Windows') {
-            $mysqldump = 'mysqldump';
-        } else {
-            $mysqldump = '/usr/bin/mysqldump';
-        }
+        $process = new Process([
+            $this->mysqlDumpBinary(),
+            '--host=' . ($connection['host'] ?? '127.0.0.1'),
+            '--port=' . ($connection['port'] ?? 3306),
+            '--user=' . ($connection['username'] ?? ''),
+            '--password=' . ($connection['password'] ?? ''),
+            '--result-file=' . $path,
+            $connection['database'] ?? '',
+        ]);
 
-        $command = sprintf(
-            "%s -h %s -u %s -p%s %s > %s",
-            $mysqldump,
-            escapeshellarg($host),
-            escapeshellarg($username),
-            escapeshellarg($password),
-            escapeshellarg($database),
-            escapeshellarg($path)
-        );
+        $process->setTimeout(300);
+        $process->run();
 
-        exec($command, $output, $result);
+        if (!$process->isSuccessful()) {
+            if (File::exists($path)) {
+                File::delete($path);
+            }
 
-        if ($result !== 0) {
-            return back()->with('error', 'Backup failed.');
+            Log::error('MySQL backup failed.', [
+                'output' => $process->getOutput(),
+                'error' => $process->getErrorOutput(),
+            ]);
+
+            return back()->with('error', trim($process->getErrorOutput() ?: $process->getOutput()) ?: 'Backup failed.');
         }
 
         BackupLog::create([
+            'type' => 'manual',
             'filename' => $filename,
-            'file_size' => File::size($path),
-            'status' => 'success'
+            'status' => 'success',
+            'path' => $path,
+            'message' => 'Backup created successfully.',
         ]);
 
         return back()->with('success', 'Backup created successfully.');
@@ -74,53 +86,105 @@ class BackupController extends Controller
 
     public function download($file)
     {
-        return response()->download(
-            storage_path(
-                'app/backups/' . $file
-            )
-        );
+        $resolvedPath = $this->resolveBackupFilePath($file);
+
+        if ($resolvedPath === null) {
+            abort(404);
+        }
+
+        return response()->download($resolvedPath);
     }
 
     public function restore(Request $request)
     {
+        if ($this->isUnsupportedDatabase()) {
+            return back()->with('error', 'Database restores are only supported for MySQL databases.');
+        }
+
         $request->validate([
-            'backup_file' => 'required|string'
+            'backup_file' => 'required|string',
         ]);
 
-        // Get list of valid backup files (whitelist validation)
-        $backupDir = storage_path('app/backups');
-        $backupFiles = collect(File::files($backupDir))
-            ->map(fn($f) => $f->getBasename())
-            ->toArray();
+        $file = $this->resolveBackupFilePath($request->backup_file);
 
-        // Validate backup file is in our whitelist
-        if (!in_array($request->backup_file, $backupFiles)) {
+        if ($file === null) {
             return back()->with('error', 'Invalid backup file selected.');
         }
 
-        $file = $backupDir . '/' . $request->backup_file;
+        $connection = config('database.connections.mysql');
 
-        // Use safe command with proper escaping
-        $database = env('DB_DATABASE');
-        $username = env('DB_USERNAME');
-        $password = env('DB_PASSWORD');
-        $host = env('DB_HOST', 'localhost');
+        $process = new Process([
+            $this->mysqlClientBinary(),
+            '--host=' . ($connection['host'] ?? '127.0.0.1'),
+            '--port=' . ($connection['port'] ?? 3306),
+            '--user=' . ($connection['username'] ?? ''),
+            '--password=' . ($connection['password'] ?? ''),
+            $connection['database'] ?? '',
+        ]);
 
-        $command = sprintf(
-            "mysql -h %s -u %s -p%s %s < %s",
-            escapeshellarg($host),
-            escapeshellarg($username),
-            escapeshellarg($password),
-            escapeshellarg($database),
-            escapeshellarg($file)
-        );
+        $process->setTimeout(300);
+        $process->setInput(file_get_contents($file));
+        $process->run();
 
-        exec($command, $output, $result);
+        if (!$process->isSuccessful()) {
+            Log::error('MySQL restore failed.', [
+                'output' => $process->getOutput(),
+                'error' => $process->getErrorOutput(),
+            ]);
 
-        if ($result !== 0) {
-            return back()->with('error', 'Database restore failed.');
+            return back()->with('error', trim($process->getErrorOutput() ?: $process->getOutput()) ?: 'Database restore failed.');
         }
 
+        BackupLog::create([
+            'type' => 'restore',
+            'filename' => basename($file),
+            'status' => 'success',
+            'path' => $file,
+            'message' => 'Database restored successfully.',
+        ]);
+
         return back()->with('success', 'Database restored successfully.');
+    }
+
+    private function isUnsupportedDatabase(): bool
+    {
+        return config('database.default') !== 'mysql';
+    }
+
+    private function resolveBackupFilePath(string $file): ?string
+    {
+        $requestedFile = basename($file);
+
+        if ($requestedFile !== $file || !Str::endsWith($requestedFile, '.sql')) {
+            return null;
+        }
+
+        $backupDir = realpath(storage_path('app/backups'));
+
+        if ($backupDir === false) {
+            return null;
+        }
+
+        $resolvedFile = realpath($backupDir . DIRECTORY_SEPARATOR . $requestedFile);
+
+        if ($resolvedFile === false) {
+            return null;
+        }
+
+        if ($resolvedFile !== $backupDir . DIRECTORY_SEPARATOR . $requestedFile) {
+            return null;
+        }
+
+        return $resolvedFile;
+    }
+
+    private function mysqlDumpBinary(): string
+    {
+        return PHP_OS_FAMILY === 'Windows' ? 'mysqldump.exe' : 'mysqldump';
+    }
+
+    private function mysqlClientBinary(): string
+    {
+        return PHP_OS_FAMILY === 'Windows' ? 'mysql.exe' : 'mysql';
     }
 }

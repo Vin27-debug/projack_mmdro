@@ -6,6 +6,7 @@ use App\Models\BackupLog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Symfony\Component\Process\Process;
 
 class BackupDatabase extends Command
 {
@@ -15,6 +16,12 @@ class BackupDatabase extends Command
 
     public function handle(): int
     {
+        if (config('database.default') !== 'mysql') {
+            $this->error('Database backups are only supported for MySQL databases.');
+
+            return self::FAILURE;
+        }
+
         $type = $this->option('type');
         $backupDir = storage_path('app/backups');
 
@@ -24,26 +31,32 @@ class BackupDatabase extends Command
 
         $filename = 'backup_' . $type . '_' . now()->format('Y_m_d_His') . '.sql';
         $path = $backupDir . DIRECTORY_SEPARATOR . $filename;
+        $connection = config('database.connections.mysql');
 
-        $database = env('DB_DATABASE');
-        $username = env('DB_USERNAME');
-        $password = env('DB_PASSWORD');
+        $process = new Process([
+            $this->mysqlDumpBinary(),
+            '--host=' . ($connection['host'] ?? '127.0.0.1'),
+            '--port=' . ($connection['port'] ?? 3306),
+            '--user=' . ($connection['username'] ?? ''),
+            '--password=' . ($connection['password'] ?? ''),
+            '--result-file=' . $path,
+            $connection['database'] ?? '',
+        ]);
 
-        $mysqldump = 'C:\\laragon\\bin\\mysql\\mysql-8.4.3-winx64\\bin\\mysqldump.exe';
-        $command = '"' . $mysqldump . '" -u' . $username . ' ' . $database . ' > "' . $path . '"';
+        $process->setTimeout(300);
+        $process->run();
 
-        exec($command, $output, $result);
-
-        if ($result !== 0 || !File::exists($path)) {
+        if (!$process->isSuccessful() || !File::exists($path)) {
             BackupLog::create([
                 'type' => $type,
                 'filename' => $filename,
                 'status' => 'failed',
                 'path' => $path,
-                'message' => 'Backup creation failed',
+                'message' => trim($process->getErrorOutput() ?: $process->getOutput()) ?: 'Backup creation failed',
             ]);
 
             $this->error('Backup failed.');
+
             return self::FAILURE;
         }
 
@@ -65,6 +78,12 @@ class BackupDatabase extends Command
         ]);
 
         $this->info('Backup created successfully.');
+
         return self::SUCCESS;
+    }
+
+    private function mysqlDumpBinary(): string
+    {
+        return PHP_OS_FAMILY === 'Windows' ? 'mysqldump.exe' : 'mysqldump';
     }
 }
