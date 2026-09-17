@@ -687,12 +687,91 @@ class DashboardController extends Controller
                 'status' => Driver::STATUS_RETURNING,
             ]);
 
-            if ($dispatch->vehicle_id) {
-                $this->releaseVehicleIfUnused((int) $dispatch->vehicle_id, $dispatch->id);
+            if ($dispatch->vehicle_id && $dispatch->vehicle) {
+                $dispatch->vehicle->update([
+                    'status' => Ambulance::STATUS_ON_DUTY,
+                ]);
             }
         });
 
-        return back()->with('success', 'Incident completed successfully.');
+        return back()->with('success', 'Mission completed. Driver is now returning to base and the vehicle remains assigned until the crew confirms it is ready for the next mission.');
+    }
+
+    public function markReturningToBase(
+        Incident $incident
+    ): RedirectResponse {
+
+        $driver = Auth::user()?->driver;
+
+        if (!$driver) {
+            abort(403, 'Driver profile not found.');
+        }
+
+        $dispatch = $this->getDriverDispatchForIncident($incident, $driver, [Dispatch::STATUS_COMPLETED]);
+
+        if (!$dispatch) {
+            abort(403, 'This incident is not in a return-to-base state.');
+        }
+
+        if ($incident->status !== Incident::STATUS_COMPLETED) {
+            return back()->with('error', 'This incident must be completed before the vehicle can be checked back in.');
+        }
+
+        DB::transaction(function () use ($driver, $dispatch) {
+            $driver->update([
+                'status' => Driver::STATUS_RETURNING,
+            ]);
+
+            if ($dispatch->vehicle_id && $dispatch->vehicle) {
+                $dispatch->vehicle->update([
+                    'status' => Ambulance::STATUS_ON_DUTY,
+                ]);
+            }
+        });
+
+        return back()->with('success', 'Vehicle has been confirmed to be returning to base. It remains unavailable until final readiness is confirmed.');
+    }
+
+    public function markReadyForNextMission(
+        Incident $incident
+    ): RedirectResponse {
+
+        $driver = Auth::user()?->driver;
+
+        if (!$driver) {
+            abort(403, 'Driver profile not found.');
+        }
+
+        $dispatch = $this->getDriverDispatchForIncident($incident, $driver, [Dispatch::STATUS_COMPLETED]);
+
+        if (!$dispatch) {
+            abort(403, 'This incident is not eligible to be marked ready for the next mission.');
+        }
+
+        if ($incident->completed_at === null) {
+            return back()->with('error', 'The incident must be completed before readying the crew for the next mission.');
+        }
+
+        DB::transaction(function () use ($driver, $dispatch) {
+            $driver->update([
+                'status' => Driver::STATUS_AVAILABLE,
+            ]);
+
+            if ($dispatch->vehicle_id) {
+                $hasOtherActiveDispatch = Dispatch::active()
+                    ->where('vehicle_id', $dispatch->vehicle_id)
+                    ->where('id', '!=', $dispatch->id)
+                    ->exists();
+
+                if (!$hasOtherActiveDispatch) {
+                    $dispatch->vehicle?->update([
+                        'status' => Ambulance::STATUS_AVAILABLE,
+                    ]);
+                }
+            }
+        });
+
+        return back()->with('success', 'Driver and vehicle are ready for the next mission.');
     }
 
 

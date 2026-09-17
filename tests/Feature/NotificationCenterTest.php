@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Ambulance;
+use App\Models\Dispatch;
+use App\Models\Driver;
 use App\Models\Incident;
 use App\Models\Notification;
 use App\Models\User;
@@ -64,6 +67,70 @@ class NotificationCenterTest extends TestCase
         $this->assertFalse((bool) $notification->fresh()->is_read);
     }
 
+    public function test_driver_report_submission_creates_incident_report_submitted_notification_and_links_it_to_the_incident(): void
+    {
+        $driverRole = Role::firstOrCreate(['name' => 'driver']);
+        $driverUser = User::factory()->create(['status' => 'approved']);
+        $driverUser->assignRole($driverRole);
+
+        $driver = Driver::create([
+            'user_id' => $driverUser->id,
+            'badge_id' => 'DRV-404',
+            'contact_number' => '09123456789',
+            'license_number' => 'LIC-404',
+            'license_expiry' => '2030-01-01',
+            'status' => 'available',
+        ]);
+
+        $ambulance = Ambulance::create([
+            'plate_number' => 'ABC-404',
+            'vehicle_name' => 'Ambulance Four',
+            'vehicle_type' => 'ambulance',
+            'status' => 'available',
+        ]);
+
+        $incident = Incident::create([
+            'incident_number' => 'INC-404',
+            'reporter_name' => 'Test Reporter',
+            'contact_number' => '09170001111',
+            'incident_type' => 'Medical Emergency',
+            'location' => 'Test Location',
+            'description' => 'Test description',
+            'priority' => 'Medium',
+            'status' => Incident::STATUS_COMPLETED,
+            'driver_id' => $driver->id,
+            'ambulance_id' => $ambulance->id,
+        ]);
+
+        Dispatch::create([
+            'incident_id' => $incident->id,
+            'driver_id' => $driver->id,
+            'vehicle_id' => $ambulance->id,
+            'status' => Dispatch::STATUS_COMPLETED,
+            'completed_at' => now(),
+        ]);
+
+        $this->actingAs($driverUser)->post(route('driver.report.store', $incident), [
+            'summary' => 'Patient stabilized',
+            'actions_taken' => 'Transported to hospital',
+            'casualties' => 'None',
+            'remarks' => 'Completed',
+        ])->assertRedirect(route('driver.dashboard'));
+
+        $notification = Notification::where('type', 'report')->latest()->first();
+
+        $this->assertNotNull($notification);
+        $this->assertSame('Incident Report Submitted', $notification->title);
+        $this->assertSame($incident->id, $notification->related_id);
+        $this->assertSame(Incident::class, $notification->related_type);
+        $this->assertStringNotContainsString('New Incident Report', $notification->title);
+
+        $this->actingAs($this->createAdmin())
+            ->get(route('admin.notifications.show', $notification))
+            ->assertOk()
+            ->assertSee('View Incident');
+    }
+
     public function test_opening_one_notification_marks_only_that_notification_read_and_preserves_records(): void
     {
         $this->withoutMiddleware(PreventRequestForgery::class);
@@ -83,11 +150,32 @@ class NotificationCenterTest extends TestCase
 
         $response = $this->actingAs($admin)->post(route('admin.notifications.open', $opened));
 
-        $response->assertRedirect(route('admin.notifications.index'));
+        $response->assertRedirect(route('admin.notifications.show', $opened));
         $this->assertTrue((bool) $opened->fresh()->is_read);
         $this->assertFalse((bool) $other->fresh()->is_read);
         $this->assertDatabaseHas('notifications', ['id' => $opened->id]);
         $this->assertDatabaseHas('notifications', ['id' => $other->id]);
+    }
+
+    public function test_notification_detail_view_displays_the_selected_message_and_status(): void
+    {
+        $admin = $this->createAdmin();
+        $notification = Notification::create([
+            'title' => 'Vehicle Selected for Dispatch',
+            'message' => 'Driver selected vehicle for incident INC-003.',
+            'type' => 'dispatch',
+            'is_read' => false,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.notifications.show', $notification))
+            ->assertOk()
+            ->assertSee('Notification Details')
+            ->assertSee('Vehicle Selected for Dispatch')
+            ->assertSee('Driver selected vehicle for incident INC-003.')
+            ->assertSee('Read');
+
+        $this->assertTrue((bool) $notification->fresh()->is_read);
     }
 
     public function test_mark_read_marks_only_the_selected_notification(): void
@@ -173,7 +261,7 @@ class NotificationCenterTest extends TestCase
 
         $this->actingAs($admin)
             ->post(route('admin.notifications.open', $notification))
-            ->assertRedirect(route('admin.notifications.index'));
+            ->assertRedirect(route('admin.notifications.show', $notification));
 
         $this->assertTrue((bool) $notification->fresh()->is_read);
     }
@@ -212,10 +300,45 @@ class NotificationCenterTest extends TestCase
         $response = $this->actingAs($admin)
             ->post(route('admin.notifications.open', $notification));
 
-        $response->assertRedirect(route('admin.notifications.index'));
+        $response->assertRedirect(route('admin.notifications.show', $notification));
         $notification = $notification->fresh();
         $this->assertTrue((bool) $notification->is_read);
         $this->assertTrue($updatedAt->equalTo($notification->updated_at));
+    }
+
+    public function test_admin_can_update_an_emergency_timestamp_and_log_the_correction(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+        $admin = $this->createAdmin();
+        $incident = Incident::create([
+            'incident_number' => 'INC-100',
+            'reporter_name' => 'Test Reporter',
+            'contact_number' => '09170001111',
+            'incident_type' => 'Medical Emergency',
+            'location' => 'Test Location',
+            'description' => 'Test description',
+            'priority' => 'Medium',
+            'status' => Incident::STATUS_DISPATCHED,
+            'call_received_at' => now()->subHours(2),
+            'response_at' => now()->subHour(),
+            'at_scene_at' => now()->subMinutes(45),
+            'at_patient_at' => null,
+            'depart_scene_at' => null,
+            'at_hospital_at' => null,
+        ]);
+
+        $oldAtScene = $incident->at_scene_at->format('Y-m-d H:i:s');
+        $newAtScene = now()->setMinute(47)->setSecond(0)->format('Y-m-d H:i:s');
+
+        $this->actingAs($admin)
+            ->post(route('admin.incidents.timestamp.update', ['incident' => $incident, 'field' => 'at_scene_at']), [
+                'timestamp' => $newAtScene,
+            ])
+            ->assertRedirect(route('admin.incidents.show', $incident));
+
+        $this->assertNotNull($incident->fresh()->at_scene_at);
+        $this->assertSame($newAtScene, $incident->fresh()->at_scene_at->format('Y-m-d H:i:s'));
+        $this->assertDatabaseHas('audit_logs', ['module' => 'Emergency Time Record']);
     }
 
     private function createAdmin(): User

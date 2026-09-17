@@ -81,7 +81,8 @@
                         <form
                             method="POST"
                             action="{{ route('backups.restore') }}"
-                            style="display:inline;">
+                            style="display:inline;"
+                            onsubmit="return confirm('This restore action will overwrite the current MySQL database. Continue only if you are sure this is the correct backup for production recovery.');">
 
                             @csrf
 

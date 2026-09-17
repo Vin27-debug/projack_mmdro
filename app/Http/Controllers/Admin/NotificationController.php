@@ -46,6 +46,19 @@ class NotificationController extends Controller
         return back()->with('success', 'Notification marked as read.');
     }
 
+    public function show(Notification $notification)
+    {
+        $this->authorizeNotification($notification);
+
+        if (!$notification->is_read) {
+            $notification->update([
+                'is_read' => true,
+            ]);
+        }
+
+        return view('admin.notifications.show', compact('notification'));
+    }
+
     public function open(Notification $notification)
     {
         $this->authorizeNotification($notification);
@@ -56,7 +69,7 @@ class NotificationController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.notifications.index');
+        return redirect()->route('admin.notifications.show', $notification);
     }
 
     public function unreadCount()

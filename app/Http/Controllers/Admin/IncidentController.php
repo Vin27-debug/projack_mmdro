@@ -10,7 +10,9 @@ use App\Models\IncidentAttachment;
 use App\Models\Driver;
 use App\Models\Notification;
 use App\Models\VehicleDriverAssignment;
+use App\Services\AuditService;
 use App\Services\DispatchRecommendationService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -141,6 +143,54 @@ class IncidentController extends Controller
         return back()->with('success', $incident->incident_number . ' has been restored from the archive.');
     }
 
+    public function updateTimestamp(Request $request, Incident $incident, string $field)
+    {
+        abort_unless(auth()->user()?->hasRole(['admin', 'super-admin']), 403, 'You are not authorized to update emergency timestamps.');
+
+        $allowedFields = [
+            'call_received_at',
+            'response_at',
+            'at_scene_at',
+            'at_patient_at',
+            'depart_scene_at',
+            'at_hospital_at',
+        ];
+
+        abort_unless(in_array($field, $allowedFields, true), 404);
+
+        $request->validate([
+            'timestamp' => ['required', 'date'],
+        ]);
+
+        $newValue = Carbon::parse($request->input('timestamp'));
+        $oldValue = $incident->getAttribute($field);
+
+        $incident->update([$field => $newValue]);
+
+        $label = match ($field) {
+            'call_received_at' => 'Call Received',
+            'response_at' => 'Response',
+            'at_scene_at' => 'At Scene',
+            'at_patient_at' => 'At Patient',
+            'depart_scene_at' => 'Depart Scene',
+            'at_hospital_at' => 'At Hospital',
+        };
+
+        AuditService::log(
+            'updated',
+            'Emergency Time Record',
+            sprintf(
+                'Admin updated Emergency Time Record for %s. Field: %s. Old: %s. New: %s.',
+                $incident->incident_number,
+                $label,
+                $oldValue ? $oldValue->format('M d, Y h:i A') : 'Not yet recorded',
+                $newValue->format('M d, Y h:i A')
+            )
+        );
+
+        return redirect()->route('admin.incidents.show', $incident)->with('success', 'Emergency time record updated.');
+    }
+
     public function downloadAttachment(Incident $incident, IncidentAttachment $attachment)
     {
         abort_unless($attachment->incident_id === $incident->id, 404);
@@ -257,7 +307,7 @@ class IncidentController extends Controller
             'description' => 'nullable|string',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'priority' => 'required|in:Low,Medium,High,Critical',
+            'priority' => ['required', Rule::in(Incident::VALID_PRIORITIES)],
             'status' => ['nullable', Rule::in(Incident::VALID_STATUSES)],
             'attachments' => 'nullable|array|max:10',
             'attachments.*' => 'file|max:10240|mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx',

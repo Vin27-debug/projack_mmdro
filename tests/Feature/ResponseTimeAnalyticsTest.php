@@ -47,6 +47,9 @@ class ResponseTimeAnalyticsTest extends TestCase
             'status' => 'completed',
             'driver_id' => $driver->id,
             'ambulance_id' => $ambulance->id,
+            'call_received_at' => now()->subMinutes(14),
+            'response_at' => now()->subMinutes(8),
+            'at_scene_at' => now()->subMinutes(2),
         ]);
 
         Dispatch::create([
@@ -54,8 +57,8 @@ class ResponseTimeAnalyticsTest extends TestCase
             'driver_id' => $driver->id,
             'vehicle_id' => $ambulance->id,
             'status' => Dispatch::STATUS_COMPLETED,
-            'assigned_at' => now()->subMinutes(18),
-            'arrived_at' => now(),
+            'assigned_at' => now()->subMinutes(45),
+            'arrived_at' => now()->subMinutes(30),
             'completed_at' => now(),
         ]);
 
@@ -67,5 +70,6 @@ class ResponseTimeAnalyticsTest extends TestCase
         $response->assertSee('Slowest Response');
         $response->assertSee('Total Completed Responses');
         $response->assertSee('Response Time Trend');
+        $response->assertSee('12.00 min');
     }
 }

@@ -53,7 +53,7 @@ class HijackController extends Controller
             ]);
 
             Notification::create([
-                'title' => 'Vehicle Hijack Alert',
+                'title' => 'Hijack Alert',
                 'message' => 'Possible vehicle hijacking detected.',
                 'type' => 'hijack',
             ]);

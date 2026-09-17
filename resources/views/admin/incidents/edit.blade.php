@@ -22,7 +22,7 @@
                 <div class="col-md-6"><label class="form-label">Incident Classification</label><select name="incident_type" class="form-select" required>
                         <option value="">Select classification</option>@foreach(\App\Models\Incident::INCIDENT_TYPES as $type)<option value="{{ $type }}" @selected(old('incident_type', $incident->incident_type) === $type)>{{ $type }}</option>@endforeach
                     </select></div>
-                <div class="col-md-6"><label class="form-label">Priority</label><select name="priority" class="form-select">@foreach(['Low','Medium','High','Critical'] as $priority)<option value="{{ $priority }}" @selected(old('priority', $incident->priority) === $priority)>{{ $priority }}</option>@endforeach</select></div>
+                <div class="col-md-6"><label class="form-label">Priority</label><select name="priority" class="form-select">@foreach(\App\Models\Incident::VALID_PRIORITIES as $priority)<option value="{{ $priority }}" @selected(old('priority', $incident->priority) === $priority)>{{ \App\Models\Incident::priorityDisplayLabel($priority) }}</option>@endforeach</select></div>
                 <div class="col-12"><label class="form-label">Location</label><input name="location" class="form-control" value="{{ old('location', $incident->location) }}"></div>
                 <div class="col-md-4"><label class="form-label">House Number</label><input name="house_number" class="form-control" value="{{ old('house_number', $incident->house_number) }}"></div>
                 <div class="col-md-8"><label class="form-label">Street</label><input name="street" class="form-control" value="{{ old('street', $incident->street) }}"></div>

@@ -153,7 +153,7 @@
                             <div class="field-label">Priority</div>
 
                             <div class="field-value">
-                                {{ $incident->priority ?: 'N/A' }}
+                                {{ \App\Models\Incident::priorityDisplayLabel($incident->priority) }}
                             </div>
                         </div>
 
@@ -551,17 +551,24 @@
             <div class="card-header bg-dark text-white"><i class="bi bi-list-check me-2"></i>Incident Timeline</div>
             <div class="card-body">
                 @php($latestDispatch = $incident->dispatches->sortByDesc('created_at')->first())
-                @foreach([
+                @php
+                $timelineEntries = [
                 'Incident Reported' => $incident->created_at,
                 'Dispatch Created' => $latestDispatch?->created_at,
                 'Driver Accepted' => $latestDispatch?->accepted_at,
                 'En Route' => $latestDispatch?->en_route_at,
-                'Arrived' => $latestDispatch?->arrived_at,
+                'At Scene' => $latestDispatch?->arrived_at ?? $incident->at_scene_at,
+                'At Patient' => $incident->at_patient_at,
+                'Depart Scene' => $incident->depart_scene_at,
+                'At Hospital' => $incident->at_hospital_at,
                 'Response Completed' => $incident->completed_at ?: $latestDispatch?->completed_at,
                 'Report Submitted' => $incident->report?->submitted_at,
                 'Report Approved' => $incident->report?->status === 'approved' ? $incident->report->updated_at : null,
-                'Incident Closed' => $incident->closed_at,
-                ] as $label => $timestamp)
+                'Return to Base / Report to Station' => $incident->completed_at,
+                'Ready for Next Mission' => $incident->closed_at,
+                ];
+                @endphp
+                @foreach($timelineEntries as $label => $timestamp)
                 <div class="d-flex justify-content-between border-bottom py-2"><span>{{ $label }}</span><span class="text-muted">{{ $timestamp?->format('M d, Y h:i A') ?: 'Pending' }}</span></div>
                 @endforeach
             </div>

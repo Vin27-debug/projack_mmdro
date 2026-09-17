@@ -12,21 +12,14 @@ class ResponseTimeController extends Controller
     {
         $dispatches = Dispatch::query()
             ->with(['incident', 'driver.user', 'vehicle'])
-            ->whereNotNull('assigned_at')
-            ->whereNotNull('arrived_at')
-            ->orderByDesc('arrived_at')
-            ->get();
+            ->get()
+            ->filter(fn(Dispatch $dispatch) => $this->calculateResponseMinutes($dispatch) !== null)
+            ->sortByDesc(fn(Dispatch $dispatch) => $dispatch->incident?->at_scene_at ?? $dispatch->arrived_at ?? $dispatch->created_at);
 
         $completedResponses = $dispatches->count();
 
         $responseTimes = $dispatches
-            ->map(function (Dispatch $dispatch): ?int {
-                if (!$dispatch->assigned_at || !$dispatch->arrived_at) {
-                    return null;
-                }
-
-                return (int) $dispatch->assigned_at->diffInMinutes($dispatch->arrived_at);
-            })
+            ->map(fn(Dispatch $dispatch): ?float => $this->calculateResponseMinutes($dispatch))
             ->filter()
             ->values();
 
@@ -43,16 +36,11 @@ class ResponseTimeController extends Controller
             : 0;
 
         $monthlyTrend = $dispatches->groupBy(function (Dispatch $dispatch): string {
-            return $dispatch->arrived_at?->format('Y-m') ?? 'unknown';
+            $incident = $dispatch->incident;
+            return $incident?->at_scene_at?->format('Y-m') ?? $dispatch->arrived_at?->format('Y-m') ?? 'unknown';
         })
             ->map(function (Collection $group): float {
-                $times = $group->map(function (Dispatch $dispatch): ?int {
-                    if (!$dispatch->assigned_at || !$dispatch->arrived_at) {
-                        return null;
-                    }
-
-                    return (int) $dispatch->assigned_at->diffInMinutes($dispatch->arrived_at);
-                })->filter()->values();
+                $times = $group->map(fn(Dispatch $dispatch): ?float => $this->calculateResponseMinutes($dispatch))->filter()->values();
 
                 return $times->isNotEmpty() ? round($times->avg(), 2) : 0;
             })
@@ -71,5 +59,24 @@ class ResponseTimeController extends Controller
             'labels',
             'series'
         ));
+    }
+
+    protected function calculateResponseMinutes(Dispatch $dispatch): ?float
+    {
+        $incident = $dispatch->incident;
+
+        if ($incident && $incident->call_received_at && $incident->at_scene_at) {
+            return (float) $incident->call_received_at->diffInMinutes($incident->at_scene_at, false);
+        }
+
+        if ($incident && $incident->response_at && $incident->at_scene_at) {
+            return (float) $incident->response_at->diffInMinutes($incident->at_scene_at, false);
+        }
+
+        if ($dispatch->assigned_at && $dispatch->arrived_at) {
+            return (float) $dispatch->assigned_at->diffInMinutes($dispatch->arrived_at, false);
+        }
+
+        return null;
     }
 }

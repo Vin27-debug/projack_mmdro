@@ -7,6 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class Incident extends Model
 {
+    public const PRIORITY_LOW = 'Low';
+    public const PRIORITY_MEDIUM = 'Medium';
+    public const PRIORITY_HIGH = 'High';
+    public const PRIORITY_CRITICAL = 'Critical';
+
+    public const VALID_PRIORITIES = [
+        self::PRIORITY_LOW,
+        self::PRIORITY_MEDIUM,
+        self::PRIORITY_HIGH,
+        self::PRIORITY_CRITICAL,
+    ];
+
     public const STATUS_PENDING = 'pending';
     public const STATUS_DISPATCHED = 'dispatched';
     public const STATUS_RESPONDING = 'responding';
@@ -108,6 +120,32 @@ class Incident extends Model
     public function report()
     {
         return $this->hasOne(IncidentReport::class, 'incident_id');
+    }
+
+    public static function priorityDisplayLabel(?string $priority): string
+    {
+        if (blank($priority)) {
+            return 'N/A';
+        }
+
+        return match (strtolower(trim($priority))) {
+            'low' => 'Green — Low',
+            'medium' => 'Yellow — Medium',
+            'high' => 'Red — High',
+            'critical' => 'Black — Critical',
+            default => (string) $priority,
+        };
+    }
+
+    public static function priorityBadgeClass(?string $priority): string
+    {
+        return match (strtolower(trim((string) ($priority ?? '')))) {
+            'low' => 'success',
+            'medium' => 'warning text-dark',
+            'high' => 'danger',
+            'critical' => 'dark',
+            default => 'secondary',
+        };
     }
 
     public function scopeNotArchived(Builder $query)

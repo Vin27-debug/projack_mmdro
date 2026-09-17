@@ -39,13 +39,7 @@ class ReportsService
         return $dispatches->groupBy(fn(Dispatch $dispatch) => $dispatch->driver_id)
             ->map(function (Collection $group) {
                 $driver = $group->first()->driver;
-                $responseTimes = $group->map(function (Dispatch $dispatch): ?int {
-                    if (!$dispatch->assigned_at || !$dispatch->arrived_at) {
-                        return null;
-                    }
-
-                    return (int) $dispatch->assigned_at->diffInMinutes($dispatch->arrived_at);
-                })->filter()->values();
+                $responseTimes = $group->map(fn(Dispatch $dispatch): ?float => $this->calculateResponseMinutes($dispatch))->filter()->values();
 
                 return (object) [
                     'driver' => $driver,
@@ -91,15 +85,9 @@ class ReportsService
         $dispatchesQuery = Dispatch::query()->with(['incident', 'driver.user', 'vehicle']);
         $this->applyDateRange($dispatchesQuery, $filters);
 
-        $dispatches = $dispatchesQuery->whereNotNull('assigned_at')->whereNotNull('arrived_at')->get();
+        $dispatches = $dispatchesQuery->get()->filter(fn(Dispatch $dispatch) => $this->calculateResponseMinutes($dispatch) !== null);
 
-        $responseTimes = $dispatches->map(function (Dispatch $dispatch): ?int {
-            if (!$dispatch->assigned_at || !$dispatch->arrived_at) {
-                return null;
-            }
-
-            return (int) $dispatch->assigned_at->diffInMinutes($dispatch->arrived_at);
-        })->filter()->values();
+        $responseTimes = $dispatches->map(fn(Dispatch $dispatch): ?float => $this->calculateResponseMinutes($dispatch))->filter()->values();
 
         return [
             'dispatches' => $dispatches,
@@ -147,5 +135,24 @@ class ReportsService
         if ($endDate) {
             $query->whereDate('created_at', '<=', $endDate);
         }
+    }
+
+    protected function calculateResponseMinutes(Dispatch $dispatch): ?float
+    {
+        $incident = $dispatch->incident;
+
+        if ($incident && $incident->call_received_at && $incident->at_scene_at) {
+            return (float) $incident->call_received_at->diffInMinutes($incident->at_scene_at, false);
+        }
+
+        if ($incident && $incident->response_at && $incident->at_scene_at) {
+            return (float) $incident->response_at->diffInMinutes($incident->at_scene_at, false);
+        }
+
+        if ($dispatch->assigned_at && $dispatch->arrived_at) {
+            return (float) $dispatch->assigned_at->diffInMinutes($dispatch->arrived_at, false);
+        }
+
+        return null;
     }
 }

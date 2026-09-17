@@ -93,10 +93,12 @@ class IncidentReportController extends Controller
             }
 
             Notification::create([
-                'title' => 'New Incident Report',
+                'title' => 'Incident Report Submitted',
                 'message' => 'Driver submitted report for Incident #' . $incident->incident_number,
                 'type' => 'report',
                 'is_read' => false,
+                'related_id' => $incident->id,
+                'related_type' => Incident::class,
             ]);
         });
 

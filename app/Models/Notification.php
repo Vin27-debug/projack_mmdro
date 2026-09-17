@@ -14,17 +14,33 @@ class Notification extends Model
     ];
 
     protected $fillable = [
-
         'user_id',
         'title',
         'message',
         'type',
-        'is_read'
+        'is_read',
+        'related_id',
+        'related_type',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function relatedRecord()
+    {
+        if (blank($this->related_type) || blank($this->related_id)) {
+            return null;
+        }
+
+        $modelClass = $this->related_type;
+
+        if (!class_exists($modelClass)) {
+            return null;
+        }
+
+        return $modelClass::find($this->related_id);
     }
 
     public function scopeVisibleTo(Builder $query, ?int $userId): Builder

@@ -42,10 +42,63 @@
         }
 
         .admin-sidebar {
+            width: 270px;
             min-height: 100vh;
             background: linear-gradient(180deg, #091c3d 0%, #07172f 100%);
             border-right: 1px solid rgba(255, 255, 255, 0.08);
             padding: 1.25rem 0 1.5rem;
+            transition: width 0.2s ease, padding 0.2s ease;
+            overflow: hidden;
+        }
+
+        .admin-shell-row>.col-xl-auto {
+            width: 270px;
+            transition: width 0.2s ease;
+        }
+
+        body.admin-sidebar-collapsed .admin-shell-row>.col-xl-auto {
+            width: 88px;
+        }
+
+        body.admin-sidebar-collapsed .admin-sidebar {
+            width: 88px;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        body.admin-sidebar-collapsed .admin-brand,
+        body.admin-sidebar-collapsed .admin-nav-title,
+        body.admin-sidebar-collapsed .nav-label,
+        body.admin-sidebar-collapsed .nav-link .text-hide-when-collapsed,
+        body.admin-sidebar-collapsed .admin-sidebar .logout-label,
+        body.admin-sidebar-collapsed .admin-sidebar .help-label {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        body.admin-sidebar-collapsed .admin-brand {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        body.admin-sidebar-collapsed .admin-brand-mark {
+            margin: 0 auto;
+        }
+
+        body.admin-sidebar-collapsed .admin-sidebar .nav-link,
+        body.admin-sidebar-collapsed .admin-sidebar .help-button,
+        body.admin-sidebar-collapsed .admin-sidebar .logout-button {
+            justify-content: center;
+            padding-left: 0.6rem;
+            padding-right: 0.6rem;
+        }
+
+        body.admin-sidebar-collapsed .admin-sidebar .nav-link .badge {
+            display: none;
         }
 
         .admin-brand {
@@ -357,9 +410,21 @@
             outline-offset: 2px;
         }
 
+        @media (min-width: 1200px) {
+
+            body.admin-sidebar-collapsed .admin-sidebar .nav-link,
+            body.admin-sidebar-collapsed .admin-sidebar .help-button,
+            body.admin-sidebar-collapsed .admin-sidebar .logout-button {
+                width: 52px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+
         @media (max-width: 991px) {
             .admin-sidebar {
                 min-height: auto;
+                width: 100%;
             }
 
             .main-content {
@@ -402,11 +467,11 @@ return Route::has($name) ? route($name) : '#';
 
             <!-- SIDEBAR -->
 
-            <div class="col-12 col-xl-2">
-                <aside class="admin-sidebar">
+            <div class="col-12 col-xl-auto">
+                <aside class="admin-sidebar" aria-label="Admin sidebar">
                     <div class="admin-brand">
                         <div class="admin-brand-mark">M</div>
-                        <div>
+                        <div class="text-hide-when-collapsed">
                             <h4 class="admin-brand-title mb-1">MuniResQ</h4>
                             <p class="admin-brand-subtitle mb-0">Admin Command</p>
                         </div>
@@ -415,55 +480,59 @@ return Route::has($name) ? route($name) : '#';
                     <div class="admin-nav-title">Operations</div>
                     <nav class="nav flex-column mb-4">
                         <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                            <i class="bi bi-speedometer2"></i> Dashboard
+                            <i class="bi bi-speedometer2"></i> <span class="nav-label">Dashboard</span>
                         </a>
-                    <a href="{{ route('admin.audit-logs.index') }}"
-   class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
-    <i class="bi bi-journal-text"></i> Audit Logs
-</a>
+                        <a href="{{ route('admin.audit-logs.index') }}" class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
+                            <i class="bi bi-journal-text"></i> <span class="nav-label">Audit Logs</span>
+                        </a>
                         <a href="{{ $adminRoute('admin.notifications.index') }}" class="nav-link {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
-                            <i class="bi bi-bell"></i> Notifications
-                            <span class="badge bg-danger float-end" data-unread-badge>{{ $unreadNotifications ?? 0 }}</span>
+                            <i class="bi bi-bell"></i> <span class="nav-label">Notifications</span>
+                            <span class="badge bg-danger float-end text-hide-when-collapsed" data-unread-badge>{{ $unreadNotifications ?? 0 }}</span>
                         </a>
                         <a href="{{ url('/admin/incidents') }}" class="nav-link {{ request()->is('admin/incidents*') ? 'active' : '' }}">
-                            <i class="bi bi-exclamation-triangle"></i> Incidents
+                            <i class="bi bi-exclamation-triangle"></i> <span class="nav-label">Incidents</span>
                         </a>
                         <a href="{{ $adminRoute('admin.dispatches.index') }}" class="nav-link {{ request()->routeIs('admin.dispatches.*') ? 'active' : '' }}">
-                            <i class="bi bi-geo-alt"></i> Dispatch Center
+                            <i class="bi bi-geo-alt"></i> <span class="nav-label">Dispatch Center</span>
                         </a>
                         <a href="{{ $adminRoute('admin.gps.monitoring') }}" class="nav-link {{ request()->routeIs('admin.gps.monitoring') ? 'active' : '' }}">
-                            <i class="bi bi-geo-fill"></i> GPS Monitoring
+                            <i class="bi bi-geo-fill"></i> <span class="nav-label">GPS Monitoring</span>
                         </a>
                         <a href="{{ $adminRoute('admin.reports.index') }}" class="nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
-                            <i class="bi bi-file-earmark-text"></i> Incident Reports
+                            <i class="bi bi-file-earmark-text"></i> <span class="nav-label">Incident Reports</span>
                         </a>
                         <a href="{{ $adminRoute('admin.reports.pdf.view') }}" class="nav-link {{ request()->routeIs('admin.reports.pdf.view') ? 'active' : '' }}">
-                            <i class="bi bi-file-earmark-pdf"></i> PDF Reports
+                            <i class="bi bi-file-earmark-pdf"></i> <span class="nav-label">PDF Reports</span>
                         </a>
                         <a href="{{ $adminRoute('admin.maintenance.index') }}" class="nav-link {{ request()->routeIs('admin.maintenance.*') ? 'active' : '' }}">
-                            <i class="bi bi-tools"></i> Vehicle Maintenance
+                            <i class="bi bi-tools"></i> <span class="nav-label">Vehicle Maintenance</span>
                         </a>
                         <a href="{{ $adminRoute('admin.vulnerable-areas.index') }}" class="nav-link {{ request()->routeIs('admin.vulnerable-areas.*') ? 'active' : '' }}">
-                            <i class="bi bi-people"></i> Vulnerable Areas
+                            <i class="bi bi-people"></i> <span class="nav-label">Vulnerable Areas</span>
                         </a>
                         <a href="{{ $adminRoute('admin.response-equipment.index') }}" class="nav-link {{ request()->routeIs('admin.response-equipment.*') ? 'active' : '' }}">
-                            <i class="bi bi-box-seam"></i> Equipment Inventory
+                            <i class="bi bi-box-seam"></i> <span class="nav-label">Equipment Inventory</span>
                         </a>
                         <a href="{{ $adminRoute('admin.operations.center') }}" class="nav-link {{ request()->routeIs('admin.operations.center') ? 'active' : '' }}">
-                            <i class="bi bi-target"></i> Operations Center
+                            <i class="bi bi-target"></i> <span class="nav-label">Operations Center</span>
                         </a>
                         <a href="{{ $adminRoute('admin.reports.center') }}" class="nav-link {{ request()->routeIs('admin.reports.center') ? 'active' : '' }}">
-                            <i class="bi bi-graph-up"></i> Reports Center
+                            <i class="bi bi-graph-up"></i> <span class="nav-label">Reports Center</span>
                         </a>
                         <a href="{{ $adminRoute('admin.reports.response-time') }}" class="nav-link {{ request()->routeIs('admin.reports.response-time') ? 'active' : '' }}">
-                            <i class="bi bi-stopwatch"></i> Response Time
+                            <i class="bi bi-stopwatch"></i> <span class="nav-label">Response Time</span>
                         </a>
                     </nav>
-                    <form method="POST" action="{{ route('logout') }}" class="px-3 mt-3">
+
+                    <button type="button" class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill help-button mx-3 mb-2" data-bs-toggle="modal" data-bs-target="#adminHelpModal">
+                        <i class="bi bi-question-circle"></i> <span class="help-label">Help</span>
+                    </button>
+
+                    <form method="POST" action="{{ route('logout') }}" class="px-3 mt-1">
                         @csrf
-                        <button type="submit" class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill">
+                        <button type="submit" class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill logout-button">
                             <i class="bi bi-box-arrow-right"></i>
-                            Logout
+                            <span class="logout-label">Logout</span>
                         </button>
                     </form>
                 </aside>
@@ -471,7 +540,7 @@ return Route::has($name) ? route($name) : '#';
 
             <!-- CONTENT -->
 
-            <div class="col-12 col-xl-10">
+            <div class="col-12 col-xl">
                 <main class="main-content">
                     @yield('content')
                 </main>
@@ -481,10 +550,38 @@ return Route::has($name) ? route($name) : '#';
 
     </div>
 
+    <div class="modal fade" id="adminHelpModal" tabindex="-1" aria-labelledby="adminHelpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="adminHelpModalLabel">Command Center Help</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="mb-0 ps-3">
+                        <li>Track incidents from report to dispatch and closeout.</li>
+                        <li>Use Audit Logs to review who changed emergency timestamps.</li>
+                        <li>Review Notifications for live operational updates and pending actions.</li>
+                        <li>Use Reports Center to monitor response times and trends across the fleet.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     @yield('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const shell = document.body;
+            const sidebar = document.querySelector('.admin-sidebar');
+
+            if (window.innerWidth >= 1200 && sidebar) {
+                shell.classList.add('admin-sidebar-collapsed');
+                sidebar.addEventListener('mouseenter', () => shell.classList.remove('admin-sidebar-collapsed'));
+                sidebar.addEventListener('mouseleave', () => shell.classList.add('admin-sidebar-collapsed'));
+            }
+
             const badge = document.querySelector('[data-unread-badge]');
 
             if (!badge) {

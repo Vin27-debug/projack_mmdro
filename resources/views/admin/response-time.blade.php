@@ -68,6 +68,7 @@
                     <h5 class="fw-bold mb-3">Recent Completed Dispatches</h5>
                     <div class="list-group list-group-flush">
                         @forelse($dispatches->take(8) as $dispatch)
+                        @php($responseMinutes = $dispatch->incident?->call_received_at && $dispatch->incident?->at_scene_at ? $dispatch->incident->call_received_at->diffInMinutes($dispatch->incident->at_scene_at, false) : ($dispatch->incident?->response_at && $dispatch->incident?->at_scene_at ? $dispatch->incident->response_at->diffInMinutes($dispatch->incident->at_scene_at, false) : ($dispatch->assigned_at && $dispatch->arrived_at ? $dispatch->assigned_at->diffInMinutes($dispatch->arrived_at, false) : null)))
                         <div class="list-group-item px-0 py-2">
                             <div class="d-flex justify-content-between align-items-start gap-2">
                                 <div>
@@ -75,8 +76,8 @@
                                     <div class="small text-muted">{{ $dispatch->driver->user->name ?? 'Unassigned' }}</div>
                                 </div>
                                 <div class="text-end">
-                                    <div class="small fw-semibold">{{ $dispatch->assigned_at && $dispatch->arrived_at ? $dispatch->assigned_at->diffInMinutes($dispatch->arrived_at) : 0 }} min</div>
-                                    <div class="small text-muted">{{ $dispatch->arrived_at?->format('M d, Y') }}</div>
+                                    <div class="small fw-semibold">{{ is_null($responseMinutes) ? 'N/A' : number_format($responseMinutes, 2) . ' min' }}</div>
+                                    <div class="small text-muted">{{ ($dispatch->incident?->at_scene_at ?? $dispatch->arrived_at)?->format('M d, Y') ?? 'N/A' }}</div>
                                 </div>
                             </div>
                         </div>

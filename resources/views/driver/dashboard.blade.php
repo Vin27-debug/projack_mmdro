@@ -75,6 +75,9 @@ $driverStatusClass = match ($driverStatus) {
 'on_scene'
 => 'bg-secondary',
 
+'returning'
+=> 'bg-info text-dark',
+
 'offline'
 => 'bg-secondary',
 
@@ -1083,7 +1086,7 @@ is_numeric($incidentLng);
                         </div>
 
 
-                        <div class="mt-3">
+                        <div class="mt-3 d-flex flex-wrap gap-2">
 
                             <a
                                 href="{{ route(
@@ -1100,6 +1103,24 @@ is_numeric($incidentLng);
                                 Submit Report
 
                             </a>
+
+                            @if($driver->status === \App\Models\Driver::STATUS_RETURNING)
+                            <form method="POST" action="{{ route('driver.incidents.returning', $reportableDispatch->incident) }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-secondary driver-action-btn">
+                                    <i class="bi bi-arrow-repeat me-1"></i>
+                                    Mark Returned to Base
+                                </button>
+                            </form>
+
+                            <form method="POST" action="{{ route('driver.incidents.ready', $reportableDispatch->incident) }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-success driver-action-btn">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Ready for Next Mission
+                                </button>
+                            </form>
+                            @endif
 
                         </div>
 

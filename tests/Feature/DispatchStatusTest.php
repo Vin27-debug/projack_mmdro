@@ -178,6 +178,75 @@ class DispatchStatusTest extends TestCase
         $response->assertDontSee('Mark At Scene');
     }
 
+    public function test_driver_return_to_base_cycle_keeps_vehicle_busy_until_ready_for_next_mission(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
+        $role = Role::firstOrCreate(['name' => 'driver']);
+        $user = User::factory()->create(['status' => 'approved']);
+        $user->assignRole($role);
+
+        $driver = Driver::create([
+            'user_id' => $user->id,
+            'badge_id' => 'AMB-107',
+            'contact_number' => '09123456796',
+            'license_number' => 'LIC-107',
+            'license_expiry' => '2030-01-01',
+            'status' => Driver::STATUS_ON_SCENE,
+        ]);
+
+        $ambulance = Ambulance::create([
+            'plate_number' => 'ABC-107',
+            'vehicle_name' => 'Return Base Vehicle',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_ON_DUTY,
+        ]);
+
+        $incident = Incident::create([
+            'incident_number' => 'INC-0107',
+            'reporter_name' => 'Eva Doe',
+            'contact_number' => '09120000007',
+            'incident_type' => 'Medical',
+            'location' => 'Test Highway',
+            'description' => 'Return to base workflow',
+            'status' => Incident::STATUS_RESPONDING,
+            'driver_id' => $driver->id,
+            'ambulance_id' => $ambulance->id,
+            'at_hospital_at' => now()->subMinutes(5),
+        ]);
+
+        $dispatch = Dispatch::create([
+            'incident_id' => $incident->id,
+            'driver_id' => $driver->id,
+            'vehicle_id' => $ambulance->id,
+            'status' => Dispatch::STATUS_ARRIVED,
+            'assigned_at' => now()->subMinutes(30),
+            'arrived_at' => now()->subMinutes(10),
+        ]);
+
+        $firstResponse = $this->actingAs($user)->post(route('driver.incidents.completed', $incident));
+        $firstResponse->assertSessionHas('success');
+        $this->assertDatabaseHas('drivers', [
+            'id' => $driver->id,
+            'status' => Driver::STATUS_RETURNING,
+        ]);
+        $this->assertDatabaseHas('ambulances', [
+            'id' => $ambulance->id,
+            'status' => Ambulance::STATUS_ON_DUTY,
+        ]);
+
+        $secondResponse = $this->actingAs($user)->post(route('driver.incidents.ready', $incident));
+        $secondResponse->assertSessionHas('success');
+        $this->assertDatabaseHas('drivers', [
+            'id' => $driver->id,
+            'status' => Driver::STATUS_AVAILABLE,
+        ]);
+        $this->assertDatabaseHas('ambulances', [
+            'id' => $ambulance->id,
+            'status' => Ambulance::STATUS_AVAILABLE,
+        ]);
+    }
+
     public function test_driver_gps_update_syncs_ambulance_coordinates_via_active_dispatch(): void
     {
         $this->withoutMiddleware(PreventRequestForgery::class);

@@ -81,8 +81,8 @@
                         <td>{{ collect([$incident->house_number, $incident->street, $incident->barangay, $incident->city, $incident->province])->filter()->implode(', ') ?: ($incident->location ?: 'N/A') }}</td>
                         <td><span class="badge bg-primary-subtle text-primary">{{ ucfirst(str_replace('_', ' ', $incident->status)) }}</span></td>
                         <td>
-                            @php($priorityClass = ['Critical'=>'danger','High'=>'warning','Medium'=>'info','Low'=>'success'][$incident->priority] ?? 'secondary')
-                            <span class="badge bg-{{ $priorityClass }} {{ $priorityClass === 'warning' || $priorityClass === 'info' ? 'text-dark' : '' }}">{{ $incident->priority }}</span>
+                            @php($priorityClass = \App\Models\Incident::priorityBadgeClass($incident->priority))
+                            <span class="badge bg-{{ $priorityClass }} {{ $priorityClass === 'warning' || $priorityClass === 'info' ? 'text-dark' : '' }}">{{ \App\Models\Incident::priorityDisplayLabel($incident->priority) }}</span>
                         </td>
                         <td>
                             <div class="d-flex flex-wrap gap-1">

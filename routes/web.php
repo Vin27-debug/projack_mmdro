@@ -174,6 +174,12 @@ Route::middleware([
     Route::post('/driver/incidents/{incident}/completed', [DriverDashboardController::class, 'markCompleted'])
         ->name('driver.incidents.completed');
 
+    Route::post('/driver/incidents/{incident}/returning', [DriverDashboardController::class, 'markReturningToBase'])
+        ->name('driver.incidents.returning');
+
+    Route::post('/driver/incidents/{incident}/ready', [DriverDashboardController::class, 'markReadyForNextMission'])
+        ->name('driver.incidents.ready');
+
     Route::get('/driver/navigation', [NavigationController::class, 'show'])
         ->name('driver.navigation');
 
@@ -277,6 +283,9 @@ Route::middleware([
     Route::post('/admin/notifications/read-all', [NotificationController::class, 'markAllRead'])
         ->name('admin.notifications.read-all');
 
+    Route::get('/admin/notifications/{notification}', [NotificationController::class, 'show'])
+        ->name('admin.notifications.show');
+
     Route::post('/admin/notifications/{notification}/open', [NotificationController::class, 'open'])
         ->name('admin.notifications.open');
 
@@ -295,6 +304,8 @@ Route::middleware([
         ->name('admin.incidents.edit');
     Route::put('/admin/incidents/{incident}', [AdminIncidentController::class, 'update'])
         ->name('admin.incidents.update');
+    Route::post('/admin/incidents/{incident}/timestamps/{field}', [AdminIncidentController::class, 'updateTimestamp'])
+        ->name('admin.incidents.timestamp.update');
     Route::post('/admin/incidents/{incident}/archive', [AdminIncidentController::class, 'archive'])
         ->name('admin.incidents.archive');
     Route::post('/admin/incidents/{incident}/restore', [AdminIncidentController::class, 'restore'])

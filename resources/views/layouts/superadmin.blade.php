@@ -20,10 +20,56 @@
         }
 
         .super-sidebar {
+            width: 270px;
             min-height: 100vh;
             background: linear-gradient(180deg, #091c3d 0%, #07172f 100%);
             border-right: 1px solid rgba(255, 255, 255, 0.08);
             padding: 1.25rem 0 1.5rem;
+            transition: width 0.2s ease;
+            overflow: hidden;
+        }
+
+        .super-shell-row>.col-xl-auto {
+            width: 270px;
+            transition: width 0.2s ease;
+        }
+
+        body.super-sidebar-collapsed .super-shell-row>.col-xl-auto {
+            width: 88px;
+        }
+
+        body.super-sidebar-collapsed .super-sidebar {
+            width: 88px;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        body.super-sidebar-collapsed .super-brand,
+        body.super-sidebar-collapsed .super-nav-title,
+        body.super-sidebar-collapsed .super-nav-text,
+        body.super-sidebar-collapsed .superadmin-nav-link span:last-child,
+        body.super-sidebar-collapsed .super-sidebar .logout-label,
+        body.super-sidebar-collapsed .super-sidebar .help-label {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        body.super-sidebar-collapsed .super-brand {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        body.super-sidebar-collapsed .super-sidebar .nav-link,
+        body.super-sidebar-collapsed .super-sidebar .superadmin-nav-link,
+        body.super-sidebar-collapsed .super-sidebar .help-button,
+        body.super-sidebar-collapsed .super-sidebar .logout-button {
+            justify-content: center;
+            padding-left: 0.6rem;
+            padding-right: 0.6rem;
         }
 
         .super-brand-title,
@@ -372,9 +418,9 @@
 
 <body class="super-shell">
     <div class="container-fluid super-shell">
-        <div class="row gx-0">
-            <div class="col-12 col-xl-2">
-                <aside class="super-sidebar">
+        <div class="row gx-0 super-shell-row">
+            <div class="col-12 col-xl-auto">
+                <aside class="super-sidebar" aria-label="Super admin sidebar">
                     <div class="super-brand">
                         <div>
                             <h4 class="super-brand-title mb-1">MuniResQ</h4>
@@ -384,37 +430,36 @@
                     <div class="super-nav-title">Command Navigation</div>
                     <nav class="nav flex-column mb-4">
                         <a href="{{ route('superadmin.dashboard') }}" class="nav-link {{ request()->routeIs('superadmin.dashboard') ? 'active' : '' }}">
-                            <i class="bi bi-speedometer2"></i> Dashboard
+                            <i class="bi bi-speedometer2"></i> <span class="super-nav-text">Dashboard</span>
                         </a>
                         <a href="{{ route('superadmin.drivers') }}" class="nav-link {{ request()->routeIs('superadmin.drivers') ? 'active' : '' }}">
-                            <i class="bi bi-people"></i> Drivers
+                            <i class="bi bi-people"></i> <span class="super-nav-text">Drivers</span>
                         </a>
-                        <a href="{{ route('admins.index') }}"
-                            class="superadmin-nav-link {{ request()->routeIs('admins.*') ? 'active' : '' }}">
-
-                            <span class="superadmin-nav-icon">
-                                <i class="bi bi-person-plus"></i>
-                            </span>
-
+                        <a href="{{ route('admins.index') }}" class="superadmin-nav-link {{ request()->routeIs('admins.*') ? 'active' : '' }}">
+                            <span class="superadmin-nav-icon"><i class="bi bi-person-plus"></i></span>
                             <span>Create Admin</span>
-
                         </a>
                         <a href="{{ route('superadmin.ambulances.index') }}" class="nav-link {{ request()->routeIs('superadmin.ambulances.*') ? 'active' : '' }}">
-                            <i class="bi bi-truck"></i> Ambulances
+                            <i class="bi bi-truck"></i> <span class="super-nav-text">Ambulances</span>
                         </a>
                         <a href="{{ route('backups.index') }}" class="nav-link {{ request()->routeIs('backups.*') ? 'active' : '' }}">
-                            <i class="bi bi-cloud-arrow-up"></i> Backup & Restore
+                            <i class="bi bi-cloud-arrow-up"></i> <span class="super-nav-text">Backup & Restore</span>
                         </a>
                     </nav>
-                    <form method="POST" action="{{ route('logout') }}" class="mt-3 px-3">
+
+                    <button type="button" class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill help-button mx-3 mb-2" data-bs-toggle="modal" data-bs-target="#superAdminHelpModal">
+                        <i class="bi bi-question-circle"></i> <span class="help-label">Help</span>
+                    </button>
+
+                    <form method="POST" action="{{ route('logout') }}" class="mt-1 px-3">
                         @csrf
-                        <button type="submit" class="btn btn-outline-light w-100 min-touch-target">
-                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        <button type="submit" class="btn btn-outline-light w-100 min-touch-target d-flex align-items-center justify-content-center gap-2 logout-button">
+                            <i class="bi bi-box-arrow-right me-2"></i><span class="logout-label">Logout</span>
                         </button>
                     </form>
                 </aside>
             </div>
-            <div class="col-12 col-xl-10">
+            <div class="col-12 col-xl">
                 <main class="main-content">
                     @yield('content')
                 </main>
@@ -422,7 +467,37 @@
         </div>
     </div>
 
+    <div class="modal fade" id="superAdminHelpModal" tabindex="-1" aria-labelledby="superAdminHelpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="superAdminHelpModalLabel">System Administration Help</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="mb-0 ps-3">
+                        <li>Use Drivers and Ambulances to keep fleet readiness current.</li>
+                        <li>Review backup and restore actions before making any destructive recovery decision.</li>
+                        <li>Create or manage admin accounts from the command navigation.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const shell = document.body;
+            const sidebar = document.querySelector('.super-sidebar');
+
+            if (window.innerWidth >= 1200 && sidebar) {
+                shell.classList.add('super-sidebar-collapsed');
+                sidebar.addEventListener('mouseenter', () => shell.classList.remove('super-sidebar-collapsed'));
+                sidebar.addEventListener('mouseleave', () => shell.classList.add('super-sidebar-collapsed'));
+            }
+        });
+    </script>
 </body>
 
 </html>
