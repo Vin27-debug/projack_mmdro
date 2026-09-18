@@ -8,73 +8,66 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
+        :root {
+            --mr-bg: #071a38;
+            --mr-sidebar: #061633;
+            --mr-surface: #0b2043;
+            --mr-border: rgba(255, 255, 255, 0.1);
+            --mr-text: #eef4ff;
+            --mr-muted: rgba(255, 255, 255, 0.62);
+            --mr-accent: #014cfd;
+            --mr-accent-dark: #003399;
+        }
+
         .super-shell {
             min-height: 100vh;
-            background: radial-gradient(circle at top left, rgba(59, 105, 255, 0.12), transparent 28%),
-                linear-gradient(180deg, #071329 0%, #08172f 100%);
-            color: #eef4ff;
+            background: var(--mr-bg);
+            color: var(--mr-text);
+        }
+
+        .super-layout {
+            display: flex;
+            min-height: 100vh;
         }
 
         .main-content {
-            padding: 1.75rem 1.75rem 2.5rem;
+            min-height: 100vh;
+            padding: 1.5rem 1.75rem 2.5rem;
         }
 
         .super-sidebar {
-            width: 270px;
-            min-height: 100vh;
-            background: linear-gradient(180deg, #091c3d 0%, #07172f 100%);
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 1.25rem 0 1.5rem;
-            transition: width 0.2s ease;
-            overflow: hidden;
+            position: fixed;
+            inset: 0 auto 0 0;
+            z-index: 1040;
+            width: 68px;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            overflow-y: auto;
+            background: var(--mr-sidebar);
+            border-right: 1px solid var(--mr-border);
+            transition: width 160ms ease;
         }
 
-        .super-shell-row>.col-xl-auto {
-            width: 270px;
-            transition: width 0.2s ease;
+        .super-sidebar:hover,
+        .super-sidebar:focus-within,
+        body.super-sidebar-expanded .super-sidebar {
+            width: 240px;
         }
 
-        body.super-sidebar-collapsed .super-shell-row>.col-xl-auto {
-            width: 88px;
+        .super-content {
+            width: 100%;
+            min-width: 0;
+            margin-left: 68px;
+            transition: margin-left 160ms ease;
         }
 
-        body.super-sidebar-collapsed .super-sidebar {
-            width: 88px;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        body.super-sidebar-collapsed .super-brand,
-        body.super-sidebar-collapsed .super-nav-title,
-        body.super-sidebar-collapsed .super-nav-text,
-        body.super-sidebar-collapsed .superadmin-nav-link span:last-child,
-        body.super-sidebar-collapsed .super-sidebar .logout-label,
-        body.super-sidebar-collapsed .super-sidebar .help-label {
-            opacity: 0;
-            width: 0;
-            overflow: hidden;
-            visibility: hidden;
-            pointer-events: none;
-        }
-
-        body.super-sidebar-collapsed .super-brand {
-            justify-content: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        body.super-sidebar-collapsed .super-sidebar .nav-link,
-        body.super-sidebar-collapsed .super-sidebar .superadmin-nav-link,
-        body.super-sidebar-collapsed .super-sidebar .help-button,
-        body.super-sidebar-collapsed .super-sidebar .logout-button {
-            justify-content: center;
-            padding-left: 0.6rem;
-            padding-right: 0.6rem;
+        body.super-sidebar-expanded .super-content {
+            margin-left: 240px;
         }
 
         .super-brand-title,
         .super-brand-subtitle,
-        .super-nav-title,
         .nav-link,
         .card,
         .table th,
@@ -101,63 +94,176 @@
         .super-brand {
             display: flex;
             align-items: center;
-            gap: 0.85rem;
-            padding: 0 1.25rem 1.5rem;
+            gap: 0.7rem;
+            min-height: 64px;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--mr-border);
+            white-space: nowrap;
         }
 
         .super-brand-mark {
-            width: 44px;
-            height: 44px;
-            border-radius: 1rem;
+            width: 40px;
+            height: 40px;
+            flex: 0 0 40px;
             display: grid;
             place-items: center;
-            background: #0d6efd;
-            color: #fff;
-            font-weight: 700;
-            font-size: 1.15rem;
-            box-shadow: 0 16px 30px rgba(13, 110, 253, 0.18);
+            padding: 0.3rem;
+            background: #0b2c68;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+        }
+
+        .super-brand-mark img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .super-brand-copy,
+        .super-sidebar .nav-label,
+        .super-sidebar .super-nav-group summary span,
+        .super-sidebar .control-label,
+        .super-sidebar .super-user-copy {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 100ms ease;
+        }
+
+        .super-sidebar:hover .super-brand-copy,
+        .super-sidebar:focus-within .super-brand-copy,
+        body.super-sidebar-expanded .super-brand-copy,
+        .super-sidebar:hover .nav-label,
+        .super-sidebar:focus-within .nav-label,
+        body.super-sidebar-expanded .nav-label,
+        .super-sidebar:hover .super-nav-group summary span,
+        .super-sidebar:focus-within .super-nav-group summary span,
+        body.super-sidebar-expanded .super-nav-group summary span,
+        .super-sidebar:hover .control-label,
+        .super-sidebar:focus-within .control-label,
+        body.super-sidebar-expanded .control-label,
+        .super-sidebar:hover .super-user-copy,
+        .super-sidebar:focus-within .super-user-copy,
+        body.super-sidebar-expanded .super-user-copy {
+            opacity: 1;
+            visibility: visible;
         }
 
         .super-brand-title {
             margin: 0;
-            font-size: 1.05rem;
-            font-weight: 700;
+            font-size: 0.98rem;
+            font-weight: 600;
         }
 
         .super-brand-subtitle {
             margin: 0;
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.72);
+            font-size: 0.68rem;
+            color: var(--mr-muted);
         }
 
-        .super-nav-title {
-            margin: 0 0 0.75rem 1.25rem;
-            font-size: 0.75rem;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.52);
+        .super-nav {
+            flex: 1;
+            padding: 0.65rem 0.5rem;
         }
 
-        .super-sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.78);
-            padding: 0.9rem 1.25rem;
-            margin: 0.15rem 1.25rem;
-            border-radius: 1rem;
-            transition: all 0.18s ease;
+        .super-nav-group {
+            margin: 0 0 0.55rem;
+        }
+
+        .super-nav-group summary {
             display: flex;
             align-items: center;
-            gap: 0.85rem;
-            font-weight: 500;
+            height: 24px;
+            padding: 0 0.6rem;
+            overflow: hidden;
+            color: rgba(255, 255, 255, 0.42);
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.07em;
+            line-height: 1;
+            text-transform: uppercase;
+            white-space: nowrap;
+            list-style: none;
+        }
+
+        .super-nav-group summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .super-nav-group summary::after {
+            content: '\F282';
+            margin-left: auto;
+            font-family: bootstrap-icons;
+            font-size: 0.65rem;
+        }
+
+        .super-sidebar:not(:hover) .super-nav-group summary::after,
+        .super-sidebar:not(:focus-within) .super-nav-group summary::after,
+        body:not(.super-sidebar-expanded) .super-nav-group summary::after {
+            display: none;
+        }
+
+        @media (min-width: 992px) {
+            .super-sidebar:not(:hover):not(:focus-within) .super-nav-group:not([open])>.nav {
+                display: flex;
+            }
+        }
+
+        .super-sidebar .nav-link,
+        .superadmin-nav-link {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-height: 42px;
+            width: 100%;
+            padding: 0.55rem 0.6rem;
+            overflow: hidden;
+            border: 0;
+            border-radius: 3px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.72) !important;
+            font-size: 0.84rem;
+            font-weight: 400;
+            line-height: 1.2;
+            text-decoration: none !important;
+            white-space: nowrap;
+            transition: background-color 100ms ease, color 100ms ease;
         }
 
         .super-sidebar .nav-link:hover,
-        .super-sidebar .nav-link.active {
-            background: rgba(59, 105, 255, 0.16);
-            color: #fff;
+        .superadmin-nav-link:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff !important;
         }
 
-        .super-sidebar .nav-link.active {
-            box-shadow: inset 0 0 0 1px rgba(59, 105, 255, 0.22);
+        .super-sidebar .nav-link.active,
+        .superadmin-nav-link.active {
+            background: rgba(1, 76, 253, 0.18);
+            color: #fff !important;
+        }
+
+        .super-sidebar .nav-link.active::before,
+        .superadmin-nav-link.active::before {
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 3px;
+            background: var(--mr-accent);
+            content: '';
+        }
+
+        .super-sidebar .nav-link i,
+        .superadmin-nav-icon {
+            width: 28px;
+            min-width: 28px;
+            color: rgba(255, 255, 255, 0.68);
+            font-size: 1.05rem;
+            text-align: center;
+        }
+
+        .super-sidebar .nav-link.active i,
+        .super-sidebar .nav-link:hover i,
+        .superadmin-nav-link.active .superadmin-nav-icon,
+        .superadmin-nav-link:hover .superadmin-nav-icon {
+            color: #fff;
         }
 
         .eoc-title,
@@ -342,128 +448,229 @@
             background-color: transparent !important;
         }
 
-        /* =========================================
-   SUPER ADMIN SIDEBAR NAVIGATION
-========================================= */
+        .super-sidebar-footer {
+            padding: 0.65rem 0.5rem 0.8rem;
+            border-top: 1px solid var(--mr-border);
+        }
 
-        .superadmin-nav-link {
+        .super-user {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 0.65rem;
+            min-height: 36px;
+            padding: 0.25rem 0.6rem 0.6rem;
+            white-space: nowrap;
+        }
 
+        .super-user-icon {
+            width: 28px;
+            min-width: 28px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .super-user-name {
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+
+        .super-user-role {
+            color: var(--mr-muted);
+            font-size: 0.68rem;
+        }
+
+        .super-control,
+        .super-logout {
             width: 100%;
-            padding: 14px 18px;
-
-            margin-bottom: 6px;
-
-            color: #f4f7ff !important;
-            text-decoration: none !important;
-
-            border-radius: 14px;
-
-            font-size: 15px;
-            font-weight: 600;
-
-            background: transparent;
-
-            border: 1px solid transparent;
-
-            transition:
-                background .2s ease,
-                border-color .2s ease,
-                transform .2s ease;
-        }
-
-        .superadmin-nav-link:hover {
-            color: #ffffff !important;
-            background: rgba(37, 99, 235, 0.14);
-
-            border-color: rgba(59, 130, 246, 0.25);
-
-            transform: translateX(2px);
-        }
-
-        .superadmin-nav-link.active {
-            color: #ffffff !important;
-
-            background: linear-gradient(135deg,
-                    rgba(37, 99, 235, 0.32),
-                    rgba(30, 64, 175, 0.24));
-
-            border-color: rgba(59, 130, 246, 0.55);
-
-            box-shadow:
-                0 8px 20px rgba(0, 0, 0, 0.12),
-                inset 0 0 20px rgba(59, 130, 246, 0.04);
-        }
-
-        .superadmin-nav-icon {
-            width: 24px;
-            min-width: 24px;
-
+            min-height: 40px;
             display: flex;
             align-items: center;
-            justify-content: center;
-
-            font-size: 17px;
-
-            color: #dbeafe;
+            gap: 0.75rem;
+            padding: 0.5rem 0.6rem;
+            border: 0;
+            border-radius: 3px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 0.82rem;
+            text-align: left;
+            text-decoration: none;
         }
 
-        .superadmin-nav-link.active .superadmin-nav-icon {
-            color: #ffffff;
+        .super-control:hover,
+        .super-logout:hover,
+        .super-control.active {
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+        }
+
+        .super-control.active {
+            background: rgba(1, 76, 253, 0.18);
+        }
+
+        .super-control i,
+        .super-logout i {
+            width: 28px;
+            min-width: 28px;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .super-mobile-toggle,
+        .super-mobile-close,
+        .super-sidebar-backdrop {
+            display: none;
+        }
+
+        @media (max-width: 991.98px) {
+            .super-sidebar {
+                width: 240px;
+                transform: translateX(-100%);
+                transition: transform 160ms ease;
+            }
+
+            body.super-mobile-open .super-sidebar {
+                transform: translateX(0);
+            }
+
+            .super-sidebar .super-brand-copy,
+            .super-sidebar .nav-label,
+            .super-sidebar .super-nav-group summary span,
+            .super-sidebar .control-label,
+            .super-sidebar .super-user-copy {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .super-sidebar .super-nav-group summary::after {
+                display: block;
+            }
+
+            .super-content,
+            body.super-sidebar-expanded .super-content {
+                margin-left: 0;
+            }
+
+            .super-mobile-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 40px;
+                height: 40px;
+                margin-bottom: 1rem;
+                border: 1px solid var(--mr-border);
+                border-radius: 3px;
+                background: var(--mr-surface);
+                color: #fff;
+            }
+
+            .super-mobile-close {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                margin-left: auto;
+                border: 0;
+                background: transparent;
+                color: rgba(255, 255, 255, 0.75);
+                font-size: 1.15rem;
+            }
+
+            .super-sidebar-backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 1030;
+                display: block;
+                background: rgba(0, 0, 0, 0.48);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 160ms ease;
+            }
+
+            body.super-mobile-open .super-sidebar-backdrop {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .main-content {
+                padding: 1rem 1.25rem 2rem;
+            }
         }
     </style>
 </head>
 
 <body class="super-shell">
-    <div class="container-fluid super-shell">
-        <div class="row gx-0 super-shell-row">
-            <div class="col-12 col-xl-auto">
-                <aside class="super-sidebar" aria-label="Super admin sidebar">
-                    <div class="super-brand">
-                        <div>
-                            <h4 class="super-brand-title mb-1">MuniResQ</h4>
-                            <p class="super-brand-subtitle mb-0">Super Admin</p>
-                        </div>
-                    </div>
-                    <div class="super-nav-title">Command Navigation</div>
-                    <nav class="nav flex-column mb-4">
-                        <a href="{{ route('superadmin.dashboard') }}" class="nav-link {{ request()->routeIs('superadmin.dashboard') ? 'active' : '' }}">
-                            <i class="bi bi-speedometer2"></i> <span class="super-nav-text">Dashboard</span>
-                        </a>
-                        <a href="{{ route('superadmin.drivers') }}" class="nav-link {{ request()->routeIs('superadmin.drivers') ? 'active' : '' }}">
-                            <i class="bi bi-people"></i> <span class="super-nav-text">Drivers</span>
-                        </a>
-                        <a href="{{ route('admins.index') }}" class="superadmin-nav-link {{ request()->routeIs('admins.*') ? 'active' : '' }}">
-                            <span class="superadmin-nav-icon"><i class="bi bi-person-plus"></i></span>
-                            <span>Create Admin</span>
-                        </a>
-                        <a href="{{ route('superadmin.ambulances.index') }}" class="nav-link {{ request()->routeIs('superadmin.ambulances.*') ? 'active' : '' }}">
-                            <i class="bi bi-truck"></i> <span class="super-nav-text">Ambulances</span>
-                        </a>
-                        <a href="{{ route('backups.index') }}" class="nav-link {{ request()->routeIs('backups.*') ? 'active' : '' }}">
-                            <i class="bi bi-cloud-arrow-up"></i> <span class="super-nav-text">Backup & Restore</span>
-                        </a>
+    <div class="super-layout">
+        <aside class="super-sidebar" id="superSidebar" aria-label="Super admin sidebar">
+            <div class="super-brand">
+                <div class="super-brand-mark">
+                    <img src="{{ asset('favicon.ico') }}" alt="MuniResQ logo">
+                </div>
+                <div class="super-brand-copy">
+                    <h1 class="super-brand-title">MuniResQ</h1>
+                    <p class="super-brand-subtitle">MDRRMO Management System</p>
+                </div>
+                <button type="button" class="super-mobile-close" data-super-sidebar-close aria-label="Close navigation">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <nav class="super-nav" aria-label="Super admin navigation">
+                <details class="super-nav-group" open>
+                    <summary><span>Operations</span></summary>
+                    <nav class="nav flex-column">
+                        <a href="{{ route('superadmin.dashboard') }}" class="nav-link {{ request()->routeIs('superadmin.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i><span class="nav-label">Dashboard</span></a>
                     </nav>
+                </details>
+                <details class="super-nav-group" open>
+                    <summary><span>Fleet</span></summary>
+                    <nav class="nav flex-column">
+                        <a href="{{ route('superadmin.ambulances.index') }}" class="nav-link {{ request()->routeIs('superadmin.ambulances.*') ? 'active' : '' }}"><i class="bi bi-truck"></i><span class="nav-label">Ambulances / Vehicles</span></a>
+                        <a href="{{ route('assignments.index') }}" class="nav-link {{ request()->routeIs('assignments.*') ? 'active' : '' }}"><i class="bi bi-arrows-move"></i><span class="nav-label">Assignments</span></a>
+                    </nav>
+                </details>
+                <details class="super-nav-group" open>
+                    <summary><span>User Management</span></summary>
+                    <nav class="nav flex-column">
+                        <a href="{{ route('superadmin.users.pending') }}" class="nav-link {{ request()->routeIs('superadmin.users.pending') ? 'active' : '' }}"><i class="bi bi-person-check"></i><span class="nav-label">Pending Users</span></a>
+                        <a href="{{ route('superadmin.drivers') }}" class="nav-link {{ request()->routeIs('superadmin.drivers*') ? 'active' : '' }}"><i class="bi bi-person-badge"></i><span class="nav-label">Drivers</span></a>
+                        <a href="{{ route('admins.index') }}" class="superadmin-nav-link {{ request()->routeIs('admins.*') ? 'active' : '' }}"><i class="bi bi-person-plus superadmin-nav-icon"></i><span class="nav-label">Admins</span></a>
+                    </nav>
+                </details>
+                <details class="super-nav-group" {{ request()->routeIs('superadmin.settings') || request()->routeIs('backups.*') ? 'open' : '' }}>
+                    <summary><span>System</span></summary>
+                    <nav class="nav flex-column">
+                        <a href="{{ route('superadmin.settings') }}" class="nav-link {{ request()->routeIs('superadmin.settings') ? 'active' : '' }}"><i class="bi bi-sliders"></i><span class="nav-label">Settings</span></a>
+                        <a href="{{ route('backups.index') }}" class="nav-link {{ request()->routeIs('backups.*') ? 'active' : '' }}"><i class="bi bi-database-up"></i><span class="nav-label">Backup &amp; Restore</span></a>
+                    </nav>
+                </details>
+            </nav>
 
-                    <button type="button" class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill help-button mx-3 mb-2" data-bs-toggle="modal" data-bs-target="#superAdminHelpModal">
-                        <i class="bi bi-question-circle"></i> <span class="help-label">Help</span>
-                    </button>
+            <div class="super-sidebar-footer">
+                <div class="super-user">
+                    <i class="bi bi-person-circle super-user-icon"></i>
+                    <div class="super-user-copy">
+                        <div class="super-user-name">{{ auth()->user()->name ?? 'Administrator' }}</div>
+                        <div class="super-user-role">Super Administrator</div>
+                    </div>
+                </div>
+                <button type="button" class="super-control" data-bs-toggle="modal" data-bs-target="#superAdminHelpModal"><i class="bi bi-question-circle"></i><span class="control-label">Help</span></button>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="super-logout"><i class="bi bi-box-arrow-right"></i><span class="control-label">Logout</span></button>
+                </form>
+            </div>
+        </aside>
 
-                    <form method="POST" action="{{ route('logout') }}" class="mt-1 px-3">
-                        @csrf
-                        <button type="submit" class="btn btn-outline-light w-100 min-touch-target d-flex align-items-center justify-content-center gap-2 logout-button">
-                            <i class="bi bi-box-arrow-right me-2"></i><span class="logout-label">Logout</span>
-                        </button>
-                    </form>
-                </aside>
-            </div>
-            <div class="col-12 col-xl">
-                <main class="main-content">
-                    @yield('content')
-                </main>
-            </div>
+        <div class="super-sidebar-backdrop" data-super-sidebar-close></div>
+
+        <div class="super-content">
+            <main class="main-content">
+                <button type="button" class="super-mobile-toggle" data-super-sidebar-open aria-label="Open navigation"><i class="bi bi-list"></i></button>
+                @yield('content')
+            </main>
         </div>
     </div>
 
@@ -489,13 +696,19 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const shell = document.body;
-            const sidebar = document.querySelector('.super-sidebar');
+            const openButton = document.querySelector('[data-super-sidebar-open]');
+            const closeButtons = document.querySelectorAll('[data-super-sidebar-close]');
 
-            if (window.innerWidth >= 1200 && sidebar) {
-                shell.classList.add('super-sidebar-collapsed');
-                sidebar.addEventListener('mouseenter', () => shell.classList.remove('super-sidebar-collapsed'));
-                sidebar.addEventListener('mouseleave', () => shell.classList.add('super-sidebar-collapsed'));
-            }
+            const closeMobileSidebar = () => shell.classList.remove('super-mobile-open');
+            const openMobileSidebar = () => shell.classList.add('super-mobile-open');
+
+            openButton?.addEventListener('click', openMobileSidebar);
+            closeButtons.forEach(button => button.addEventListener('click', closeMobileSidebar));
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape') {
+                    closeMobileSidebar();
+                }
+            });
         });
     </script>
 </body>
