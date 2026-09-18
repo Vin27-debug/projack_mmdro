@@ -207,7 +207,7 @@ Route::middleware([
     Route::get('/geocode', [GeocodingController::class, 'search'])
         ->name('geocode.search');
 
-    Route::resource('ambulances', AmbulanceController::class)
+    Route::resource('ambulances',adminAmbulanceController::class)
         ->except(['show'])
         ->names('admin.ambulances');
 
