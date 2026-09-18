@@ -112,14 +112,18 @@
         .admin-brand-mark {
             width: 44px;
             height: 44px;
-            border-radius: 1rem;
+            border-radius: 0.65rem;
             display: grid;
             place-items: center;
-            background: #0d6efd;
-            color: #fff;
-            font-weight: 700;
-            font-size: 1.15rem;
-            box-shadow: 0 16px 30px rgba(13, 110, 253, 0.18);
+            background: rgba(255, 255, 255, 0.08);
+            padding: 0.35rem;
+            overflow: hidden;
+        }
+
+        .admin-brand-mark img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .admin-brand-title {
@@ -154,6 +158,40 @@
             align-items: center;
             gap: 0.85rem;
             font-weight: 500;
+        }
+
+        .admin-nav-group {
+            margin: 0 0.75rem 0.8rem;
+        }
+
+        .admin-nav-group summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 0.55rem 0.5rem;
+            color: rgba(255, 255, 255, 0.48);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .admin-nav-group summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .admin-nav-group summary::after {
+            content: '\F282';
+            float: right;
+            font-family: bootstrap-icons;
+            transition: transform 0.18s ease;
+        }
+
+        .admin-nav-group[open] summary::after {
+            transform: rotate(180deg);
+        }
+
+        .admin-nav-group .nav {
+            margin-bottom: 0;
         }
 
         .admin-sidebar .nav-link:hover,
@@ -470,59 +508,60 @@ return Route::has($name) ? route($name) : '#';
             <div class="col-12 col-xl-auto">
                 <aside class="admin-sidebar" aria-label="Admin sidebar">
                     <div class="admin-brand">
-                        <div class="admin-brand-mark">M</div>
+                        <div class="admin-brand-mark">
+                            <img src="{{ asset('favicon.ico') }}" alt="MuniResQ logo">
+                        </div>
                         <div class="text-hide-when-collapsed">
                             <h4 class="admin-brand-title mb-1">MuniResQ</h4>
                             <p class="admin-brand-subtitle mb-0">Admin Command</p>
                         </div>
                     </div>
 
-                    <div class="admin-nav-title">Operations</div>
-                    <nav class="nav flex-column mb-4">
-                        <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                            <i class="bi bi-speedometer2"></i> <span class="nav-label">Dashboard</span>
-                        </a>
-                        <a href="{{ route('admin.audit-logs.index') }}" class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
-                            <i class="bi bi-journal-text"></i> <span class="nav-label">Audit Logs</span>
-                        </a>
-                        <a href="{{ $adminRoute('admin.notifications.index') }}" class="nav-link {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
-                            <i class="bi bi-bell"></i> <span class="nav-label">Notifications</span>
-                            <span class="badge bg-danger float-end text-hide-when-collapsed" data-unread-badge>{{ $unreadNotifications ?? 0 }}</span>
-                        </a>
-                        <a href="{{ url('/admin/incidents') }}" class="nav-link {{ request()->is('admin/incidents*') ? 'active' : '' }}">
-                            <i class="bi bi-exclamation-triangle"></i> <span class="nav-label">Incidents</span>
-                        </a>
-                        <a href="{{ $adminRoute('admin.dispatches.index') }}" class="nav-link {{ request()->routeIs('admin.dispatches.*') ? 'active' : '' }}">
-                            <i class="bi bi-geo-alt"></i> <span class="nav-label">Dispatch Center</span>
-                        </a>
-                        <a href="{{ $adminRoute('admin.gps.monitoring') }}" class="nav-link {{ request()->routeIs('admin.gps.monitoring') ? 'active' : '' }}">
-                            <i class="bi bi-geo-fill"></i> <span class="nav-label">GPS Monitoring</span>
-                        </a>
-                        <a href="{{ $adminRoute('admin.reports.index') }}" class="nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
-                            <i class="bi bi-file-earmark-text"></i> <span class="nav-label">Incident Reports</span>
-                        </a>
-                        <a href="{{ $adminRoute('admin.reports.pdf.view') }}" class="nav-link {{ request()->routeIs('admin.reports.pdf.view') ? 'active' : '' }}">
-                            <i class="bi bi-file-earmark-pdf"></i> <span class="nav-label">PDF Reports</span>
-                        </a>
-                        <a href="{{ $adminRoute('admin.maintenance.index') }}" class="nav-link {{ request()->routeIs('admin.maintenance.*') ? 'active' : '' }}">
-                            <i class="bi bi-tools"></i> <span class="nav-label">Vehicle Maintenance</span>
-                        </a>
-                        <a href="{{ $adminRoute('admin.vulnerable-areas.index') }}" class="nav-link {{ request()->routeIs('admin.vulnerable-areas.*') ? 'active' : '' }}">
-                            <i class="bi bi-people"></i> <span class="nav-label">Vulnerable Areas</span>
-                        </a>
-                        <a href="{{ $adminRoute('admin.response-equipment.index') }}" class="nav-link {{ request()->routeIs('admin.response-equipment.*') ? 'active' : '' }}">
-                            <i class="bi bi-box-seam"></i> <span class="nav-label">Equipment Inventory</span>
-                        </a>
-                        <a href="{{ $adminRoute('admin.operations.center') }}" class="nav-link {{ request()->routeIs('admin.operations.center') ? 'active' : '' }}">
-                            <i class="bi bi-target"></i> <span class="nav-label">Operations Center</span>
-                        </a>
-                        <a href="{{ $adminRoute('admin.reports.center') }}" class="nav-link {{ request()->routeIs('admin.reports.center') ? 'active' : '' }}">
-                            <i class="bi bi-graph-up"></i> <span class="nav-label">Reports Center</span>
-                        </a>
-                        <a href="{{ $adminRoute('admin.reports.response-time') }}" class="nav-link {{ request()->routeIs('admin.reports.response-time') ? 'active' : '' }}">
-                            <i class="bi bi-stopwatch"></i> <span class="nav-label">Response Time</span>
-                        </a>
-                    </nav>
+                    <details class="admin-nav-group" open>
+                        <summary>Operations</summary>
+                        <nav class="nav flex-column">
+                            <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i><span class="nav-label">Dashboard</span></a>
+                            <a href="{{ url('/admin/incidents') }}" class="nav-link {{ request()->is('admin/incidents*') ? 'active' : '' }}"><i class="bi bi-exclamation-triangle"></i><span class="nav-label">Incidents</span></a>
+                            <a href="{{ $adminRoute('admin.dispatches.index') }}" class="nav-link {{ request()->routeIs('admin.dispatches.*') ? 'active' : '' }}"><i class="bi bi-broadcast-pin"></i><span class="nav-label">Dispatch Center</span></a>
+                            <a href="{{ $adminRoute('admin.gps.monitoring') }}" class="nav-link {{ request()->routeIs('admin.gps.monitoring') ? 'active' : '' }}"><i class="bi bi-geo-alt"></i><span class="nav-label">GPS Monitoring</span></a>
+                            <a href="{{ $adminRoute('admin.operations.center') }}" class="nav-link {{ request()->routeIs('admin.operations.center') ? 'active' : '' }}"><i class="bi bi-crosshair"></i><span class="nav-label">Operations Center</span></a>
+                        </nav>
+                    </details>
+                    <details class="admin-nav-group" open>
+                        <summary>Communication</summary>
+                        <nav class="nav flex-column">
+                            <a href="{{ $adminRoute('admin.notifications.index') }}" class="nav-link {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}"><i class="bi bi-bell"></i><span class="nav-label">Notifications</span><span class="badge bg-danger ms-auto text-hide-when-collapsed" data-unread-badge>{{ $unreadNotifications ?? 0 }}</span></a>
+                        </nav>
+                    </details>
+                    <details class="admin-nav-group">
+                        <summary>Fleet</summary>
+                        <nav class="nav flex-column">
+                            <a href="{{ route('admin.ambulances.index') }}" class="nav-link {{ request()->routeIs('admin.ambulances.*') ? 'active' : '' }}"><i class="bi bi-truck"></i><span class="nav-label">Ambulances / Rescue Vehicles</span></a>
+                            <a href="{{ $adminRoute('admin.maintenance.index') }}" class="nav-link {{ request()->routeIs('admin.maintenance.*') ? 'active' : '' }}"><i class="bi bi-tools"></i><span class="nav-label">Vehicle Maintenance</span></a>
+                            <a href="{{ $adminRoute('admin.response-equipment.index') }}" class="nav-link {{ request()->routeIs('admin.response-equipment.*') ? 'active' : '' }}"><i class="bi bi-box-seam"></i><span class="nav-label">Equipment Inventory</span></a>
+                        </nav>
+                    </details>
+                    <details class="admin-nav-group" {{ request()->routeIs('admin.reports.*') ? 'open' : '' }}>
+                        <summary>Reports</summary>
+                        <nav class="nav flex-column">
+                            <a href="{{ $adminRoute('admin.reports.center') }}" class="nav-link {{ request()->routeIs('admin.reports.center') ? 'active' : '' }}"><i class="bi bi-graph-up"></i><span class="nav-label">Reports Center</span></a>
+                            <a href="{{ $adminRoute('admin.reports.index') }}" class="nav-link {{ request()->routeIs('admin.reports.index') ? 'active' : '' }}"><i class="bi bi-file-earmark-text"></i><span class="nav-label">Incident Reports</span></a>
+                            <a href="{{ $adminRoute('admin.reports.response-time') }}" class="nav-link {{ request()->routeIs('admin.reports.response-time') ? 'active' : '' }}"><i class="bi bi-stopwatch"></i><span class="nav-label">Response Time</span></a>
+                            <a href="{{ $adminRoute('admin.reports.pdf.view') }}" class="nav-link {{ request()->routeIs('admin.reports.pdf.view') ? 'active' : '' }}"><i class="bi bi-file-earmark-pdf"></i><span class="nav-label">PDF Export</span></a>
+                        </nav>
+                    </details>
+                    <details class="admin-nav-group" open>
+                        <summary>Information</summary>
+                        <nav class="nav flex-column">
+                            <a href="{{ $adminRoute('admin.vulnerable-areas.index') }}" class="nav-link {{ request()->routeIs('admin.vulnerable-areas.*') ? 'active' : '' }}"><i class="bi bi-people"></i><span class="nav-label">Vulnerable Areas</span></a>
+                        </nav>
+                    </details>
+                    <details class="admin-nav-group">
+                        <summary>System</summary>
+                        <nav class="nav flex-column">
+                            <a href="{{ route('admin.audit-logs.index') }}" class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}"><i class="bi bi-journal-text"></i><span class="nav-label">Audit Logs</span></a>
+                        </nav>
+                    </details>
 
                     <button type="button" class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill help-button mx-3 mb-2" data-bs-toggle="modal" data-bs-target="#adminHelpModal">
                         <i class="bi bi-question-circle"></i> <span class="help-label">Help</span>

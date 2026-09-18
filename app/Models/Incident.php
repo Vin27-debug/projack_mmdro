@@ -122,6 +122,17 @@ class Incident extends Model
         return $this->hasOne(IncidentReport::class, 'incident_id');
     }
 
+    public function formattedAddress(): string
+    {
+        return collect([
+            $this->house_number,
+            $this->street,
+            $this->barangay,
+            $this->city,
+            $this->province,
+        ])->filter()->implode(', ') ?: ($this->location ?: 'Address unavailable');
+    }
+
     public static function priorityDisplayLabel(?string $priority): string
     {
         if (blank($priority)) {

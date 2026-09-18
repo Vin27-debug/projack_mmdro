@@ -14,7 +14,7 @@ class ReportsService
     {
         $query = Incident::query();
 
-        $this->applyDateRange($query, $filters);
+        $this->applyIncidentFilters($query, $filters);
 
         $totalIncidents = (clone $query)->count();
         $completedIncidents = (clone $query)->where('status', 'completed')->count();
@@ -32,7 +32,7 @@ class ReportsService
     public function getDriverPerformance(array $filters = []): Collection
     {
         $dispatchesQuery = Dispatch::query()->with(['incident', 'driver.user', 'vehicle']);
-        $this->applyDateRange($dispatchesQuery, $filters);
+        $this->applyDispatchFilters($dispatchesQuery, $filters);
 
         $dispatches = $dispatchesQuery->get();
 
@@ -56,7 +56,7 @@ class ReportsService
     {
         $ambulances = Ambulance::query()
             ->with(['dispatches' => function ($query) use ($filters) {
-                $this->applyDateRange($query, $filters);
+                $this->applyDispatchFilters($query, $filters);
             }, 'maintenances'])
             ->get();
 
@@ -83,7 +83,7 @@ class ReportsService
     public function getResponseTimeMetrics(array $filters = []): array
     {
         $dispatchesQuery = Dispatch::query()->with(['incident', 'driver.user', 'vehicle']);
-        $this->applyDateRange($dispatchesQuery, $filters);
+        $this->applyDispatchFilters($dispatchesQuery, $filters);
 
         $dispatches = $dispatchesQuery->get()->filter(fn(Dispatch $dispatch) => $this->calculateResponseMinutes($dispatch) !== null);
 
@@ -101,7 +101,7 @@ class ReportsService
     public function getMonthlyIncidentTrends(array $filters = []): array
     {
         $query = Incident::query();
-        $this->applyDateRange($query, $filters);
+        $this->applyIncidentFilters($query, $filters);
 
         $driverName = DB::connection()->getDriverName();
         $monthExpression = $driverName === 'sqlite'
@@ -134,6 +134,36 @@ class ReportsService
 
         if ($endDate) {
             $query->whereDate('created_at', '<=', $endDate);
+        }
+    }
+
+    protected function applyIncidentFilters($query, array $filters = []): void
+    {
+        $this->applyDateRange($query, $filters);
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['incident_type'])) {
+            $query->where('incident_type', $filters['incident_type']);
+        }
+    }
+
+    protected function applyDispatchFilters($query, array $filters = []): void
+    {
+        $this->applyDateRange($query, $filters);
+
+        if (!empty($filters['status']) || !empty($filters['incident_type'])) {
+            $query->whereHas('incident', function ($incidentQuery) use ($filters): void {
+                if (!empty($filters['status'])) {
+                    $incidentQuery->where('status', $filters['status']);
+                }
+
+                if (!empty($filters['incident_type'])) {
+                    $incidentQuery->where('incident_type', $filters['incident_type']);
+                }
+            });
         }
     }
 

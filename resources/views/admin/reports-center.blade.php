@@ -31,7 +31,25 @@
                     <label class="form-label">End Date</label>
                     <input type="date" name="end_date" value="{{ $filters['end_date'] ?? '' }}" class="form-control">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">All statuses</option>
+                        @foreach(\App\Models\Incident::VALID_STATUSES as $status)
+                        <option value="{{ $status }}" @selected(($filters['status'] ?? '' )===$status)>{{ ucfirst(str_replace('_', ' ', $status)) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Incident Type</label>
+                    <select name="incident_type" class="form-select">
+                        <option value="">All incident types</option>
+                        @foreach(\App\Models\Incident::INCIDENT_TYPES as $type)
+                        <option value="{{ $type }}" @selected(($filters['incident_type'] ?? '' )===$type)>{{ $type }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <button type="submit" class="btn btn-primary w-100">Apply Filter</button>
                 </div>
             </div>

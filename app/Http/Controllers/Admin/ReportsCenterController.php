@@ -27,12 +27,10 @@ class ReportsCenterController extends Controller
 
         $incidents = Incident::query()
             ->with(['driver.user', 'ambulance', 'dispatches'])
-            ->when($filters['start_date'] ?? null, function ($query, $date): void {
-                $query->whereDate('created_at', '>=', $date);
-            })
-            ->when($filters['end_date'] ?? null, function ($query, $date): void {
-                $query->whereDate('created_at', '<=', $date);
-            })
+            ->when($filters['start_date'] ?? null, fn($query, $date) => $query->whereDate('created_at', '>=', $date))
+            ->when($filters['end_date'] ?? null, fn($query, $date) => $query->whereDate('created_at', '<=', $date))
+            ->when($filters['status'] ?? null, fn($query, $status) => $query->where('status', $status))
+            ->when($filters['incident_type'] ?? null, fn($query, $type) => $query->where('incident_type', $type))
             ->latest()
             ->get();
 
@@ -56,12 +54,10 @@ class ReportsCenterController extends Controller
         $responseTimeMetrics = $this->reportsService->getResponseTimeMetrics($filters);
         $incidents = Incident::query()
             ->with(['driver.user', 'ambulance', 'dispatches'])
-            ->when($filters['start_date'] ?? null, function ($query, $date): void {
-                $query->whereDate('created_at', '>=', $date);
-            })
-            ->when($filters['end_date'] ?? null, function ($query, $date): void {
-                $query->whereDate('created_at', '<=', $date);
-            })
+            ->when($filters['start_date'] ?? null, fn($query, $date) => $query->whereDate('created_at', '>=', $date))
+            ->when($filters['end_date'] ?? null, fn($query, $date) => $query->whereDate('created_at', '<=', $date))
+            ->when($filters['status'] ?? null, fn($query, $status) => $query->where('status', $status))
+            ->when($filters['incident_type'] ?? null, fn($query, $type) => $query->where('incident_type', $type))
             ->latest()
             ->get();
 
@@ -82,12 +78,10 @@ class ReportsCenterController extends Controller
         $filters = $this->normalizeFilters($request);
         $incidents = Incident::query()
             ->with(['driver.user', 'ambulance', 'dispatches'])
-            ->when($filters['start_date'] ?? null, function ($query, $date): void {
-                $query->whereDate('created_at', '>=', $date);
-            })
-            ->when($filters['end_date'] ?? null, function ($query, $date): void {
-                $query->whereDate('created_at', '<=', $date);
-            })
+            ->when($filters['start_date'] ?? null, fn($query, $date) => $query->whereDate('created_at', '>=', $date))
+            ->when($filters['end_date'] ?? null, fn($query, $date) => $query->whereDate('created_at', '<=', $date))
+            ->when($filters['status'] ?? null, fn($query, $status) => $query->where('status', $status))
+            ->when($filters['incident_type'] ?? null, fn($query, $type) => $query->where('incident_type', $type))
             ->latest()
             ->get();
 
@@ -166,6 +160,8 @@ class ReportsCenterController extends Controller
         return [
             'start_date' => $request->input('start_date'),
             'end_date' => $request->input('end_date'),
+            'status' => $request->input('status'),
+            'incident_type' => $request->input('incident_type'),
         ];
     }
 }

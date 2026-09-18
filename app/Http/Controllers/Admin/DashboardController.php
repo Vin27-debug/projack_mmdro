@@ -157,6 +157,13 @@ class DashboardController extends Controller
         $ambulances = Ambulance::latest()->get();
         $drivers = Driver::latest()->get();
         $recentIncidents = Incident::latest()->take(8)->get();
+        $priorityAdvisories = Incident::query()
+            ->with('dispatches')
+            ->open()
+            ->whereIn('priority', [Incident::PRIORITY_CRITICAL, Incident::PRIORITY_HIGH])
+            ->latest()
+            ->take(6)
+            ->get();
 
         return view(
             'admin.dashboard',
@@ -188,7 +195,8 @@ class DashboardController extends Controller
                 'incidents',
                 'ambulances',
                 'drivers',
-                'recentIncidents'
+                'recentIncidents',
+                'priorityAdvisories'
             )
         );
     }
@@ -285,7 +293,7 @@ class DashboardController extends Controller
                     'status' => $incident->status,
                     'status_key' => 'emergency',
                     'location' => $incident->location,
-                    'address' => collect([$incident->house_number, $incident->street, $incident->barangay, $incident->city, $incident->province])->filter()->implode(', '),
+                    'address' => $incident->formattedAddress(),
                     'driver_name' => $incident->driver?->user?->name ?? 'Unassigned',
                     'last_updated' => $incident->updated_at?->format('M d, Y H:i') ?? 'Unknown',
                     'type_label' => 'incident',
