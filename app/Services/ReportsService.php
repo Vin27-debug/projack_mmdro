@@ -19,7 +19,7 @@ class ReportsService
         $totalIncidents = (clone $query)->count();
         $completedIncidents = (clone $query)->where('status', 'completed')->count();
         $pendingIncidents = (clone $query)->where('status', 'pending')->count();
-        $activeIncidents = (clone $query)->whereNotIn('status', ['completed', 'closed'])->count();
+        $activeIncidents = (clone $query)->whereNotIn('status', ['completed', 'closed', 'cancelled'])->count();
 
         return [
             'total_incidents' => $totalIncidents,

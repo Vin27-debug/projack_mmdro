@@ -17,12 +17,14 @@
 
     <style>
         :root {
-            --mr-bg: #08172f;
-            --mr-surface: rgba(11, 26, 53, 0.96);
+            --mr-bg: #071a38;
+            --mr-sidebar: #061633;
+            --mr-surface: #0b2043;
             --mr-border: rgba(255, 255, 255, 0.1);
             --mr-text: #eef4ff;
-            --mr-muted: rgba(255, 255, 255, 0.72);
-            --mr-accent: #3b69ff;
+            --mr-muted: rgba(255, 255, 255, 0.62);
+            --mr-accent: #014cfd;
+            --mr-accent-dark: #003399;
             --mr-danger: #dc3545;
             --mr-success: #1c8e5b;
             --mr-warning: #f8b620;
@@ -32,8 +34,7 @@
             min-height: 100vh;
             margin: 0;
             font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI Emoji", sans-serif;
-            background: radial-gradient(circle at top left, rgba(59, 105, 255, 0.12), transparent 28%),
-                linear-gradient(180deg, #071329 0%, #08172f 100%);
+            background: var(--mr-bg);
             color: var(--mr-text);
         }
 
@@ -41,83 +42,50 @@
             min-height: 100vh;
         }
 
-        .admin-sidebar {
-            width: 270px;
+        .admin-layout {
+            display: flex;
             min-height: 100vh;
-            background: linear-gradient(180deg, #091c3d 0%, #07172f 100%);
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 1.25rem 0 1.5rem;
-            transition: width 0.2s ease, padding 0.2s ease;
-            overflow: hidden;
         }
 
-        .admin-shell-row>.col-xl-auto {
-            width: 270px;
-            transition: width 0.2s ease;
+        .admin-sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            z-index: 1040;
+            width: 68px;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            overflow-y: auto;
+            background: var(--mr-sidebar);
+            border-right: 1px solid var(--mr-border);
+            transition: width 160ms ease;
         }
 
-        body.admin-sidebar-collapsed .admin-shell-row>.col-xl-auto {
-            width: 88px;
-        }
-
-        body.admin-sidebar-collapsed .admin-sidebar {
-            width: 88px;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        body.admin-sidebar-collapsed .admin-brand,
-        body.admin-sidebar-collapsed .admin-nav-title,
-        body.admin-sidebar-collapsed .nav-label,
-        body.admin-sidebar-collapsed .nav-link .text-hide-when-collapsed,
-        body.admin-sidebar-collapsed .admin-sidebar .logout-label,
-        body.admin-sidebar-collapsed .admin-sidebar .help-label {
-            opacity: 0;
-            width: 0;
-            overflow: hidden;
-            visibility: hidden;
-            pointer-events: none;
-        }
-
-        body.admin-sidebar-collapsed .admin-brand {
-            justify-content: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        body.admin-sidebar-collapsed .admin-brand-mark {
-            margin: 0 auto;
-        }
-
-        body.admin-sidebar-collapsed .admin-sidebar .nav-link,
-        body.admin-sidebar-collapsed .admin-sidebar .help-button,
-        body.admin-sidebar-collapsed .admin-sidebar .logout-button {
-            justify-content: center;
-            padding-left: 0.6rem;
-            padding-right: 0.6rem;
-        }
-
-        body.admin-sidebar-collapsed .admin-sidebar .nav-link .badge {
-            display: none;
+        .admin-sidebar:hover,
+        .admin-sidebar:focus-within,
+        body.admin-sidebar-expanded .admin-sidebar {
+            width: 240px;
         }
 
         .admin-brand {
             display: flex;
             align-items: center;
-            gap: 0.85rem;
-            padding: 0 1.25rem 1.5rem;
-            margin-bottom: 1rem;
+            gap: 0.7rem;
+            min-height: 64px;
+            padding: 0.75rem 0.75rem;
+            border-bottom: 1px solid var(--mr-border);
+            white-space: nowrap;
         }
 
         .admin-brand-mark {
-            width: 44px;
-            height: 44px;
-            border-radius: 0.65rem;
+            width: 40px;
+            height: 40px;
+            flex: 0 0 40px;
             display: grid;
             place-items: center;
-            background: rgba(255, 255, 255, 0.08);
-            padding: 0.35rem;
-            overflow: hidden;
+            padding: 0.3rem;
+            background: #0b2c68;
+            border: 1px solid rgba(255, 255, 255, 0.14);
         }
 
         .admin-brand-mark img {
@@ -126,53 +94,71 @@
             object-fit: contain;
         }
 
+        .admin-brand-copy,
+        .admin-sidebar .nav-label,
+        .admin-sidebar .admin-nav-group summary span,
+        .admin-sidebar .control-label,
+        .admin-sidebar .admin-user-copy {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 100ms ease;
+        }
+
+        .admin-sidebar:hover .admin-brand-copy,
+        .admin-sidebar:focus-within .admin-brand-copy,
+        body.admin-sidebar-expanded .admin-brand-copy,
+        .admin-sidebar:hover .nav-label,
+        .admin-sidebar:focus-within .nav-label,
+        body.admin-sidebar-expanded .nav-label,
+        .admin-sidebar:hover .admin-nav-group summary span,
+        .admin-sidebar:focus-within .admin-nav-group summary span,
+        body.admin-sidebar-expanded .admin-nav-group summary span,
+        .admin-sidebar:hover .control-label,
+        .admin-sidebar:focus-within .control-label,
+        body.admin-sidebar-expanded .control-label,
+        .admin-sidebar:hover .admin-user-copy,
+        .admin-sidebar:focus-within .admin-user-copy,
+        body.admin-sidebar-expanded .admin-user-copy {
+            opacity: 1;
+            visibility: visible;
+        }
+
         .admin-brand-title {
             margin: 0;
-            font-size: 1.05rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
             color: #fff;
+            font-size: 0.98rem;
+            font-weight: 600;
         }
 
         .admin-brand-subtitle {
             margin: 0;
-            font-size: 0.82rem;
             color: var(--mr-muted);
+            font-size: 0.68rem;
         }
 
-        .admin-nav-title {
-            margin: 0 0 0.75rem 1.25rem;
-            font-size: 0.76rem;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.48);
-        }
-
-        .admin-sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.78);
-            padding: 0.9rem 1.25rem;
-            margin: 0.15rem 1.25rem;
-            border-radius: 1rem;
-            transition: all 0.18s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.85rem;
-            font-weight: 500;
+        .admin-nav {
+            flex: 1;
+            padding: 0.65rem 0.5rem;
         }
 
         .admin-nav-group {
-            margin: 0 0.75rem 0.8rem;
+            margin: 0 0 0.55rem;
         }
 
         .admin-nav-group summary {
-            list-style: none;
-            cursor: pointer;
-            padding: 0.55rem 0.5rem;
-            color: rgba(255, 255, 255, 0.48);
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.14em;
+            display: flex;
+            align-items: center;
+            height: 24px;
+            padding: 0 0.6rem;
+            overflow: hidden;
+            color: rgba(255, 255, 255, 0.42);
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.07em;
+            line-height: 1;
             text-transform: uppercase;
+            white-space: nowrap;
+            list-style: none;
         }
 
         .admin-nav-group summary::-webkit-details-marker {
@@ -181,41 +167,172 @@
 
         .admin-nav-group summary::after {
             content: '\F282';
-            float: right;
+            margin-left: auto;
             font-family: bootstrap-icons;
-            transition: transform 0.18s ease;
+            font-size: 0.65rem;
         }
 
-        .admin-nav-group[open] summary::after {
-            transform: rotate(180deg);
+        .admin-sidebar:not(:hover) .admin-nav-group summary::after,
+        .admin-sidebar:not(:focus-within) .admin-nav-group summary::after,
+        body:not(.admin-sidebar-expanded) .admin-nav-group summary::after {
+            display: none;
         }
 
         .admin-nav-group .nav {
-            margin-bottom: 0;
+            gap: 2px;
         }
 
-        .admin-sidebar .nav-link:hover,
-        .admin-sidebar .nav-link.active {
-            background: rgba(59, 105, 255, 0.16);
+        @media (min-width: 992px) {
+            .admin-sidebar:not(:hover):not(:focus-within) .admin-nav-group:not([open])>.nav {
+                display: flex;
+            }
+        }
+
+        .admin-sidebar .nav-link {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-height: 42px;
+            padding: 0.55rem 0.6rem;
+            overflow: hidden;
+            border-radius: 3px;
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 0.84rem;
+            font-weight: 400;
+            line-height: 1.2;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background-color 100ms ease, color 100ms ease;
+        }
+
+        .admin-sidebar .nav-link:hover {
+            background: rgba(255, 255, 255, 0.06);
             color: #fff;
         }
 
         .admin-sidebar .nav-link.active {
-            box-shadow: inset 0 0 0 1px rgba(59, 105, 255, 0.22);
+            background: rgba(1, 76, 253, 0.18);
+            color: #fff;
+        }
+
+        .admin-sidebar .nav-link.active::before {
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 3px;
+            background: var(--mr-accent);
+            content: '';
         }
 
         .admin-sidebar .nav-link i {
-            min-width: 1.4rem;
-            font-size: 1.15rem;
+            width: 28px;
+            min-width: 28px;
+            color: rgba(255, 255, 255, 0.68);
+            font-size: 1.05rem;
+            text-align: center;
+        }
+
+        .admin-sidebar .nav-link.active i,
+        .admin-sidebar .nav-link:hover i {
+            color: #fff;
         }
 
         .admin-sidebar .badge {
-            min-width: 2.1rem;
+            margin-left: auto;
+            min-width: 1.4rem;
+            padding: 0.22rem 0.35rem;
+            border-radius: 2px;
+            font-size: 0.68rem;
+        }
+
+        .admin-sidebar-footer {
+            padding: 0.65rem 0.5rem 0.8rem;
+            border-top: 1px solid var(--mr-border);
+        }
+
+        .admin-user {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            min-height: 36px;
+            padding: 0.25rem 0.6rem 0.6rem;
+            white-space: nowrap;
+        }
+
+        .admin-user-icon {
+            width: 28px;
+            min-width: 28px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .admin-user-name {
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+
+        .admin-user-role {
+            color: var(--mr-muted);
+            font-size: 0.68rem;
+        }
+
+        .admin-control,
+        .admin-logout {
+            width: 100%;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.6rem;
+            border: 0;
+            border-radius: 3px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 0.82rem;
+            text-align: left;
+        }
+
+        .admin-control:hover,
+        .admin-logout:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+        }
+
+        .admin-control.active {
+            background: rgba(1, 76, 253, 0.18);
+            color: #fff;
+        }
+
+        .admin-control i,
+        .admin-logout i {
+            width: 28px;
+            min-width: 28px;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .admin-mobile-toggle,
+        .admin-mobile-close,
+        .admin-sidebar-backdrop {
+            display: none;
+        }
+
+        .admin-content {
+            width: 100%;
+            min-width: 0;
+            margin-left: 68px;
+            transition: margin-left 160ms ease;
+        }
+
+        body.admin-sidebar-expanded .admin-content {
+            margin-left: 240px;
         }
 
         .main-content {
-            padding: 1.75rem 1.75rem 2.5rem;
             min-height: 100vh;
+            padding: 1.5rem 1.75rem 2.5rem;
         }
 
         .admin-card,
@@ -448,42 +565,79 @@
             outline-offset: 2px;
         }
 
-        @media (min-width: 1200px) {
-
-            body.admin-sidebar-collapsed .admin-sidebar .nav-link,
-            body.admin-sidebar-collapsed .admin-sidebar .help-button,
-            body.admin-sidebar-collapsed .admin-sidebar .logout-button {
-                width: 52px;
-                margin-left: auto;
-                margin-right: auto;
-            }
-        }
-
-        @media (max-width: 991px) {
+        @media (max-width: 991.98px) {
             .admin-sidebar {
-                min-height: auto;
-                width: 100%;
+                width: 240px;
+                transform: translateX(-100%);
+                transition: transform 160ms ease;
+            }
+
+            body.admin-mobile-open .admin-sidebar {
+                transform: translateX(0);
+            }
+
+            .admin-sidebar .admin-brand-copy,
+            .admin-sidebar .nav-label,
+            .admin-sidebar .admin-nav-group summary span,
+            .admin-sidebar .control-label,
+            .admin-sidebar .admin-user-copy {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .admin-sidebar .admin-nav-group summary::after {
+                display: block;
+            }
+
+            .admin-content,
+            body.admin-sidebar-expanded .admin-content {
+                margin-left: 0;
+            }
+
+            .admin-mobile-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 40px;
+                height: 40px;
+                margin-bottom: 1rem;
+                border: 1px solid var(--mr-border);
+                border-radius: 3px;
+                background: var(--mr-surface);
+                color: #fff;
+            }
+
+            .admin-mobile-close {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                margin-left: auto;
+                border: 0;
+                background: transparent;
+                color: rgba(255, 255, 255, 0.75);
+                font-size: 1.15rem;
+            }
+
+            .admin-sidebar-backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 1030;
+                display: block;
+                background: rgba(0, 0, 0, 0.48);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 160ms ease;
+            }
+
+            body.admin-mobile-open .admin-sidebar-backdrop {
+                opacity: 1;
+                pointer-events: auto;
             }
 
             .main-content {
-                padding: 1.25rem;
-            }
-        }
-
-        @media (max-width: 767px) {
-            .admin-sidebar {
-                position: relative;
-            }
-
-            .admin-sidebar .admin-brand,
-            .admin-sidebar .admin-nav-title {
-                padding-left: 1rem;
-                padding-right: 1rem;
-            }
-
-            .admin-sidebar .nav-link {
-                margin-left: 1rem;
-                margin-right: 1rem;
+                padding: 1rem 1.25rem 2rem;
             }
         }
     </style>
@@ -499,94 +653,99 @@ return Route::has($name) ? route($name) : '#';
 
 <body class="admin-shell">
 
-    <div class="container-fluid admin-shell">
+    <div class="admin-layout">
+        <aside class="admin-sidebar" id="adminSidebar" aria-label="Admin sidebar">
+            <div class="admin-brand">
+                <div class="admin-brand-mark">
+                    <img src="{{ asset('favicon.ico') }}" alt="MuniResQ logo">
+                </div>
+                <div class="admin-brand-copy">
+                    <h1 class="admin-brand-title">MuniResQ</h1>
+                    <p class="admin-brand-subtitle">MDRRMO Management System</p>
+                </div>
+                <button type="button" class="admin-mobile-close" data-admin-sidebar-close aria-label="Close navigation">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
 
-        <div class="row gx-0">
+            <nav class="admin-nav" aria-label="Admin navigation">
+                <details class="admin-nav-group" open>
+                    <summary><span>Operations</span></summary>
+                    <nav class="nav flex-column">
+                        <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i><span class="nav-label">Dashboard</span></a>
+                        <a href="{{ url('/admin/incidents') }}" class="nav-link {{ request()->is('admin/incidents*') ? 'active' : '' }}"><i class="bi bi-exclamation-triangle"></i><span class="nav-label">Incidents</span></a>
+                        <a href="{{ $adminRoute('admin.dispatches.index') }}" class="nav-link {{ request()->routeIs('admin.dispatches.*') ? 'active' : '' }}"><i class="bi bi-broadcast-pin"></i><span class="nav-label">Dispatch Center</span></a>
+                        <a href="{{ $adminRoute('admin.gps.monitoring') }}" class="nav-link {{ request()->routeIs('admin.gps.monitoring') ? 'active' : '' }}"><i class="bi bi-geo-alt"></i><span class="nav-label">GPS Monitoring</span></a>
+                        <a href="{{ $adminRoute('admin.operations.center') }}" class="nav-link {{ request()->routeIs('admin.operations.center') ? 'active' : '' }}"><i class="bi bi-crosshair"></i><span class="nav-label">Operations Center</span></a>
+                    </nav>
+                </details>
+                <details class="admin-nav-group" open>
+                    <summary><span>Communication</span></summary>
+                    <nav class="nav flex-column">
+                        <a href="{{ $adminRoute('admin.notifications.index') }}" class="nav-link {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}"><i class="bi bi-bell"></i><span class="nav-label">Notifications</span><span class="badge bg-danger ms-auto" data-unread-badge>{{ $unreadNotifications ?? 0 }}</span></a>
+                    </nav>
+                </details>
+                <details class="admin-nav-group">
+                    <summary><span>Fleet</span></summary>
+                    <nav class="nav flex-column">
+                        <a href="{{ route('admin.ambulances.index') }}" class="nav-link {{ request()->routeIs('admin.ambulances.*') ? 'active' : '' }}"><i class="bi bi-truck"></i><span class="nav-label">Ambulances / Rescue Vehicles</span></a>
+                        <a href="{{ $adminRoute('admin.maintenance.index') }}" class="nav-link {{ request()->routeIs('admin.maintenance.*') ? 'active' : '' }}"><i class="bi bi-tools"></i><span class="nav-label">Vehicle Maintenance</span></a>
+                        <a href="{{ $adminRoute('admin.response-equipment.index') }}" class="nav-link {{ request()->routeIs('admin.response-equipment.*') ? 'active' : '' }}"><i class="bi bi-box-seam"></i><span class="nav-label">Equipment Inventory</span></a>
+                    </nav>
+                </details>
+                <details class="admin-nav-group" {{ request()->routeIs('admin.reports.*') ? 'open' : '' }}>
+                    <summary><span>Reports</span></summary>
+                    <nav class="nav flex-column">
+                        <a href="{{ $adminRoute('admin.reports.center') }}" class="nav-link {{ request()->routeIs('admin.reports.center') ? 'active' : '' }}"><i class="bi bi-graph-up"></i><span class="nav-label">Reports Center</span></a>
+                    </nav>
+                </details>
+                <details class="admin-nav-group" open>
+                    <summary><span>Information</span></summary>
+                    <nav class="nav flex-column">
+                        <a href="{{ $adminRoute('admin.vulnerable-areas.index') }}" class="nav-link {{ request()->routeIs('admin.vulnerable-areas.*') ? 'active' : '' }}"><i class="bi bi-people"></i><span class="nav-label">Vulnerable Areas</span></a>
+                    </nav>
+                </details>
+                <details class="admin-nav-group">
+                    <summary><span>System</span></summary>
+                    <nav class="nav flex-column">
+                        <a href="{{ route('admin.audit-logs.index') }}" class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}"><i class="bi bi-journal-text"></i><span class="nav-label">Audit Logs</span></a>
+                    </nav>
+                </details>
+            </nav>
 
-            <!-- SIDEBAR -->
-
-            <div class="col-12 col-xl-auto">
-                <aside class="admin-sidebar" aria-label="Admin sidebar">
-                    <div class="admin-brand">
-                        <div class="admin-brand-mark">
-                            <img src="{{ asset('favicon.ico') }}" alt="MuniResQ logo">
-                        </div>
-                        <div class="text-hide-when-collapsed">
-                            <h4 class="admin-brand-title mb-1">MuniResQ</h4>
-                            <p class="admin-brand-subtitle mb-0">Admin Command</p>
-                        </div>
+            <div class="admin-sidebar-footer">
+                <div class="admin-user">
+                    <i class="bi bi-person-circle admin-user-icon"></i>
+                    <div class="admin-user-copy">
+                        <div class="admin-user-name">{{ auth()->user()->name ?? 'Administrator' }}</div>
+                        <div class="admin-user-role">Admin account</div>
                     </div>
-
-                    <details class="admin-nav-group" open>
-                        <summary>Operations</summary>
-                        <nav class="nav flex-column">
-                            <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i><span class="nav-label">Dashboard</span></a>
-                            <a href="{{ url('/admin/incidents') }}" class="nav-link {{ request()->is('admin/incidents*') ? 'active' : '' }}"><i class="bi bi-exclamation-triangle"></i><span class="nav-label">Incidents</span></a>
-                            <a href="{{ $adminRoute('admin.dispatches.index') }}" class="nav-link {{ request()->routeIs('admin.dispatches.*') ? 'active' : '' }}"><i class="bi bi-broadcast-pin"></i><span class="nav-label">Dispatch Center</span></a>
-                            <a href="{{ $adminRoute('admin.gps.monitoring') }}" class="nav-link {{ request()->routeIs('admin.gps.monitoring') ? 'active' : '' }}"><i class="bi bi-geo-alt"></i><span class="nav-label">GPS Monitoring</span></a>
-                            <a href="{{ $adminRoute('admin.operations.center') }}" class="nav-link {{ request()->routeIs('admin.operations.center') ? 'active' : '' }}"><i class="bi bi-crosshair"></i><span class="nav-label">Operations Center</span></a>
-                        </nav>
-                    </details>
-                    <details class="admin-nav-group" open>
-                        <summary>Communication</summary>
-                        <nav class="nav flex-column">
-                            <a href="{{ $adminRoute('admin.notifications.index') }}" class="nav-link {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}"><i class="bi bi-bell"></i><span class="nav-label">Notifications</span><span class="badge bg-danger ms-auto text-hide-when-collapsed" data-unread-badge>{{ $unreadNotifications ?? 0 }}</span></a>
-                        </nav>
-                    </details>
-                    <details class="admin-nav-group">
-                        <summary>Fleet</summary>
-                        <nav class="nav flex-column">
-                            <a href="{{ route('admin.ambulances.index') }}" class="nav-link {{ request()->routeIs('admin.ambulances.*') ? 'active' : '' }}"><i class="bi bi-truck"></i><span class="nav-label">Ambulances / Rescue Vehicles</span></a>
-                            <a href="{{ $adminRoute('admin.maintenance.index') }}" class="nav-link {{ request()->routeIs('admin.maintenance.*') ? 'active' : '' }}"><i class="bi bi-tools"></i><span class="nav-label">Vehicle Maintenance</span></a>
-                            <a href="{{ $adminRoute('admin.response-equipment.index') }}" class="nav-link {{ request()->routeIs('admin.response-equipment.*') ? 'active' : '' }}"><i class="bi bi-box-seam"></i><span class="nav-label">Equipment Inventory</span></a>
-                        </nav>
-                    </details>
-                    <details class="admin-nav-group" {{ request()->routeIs('admin.reports.*') ? 'open' : '' }}>
-                        <summary>Reports</summary>
-                        <nav class="nav flex-column">
-                            <a href="{{ $adminRoute('admin.reports.center') }}" class="nav-link {{ request()->routeIs('admin.reports.center') ? 'active' : '' }}"><i class="bi bi-graph-up"></i><span class="nav-label">Reports Center</span></a>
-                            <a href="{{ $adminRoute('admin.reports.index') }}" class="nav-link {{ request()->routeIs('admin.reports.index') ? 'active' : '' }}"><i class="bi bi-file-earmark-text"></i><span class="nav-label">Incident Reports</span></a>
-                            <a href="{{ $adminRoute('admin.reports.response-time') }}" class="nav-link {{ request()->routeIs('admin.reports.response-time') ? 'active' : '' }}"><i class="bi bi-stopwatch"></i><span class="nav-label">Response Time</span></a>
-                            <a href="{{ $adminRoute('admin.reports.pdf.view') }}" class="nav-link {{ request()->routeIs('admin.reports.pdf.view') ? 'active' : '' }}"><i class="bi bi-file-earmark-pdf"></i><span class="nav-label">PDF Export</span></a>
-                        </nav>
-                    </details>
-                    <details class="admin-nav-group" open>
-                        <summary>Information</summary>
-                        <nav class="nav flex-column">
-                            <a href="{{ $adminRoute('admin.vulnerable-areas.index') }}" class="nav-link {{ request()->routeIs('admin.vulnerable-areas.*') ? 'active' : '' }}"><i class="bi bi-people"></i><span class="nav-label">Vulnerable Areas</span></a>
-                        </nav>
-                    </details>
-                    <details class="admin-nav-group">
-                        <summary>System</summary>
-                        <nav class="nav flex-column">
-                            <a href="{{ route('admin.audit-logs.index') }}" class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}"><i class="bi bi-journal-text"></i><span class="nav-label">Audit Logs</span></a>
-                        </nav>
-                    </details>
-
-                    <button type="button" class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill help-button mx-3 mb-2" data-bs-toggle="modal" data-bs-target="#adminHelpModal">
-                        <i class="bi bi-question-circle"></i> <span class="help-label">Help</span>
-                    </button>
-
-                    <form method="POST" action="{{ route('logout') }}" class="px-3 mt-1">
-                        @csrf
-                        <button type="submit" class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill logout-button">
-                            <i class="bi bi-box-arrow-right"></i>
-                            <span class="logout-label">Logout</span>
-                        </button>
-                    </form>
-                </aside>
+                </div>
+                <button type="button" class="admin-control" data-bs-toggle="modal" data-bs-target="#adminHelpModal">
+                    <i class="bi bi-question-circle"></i><span class="control-label">Help</span>
+                </button>
+                @if(Route::has('admin.backups.index'))
+                <a href="{{ route('admin.backups.index') }}" class="admin-control {{ request()->routeIs('admin.backups.*') ? 'active' : '' }}">
+                    <i class="bi bi-database-up"></i><span class="control-label">Backup &amp; Restore</span>
+                </a>
+                @endif
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="admin-logout"><i class="bi bi-box-arrow-right"></i><span class="control-label">Logout</span></button>
+                </form>
             </div>
+        </aside>
 
-            <!-- CONTENT -->
+        <div class="admin-sidebar-backdrop" data-admin-sidebar-close></div>
 
-            <div class="col-12 col-xl">
-                <main class="main-content">
-                    @yield('content')
-                </main>
-            </div>
-
+        <div class="admin-content">
+            <main class="main-content">
+                <button type="button" class="admin-mobile-toggle" data-admin-sidebar-open aria-label="Open navigation">
+                    <i class="bi bi-list"></i>
+                </button>
+                @yield('content')
+            </main>
         </div>
-
     </div>
 
     <div class="modal fade" id="adminHelpModal" tabindex="-1" aria-labelledby="adminHelpModalLabel" aria-hidden="true">
@@ -613,13 +772,19 @@ return Route::has($name) ? route($name) : '#';
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const shell = document.body;
-            const sidebar = document.querySelector('.admin-sidebar');
+            const openButton = document.querySelector('[data-admin-sidebar-open]');
+            const closeButtons = document.querySelectorAll('[data-admin-sidebar-close]');
 
-            if (window.innerWidth >= 1200 && sidebar) {
-                shell.classList.add('admin-sidebar-collapsed');
-                sidebar.addEventListener('mouseenter', () => shell.classList.remove('admin-sidebar-collapsed'));
-                sidebar.addEventListener('mouseleave', () => shell.classList.add('admin-sidebar-collapsed'));
-            }
+            const closeMobileSidebar = () => shell.classList.remove('admin-mobile-open');
+            const openMobileSidebar = () => shell.classList.add('admin-mobile-open');
+
+            openButton?.addEventListener('click', openMobileSidebar);
+            closeButtons.forEach(button => button.addEventListener('click', closeMobileSidebar));
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape') {
+                    closeMobileSidebar();
+                }
+            });
 
             const badge = document.querySelector('[data-unread-badge]');
 

@@ -1,322 +1,497 @@
 @extends('layouts.admin')
 
 @section('content')
-<div class="container-fluid px-0">
-    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-4">
-        <div>
-            <h2 class="section-heading mb-1">Emergency Reports Center</h2>
-            <p class="section-excerpt mb-0">Operational metrics, response analytics, and export-ready incident intelligence.</p>
-        </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ route('admin.reports.center.export.pdf', $filters) }}" class="btn btn-outline-danger">
-                <i class="bi bi-file-earmark-pdf"></i> Export PDF
-            </a>
-            <a href="{{ route('admin.reports.center.export.excel', $filters) }}" class="btn btn-outline-success">
-                <i class="bi bi-file-earmark-excel"></i> Export Excel
-            </a>
-            <button type="button" onclick="window.print()" class="btn btn-outline-dark">
-                <i class="bi bi-printer"></i> Print Report
-            </button>
-        </div>
-    </div>
+<style>
+    .reports-page {
+        max-width: 1600px;
+        margin: 0 auto;
+    }
 
-    <form method="GET" action="{{ route('admin.reports.center') }}" class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-            <div class="row g-3 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label">Start Date</label>
-                    <input type="date" name="start_date" value="{{ $filters['start_date'] ?? '' }}" class="form-control">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">End Date</label>
-                    <input type="date" name="end_date" value="{{ $filters['end_date'] ?? '' }}" class="form-control">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-select">
-                        <option value="">All statuses</option>
-                        @foreach(\App\Models\Incident::VALID_STATUSES as $status)
-                        <option value="{{ $status }}" @selected(($filters['status'] ?? '' )===$status)>{{ ucfirst(str_replace('_', ' ', $status)) }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Incident Type</label>
-                    <select name="incident_type" class="form-select">
-                        <option value="">All incident types</option>
-                        @foreach(\App\Models\Incident::INCIDENT_TYPES as $type)
-                        <option value="{{ $type }}" @selected(($filters['incident_type'] ?? '' )===$type)>{{ $type }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Apply Filter</button>
+    .reports-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .reports-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .reports-lead {
+        color: rgba(255, 255, 255, 0.68);
+        font-size: 1rem;
+    }
+
+    .reports-surface {
+        background: #0b2043;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 4px;
+    }
+
+    .reports-filter {
+        padding: 1.25rem;
+    }
+
+    .reports-filter .form-label {
+        color: #fff;
+        font-size: 0.95rem;
+        font-weight: 600;
+    }
+
+    .reports-filter .form-control,
+    .reports-filter .form-select {
+        min-height: 44px;
+        font-size: 0.95rem;
+    }
+
+    .reports-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .reports-actions .btn {
+        min-height: 44px;
+        font-weight: 600;
+    }
+
+    .report-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        background: #061633;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 4px;
+    }
+
+    .report-tab {
+        min-height: 44px;
+        padding: 0.55rem 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 3px;
+        background: transparent;
+        color: #fff;
+        font-size: 0.95rem;
+        font-weight: 600;
+    }
+
+    .report-tab:hover,
+    .report-tab:focus-visible {
+        background: rgba(1, 76, 253, 0.16);
+        color: #fff;
+    }
+
+    .report-tab.active {
+        background: #014cfd;
+        border-color: #014cfd;
+        color: #fff;
+    }
+
+    .report-section {
+        display: none;
+    }
+
+    .report-section.active {
+        display: block;
+    }
+
+    .report-section-title {
+        color: #fff;
+        font-size: 1.35rem;
+        font-weight: 600;
+    }
+
+    .report-section-help {
+        color: rgba(255, 255, 255, 0.68);
+        font-size: 0.95rem;
+    }
+
+    .report-stat {
+        min-height: 108px;
+        padding: 1rem;
+        border-left: 3px solid #014cfd;
+    }
+
+    .report-stat.success {
+        border-left-color: #2aa876;
+    }
+
+    .report-stat.warning {
+        border-left-color: #f0ad00;
+    }
+
+    .report-stat.danger {
+        border-left-color: #dc3545;
+    }
+
+    .report-stat-label {
+        color: rgba(255, 255, 255, 0.68);
+        font-size: 0.88rem;
+    }
+
+    .report-stat-value {
+        margin-top: 0.35rem;
+        color: #fff;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    .report-table {
+        margin-bottom: 0;
+        font-size: 0.92rem;
+    }
+
+    .report-table th {
+        color: #fff !important;
+        font-size: 0.85rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .report-table td {
+        color: rgba(255, 255, 255, 0.86) !important;
+        vertical-align: middle;
+    }
+
+    .report-table .empty-row {
+        padding: 1.5rem;
+        color: rgba(255, 255, 255, 0.68) !important;
+        text-align: center;
+    }
+
+    .status-label {
+        display: inline-block;
+        padding: 0.25rem 0.45rem;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 3px;
+        font-size: 0.8rem;
+    }
+
+    .report-chart {
+        height: 260px;
+    }
+
+    .report-note {
+        color: rgba(255, 255, 255, 0.68);
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 767px) {
+        .reports-title {
+            font-size: 1.45rem;
+        }
+
+        .report-tab {
+            flex: 1 1 calc(50% - 0.5rem);
+        }
+
+        .reports-actions .btn {
+            flex: 1 1 100%;
+        }
+    }
+</style>
+
+@php
+$fleetVehicles = collect($vehicleUtilization ?? []);
+$fleetTotal = $fleetVehicles->count();
+$fleetAvailable = $fleetVehicles->where('ambulance.status', 'available')->count();
+$fleetAssigned = $fleetVehicles->where('ambulance.status', 'on_duty')->count();
+$fleetMaintenance = $fleetVehicles->where('ambulance.status', 'maintenance')->count();
+$activeTab = request('section', 'overview');
+$validTabs = ['overview', 'response-time', 'incidents', 'fleet'];
+$activeTab = in_array($activeTab, $validTabs, true) ? $activeTab : 'overview';
+@endphp
+
+<div class="reports-page">
+    <header class="reports-header pb-3 mb-4">
+        <h1 class="reports-title mb-1">Reports Center</h1>
+        <p class="reports-lead mb-0">View incident, response-time, and fleet information in one place.</p>
+    </header>
+
+    <form method="GET" action="{{ route('admin.reports.center') }}" class="reports-surface reports-filter mb-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-sm-6 col-lg-2">
+                <label for="start_date" class="form-label">Date From</label>
+                <input id="start_date" type="date" name="start_date" value="{{ $filters['start_date'] ?? '' }}" class="form-control">
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label for="end_date" class="form-label">Date To</label>
+                <input id="end_date" type="date" name="end_date" value="{{ $filters['end_date'] ?? '' }}" class="form-control">
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label for="status" class="form-label">Status</label>
+                <select id="status" name="status" class="form-select">
+                    <option value="">All statuses</option>
+                    @foreach(\App\Models\Incident::VALID_STATUSES as $status)
+                    <option value="{{ $status }}" @selected(($filters['status'] ?? '' )===$status)>{{ ucfirst(str_replace('_', ' ', $status)) }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <label for="incident_type" class="form-label">Incident Type</label>
+                <select id="incident_type" name="incident_type" class="form-select">
+                    <option value="">All incident types</option>
+                    @foreach(\App\Models\Incident::INCIDENT_TYPES as $type)
+                    <option value="{{ $type }}" @selected(($filters['incident_type'] ?? '' )===$type)>{{ $type }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-lg-3">
+                <div class="reports-actions">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{{ route('admin.reports.center') }}" class="btn btn-outline-light">Clear Filters</a>
                 </div>
             </div>
         </div>
     </form>
 
-    <div class="row g-4 mb-4">
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100 admin-card">
-                <div class="card-body">
-                    <div class="small text-uppercase fw-semibold">Total Incidents</div>
-                    <div class="display-6 fw-bold mt-2">{{ $summary['total_incidents'] }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100 admin-card">
-                <div class="card-body">
-                    <div class="small text-uppercase fw-semibold">Completed</div>
-                    <div class="display-6 fw-bold mt-2">{{ $summary['completed_incidents'] }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100 admin-card">
-                <div class="card-body">
-                    <div class="small text-uppercase fw-semibold">Pending</div>
-                    <div class="display-6 fw-bold mt-2">{{ $summary['pending_incidents'] }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100 admin-card">
-                <div class="card-body">
-                    <div class="small text-uppercase fw-semibold">Active</div>
-                    <div class="display-6 fw-bold mt-2">{{ $summary['active_incidents'] }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <nav class="report-tabs mb-4" aria-label="Report sections">
+        <button type="button" class="report-tab {{ $activeTab === 'overview' ? 'active' : '' }}" data-report-tab="overview">View Overview</button>
+        <button type="button" class="report-tab {{ $activeTab === 'response-time' ? 'active' : '' }}" data-report-tab="response-time">View Response Time</button>
+        <button type="button" class="report-tab {{ $activeTab === 'incidents' ? 'active' : '' }}" data-report-tab="incidents">View Incidents</button>
+        <button type="button" class="report-tab {{ $activeTab === 'fleet' ? 'active' : '' }}" data-report-tab="fleet">View Fleet</button>
+    </nav>
 
-    <div class="row g-4 mb-4">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold mb-0">Monthly Incident Trends</h5>
-                        <span class="badge bg-primary text-white">Chart.js</span>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="incidentTrendChart"></canvas>
-                    </div>
+    <section class="report-section {{ $activeTab === 'overview' ? 'active' : '' }}" data-report-section="overview" aria-labelledby="overview-title">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-3">
+            <div>
+                <h2 id="overview-title" class="report-section-title mb-1">Overview</h2>
+                <p class="report-section-help mb-0">A quick summary of the current report filters.</p>
+            </div>
+            <div class="reports-actions"><a href="{{ route('admin.reports.center.export.pdf', $filters) }}" class="btn btn-outline-light">Export PDF</a><a href="{{ route('admin.reports.center.export.excel', $filters) }}" class="btn btn-outline-light">Export Excel</a></div>
+        </div>
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="reports-surface report-stat">
+                    <div class="report-stat-label">Total incidents</div>
+                    <div class="report-stat-value">{{ $summary['total_incidents'] ?? 0 }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="reports-surface report-stat danger">
+                    <div class="report-stat-label">Open incidents</div>
+                    <div class="report-stat-value">{{ $summary['active_incidents'] ?? 0 }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="reports-surface report-stat success">
+                    <div class="report-stat-label">Completed incidents</div>
+                    <div class="report-stat-value">{{ $summary['completed_incidents'] ?? 0 }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="reports-surface report-stat warning">
+                    <div class="report-stat-label">Available vehicles</div>
+                    <div class="report-stat-value">{{ $fleetAvailable }}</div>
                 </div>
             </div>
         </div>
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="fw-bold mb-3">Response Time Snapshot</h5>
-                    <div class="mb-3">
-                        <div class="text-muted small">Average</div>
-                        <div class="fw-bold fs-5">{{ $responseTimeMetrics['average_response_time'] }} min</div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="text-muted small">Fastest</div>
-                        <div class="fw-bold fs-5">{{ $responseTimeMetrics['fastest_response'] }} min</div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="text-muted small">Slowest</div>
-                        <div class="fw-bold fs-5">{{ $responseTimeMetrics['slowest_response'] }} min</div>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Completed Responses</div>
-                        <div class="fw-bold fs-5">{{ $responseTimeMetrics['completed_responses'] }}</div>
-                    </div>
-                </div>
-            </div>
+        <div class="reports-surface p-3">
+            <h3 class="h5 text-white mb-3">Incident summary</h3>
+            @include('admin.reports-center-incidents-table', ['incidents' => $incidents, 'compact' => true])
         </div>
-    </div>
+    </section>
 
-    <div class="row g-4 mb-4">
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="fw-bold mb-3">Driver Performance</h5>
+    <section class="report-section {{ $activeTab === 'response-time' ? 'active' : '' }}" data-report-section="response-time" aria-labelledby="response-title">
+        <div class="mb-3">
+            <h2 id="response-title" class="report-section-title mb-1">Response Time</h2>
+            <p class="report-section-help mb-0">Time recorded between receiving a call, responding, and arriving at the scene.</p>
+        </div>
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-lg-3">
+                <div class="reports-surface report-stat warning">
+                    <div class="report-stat-label">Average response time</div>
+                    <div class="report-stat-value">{{ $responseTimeMetrics['average_response_time'] ?? 0 }} min</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="reports-surface report-stat success">
+                    <div class="report-stat-label">Fastest response</div>
+                    <div class="report-stat-value">{{ $responseTimeMetrics['fastest_response'] ?? 0 }} min</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="reports-surface report-stat danger">
+                    <div class="report-stat-label">Slowest response</div>
+                    <div class="report-stat-value">{{ $responseTimeMetrics['slowest_response'] ?? 0 }} min</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="reports-surface report-stat">
+                    <div class="report-stat-label">Completed responses</div>
+                    <div class="report-stat-value">{{ $responseTimeMetrics['completed_responses'] ?? 0 }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-xl-5">
+                <div class="reports-surface p-3 h-100">
+                    <h3 class="h5 text-white mb-3">Monthly incident volume</h3>
+                    <div class="report-chart"><canvas id="incidentTrendChart"></canvas></div>
+                </div>
+            </div>
+            <div class="col-xl-7">
+                <div class="reports-surface p-3">
+                    <h3 class="h5 text-white mb-3">Response details</h3>
                     <div class="table-responsive">
-                        <table class="table table-sm align-middle">
+                        <table class="table report-table align-middle">
                             <thead>
                                 <tr>
-                                    <th>Driver</th>
-                                    <th>Dispatches</th>
-                                    <th>Avg. Resp.</th>
+                                    <th>Incident</th>
+                                    <th>Type</th>
+                                    <th>Call received</th>
+                                    <th>At scene</th>
+                                    <th>Call to scene</th>
+                                    <th>Response to scene</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                @forelse($driverPerformance as $item)
-                                <tr>
-                                    <td>{{ $item->driver?->user?->name ?? 'Driver' }}</td>
-                                    <td>{{ $item->dispatch_count }}</td>
-                                    <td>{{ $item->average_response_time }} min</td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="3" class="text-muted">No driver data found.</td>
-                                </tr>
-                                @endforelse
-                            </tbody>
+                            <tbody>@forelse($responseTimeMetrics['dispatches'] ?? [] as $dispatch) @php($incident = $dispatch->incident) <tr>
+                                    <td>{{ $incident?->incident_number ?? 'N/A' }}</td>
+                                    <td>{{ $incident?->incident_type ?? 'N/A' }}</td>
+                                    <td>{{ $incident?->call_received_at?->format('M d, Y H:i') ?? 'N/A' }}</td>
+                                    <td>{{ $incident?->at_scene_at?->format('M d, Y H:i') ?? 'N/A' }}</td>
+                                    <td>{{ $incident && $incident->call_received_at && $incident->at_scene_at ? $incident->call_received_at->diffInMinutes($incident->at_scene_at) . ' min' : 'N/A' }}</td>
+                                    <td>{{ $incident && $incident->response_at && $incident->at_scene_at ? $incident->response_at->diffInMinutes($incident->at_scene_at) . ' min' : 'N/A' }}</td>
+                                </tr> @empty<tr>
+                                    <td colspan="6" class="empty-row">No response-time records found.</td>
+                                </tr>@endforelse</tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="fw-bold mb-3">Vehicle Utilization</h5>
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Vehicle</th>
-                                    <th>Dispatches</th>
-                                    <th>Availability</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($vehicleUtilization as $item)
-                                <tr>
-                                    <td>{{ $item->ambulance?->vehicle_name ?? 'Vehicle' }}</td>
-                                    <td>{{ $item->total_dispatches }}</td>
-                                    <td>{{ $item->availability_rate }}%</td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="3" class="text-muted">No utilization data found.</td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+    </section>
+
+    <section class="report-section {{ $activeTab === 'incidents' ? 'active' : '' }}" data-report-section="incidents" aria-labelledby="incidents-title">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-3">
+            <div>
+                <h2 id="incidents-title" class="report-section-title mb-1">Incident Reports</h2>
+                <p class="report-section-help mb-0">Review incident type, priority, status, location, and date.</p>
+            </div>
+            <div class="reports-actions"><a href="{{ route('admin.reports.center.export.pdf', $filters) }}" class="btn btn-outline-light">Export PDF</a><a href="{{ route('admin.reports.center.export.excel', $filters) }}" class="btn btn-outline-light">Export Excel</a></div>
+        </div>
+        <div class="reports-surface p-3">@include('admin.reports-center-incidents-table', ['incidents' => $incidents, 'compact' => false])</div>
+    </section>
+
+    <section class="report-section {{ $activeTab === 'fleet' ? 'active' : '' }}" data-report-section="fleet" aria-labelledby="fleet-title">
+        <div class="mb-3">
+            <h2 id="fleet-title" class="report-section-title mb-1">Fleet Reports</h2>
+            <p class="report-section-help mb-0">Current vehicle availability and utilization.</p>
+        </div>
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-lg-3">
+                <div class="reports-surface report-stat">
+                    <div class="report-stat-label">Total vehicles</div>
+                    <div class="report-stat-value">{{ $fleetTotal }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="reports-surface report-stat success">
+                    <div class="report-stat-label">Available vehicles</div>
+                    <div class="report-stat-value">{{ $fleetAvailable }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="reports-surface report-stat">
+                    <div class="report-stat-label">Assigned vehicles</div>
+                    <div class="report-stat-value">{{ $fleetAssigned }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="reports-surface report-stat warning">
+                    <div class="report-stat-label">Maintenance vehicles</div>
+                    <div class="report-stat-value">{{ $fleetMaintenance }}</div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="card border-0 shadow-sm">
-        <div class="card-body">
-            <h5 class="fw-bold mb-3">Incident Summary</h5>
+        <div class="reports-surface p-3">
             <div class="table-responsive">
-                <table class="table align-middle">
+                <table class="table report-table align-middle">
                     <thead>
                         <tr>
-                            <th>Incident #</th>
-                            <th>Reporter</th>
+                            <th>Vehicle</th>
                             <th>Type</th>
-                            <th>Location</th>
-                            <th>Complete Address</th>
                             <th>Status</th>
-                            <th>Call Received</th>
-                            <th>Response</th>
-                            <th>At Scene</th>
-                            <th>At Patient</th>
-                            <th>Depart Scene</th>
-                            <th>At Hospital</th>
-                            <th>Created</th>
-                            <th>Dispatch Created</th>
-                            <th>Accepted</th>
-                            <th>Declined</th>
-                            <th>En Route</th>
-                            <th>Arrived</th>
-                            <th>Completed</th>
-                            <th>Closed</th>
+                            <th>Dispatches</th>
+                            <th>Availability</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @forelse($incidents as $incident)
-                        <tr>
-                            <td>{{ $incident->incident_number }}</td>
-                            <td>{{ $incident->reporter_name }}</td>
-                            <td>{{ $incident->incident_type }}</td>
-                            <td>{{ $incident->location }}</td>
-                            <td>{{ collect([$incident->house_number, $incident->street, $incident->barangay, $incident->city, $incident->province])->filter()->implode(', ') ?: 'N/A' }}</td>
-                            <td><span class="badge bg-secondary">{{ ucfirst($incident->status) }}</span></td>
-                            @php($dispatch = $incident->dispatches->sortByDesc('created_at')->first())
-                            <td>{{ $incident->call_received_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
-                            <td>{{ $incident->response_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
-                            <td>{{ $incident->at_scene_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
-                            <td>{{ $incident->at_patient_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
-                            <td>{{ $incident->depart_scene_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
-                            <td>{{ $incident->at_hospital_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
-                            <td>{{ $incident->created_at?->format('M d, Y H:i') }}</td>
-                            <td>{{ $dispatch?->created_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
-                            <td>{{ $dispatch?->accepted_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
-                            <td>{{ $dispatch?->declined_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
-                            <td>{{ $dispatch?->en_route_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
-                            <td>{{ $dispatch?->arrived_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
-                            <td>{{ $incident->completed_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
-                            <td>{{ $incident->closed_at?->format('M d, Y H:i') ?: 'N/A' }}</td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="20" class="text-muted">No incidents found.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
+                    <tbody>@forelse($fleetVehicles as $item) @php($vehicle = $item->ambulance) <tr>
+                            <td>{{ $vehicle?->vehicle_name ?? 'Vehicle' }}
+                                <div class="report-note">{{ $vehicle?->plate_number ?? 'No plate number' }}</div>
+                            </td>
+                            <td>{{ ucwords(str_replace('_', ' ', $vehicle?->vehicle_type ?? 'Vehicle')) }}</td>
+                            <td><span class="status-label">{{ ucfirst(str_replace('_', ' ', $vehicle?->status ?? 'Unknown')) }}</span></td>
+                            <td>{{ $item->total_dispatches }}</td>
+                            <td>{{ $item->availability_rate }}%</td>
+                        </tr>@empty<tr>
+                            <td colspan="5" class="empty-row">No vehicle records found.</td>
+                        </tr>@endforelse</tbody>
                 </table>
             </div>
         </div>
-    </div>
+    </section>
 </div>
 
-<style>
-    .chart-container {
-        position: relative;
-        width: 100%;
-        height: 300px;
-    }
-
-    #incidentTrendChart {
-        width: 100% !important;
-        height: 100% !important;
-    }
-</style>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const ctx = document.getElementById('incidentTrendChart');
+        const tabs = document.querySelectorAll('[data-report-tab]');
+        const sections = document.querySelectorAll('[data-report-section]');
+        const showSection = (name) => {
+            tabs.forEach(tab => {
+                const selected = tab.dataset.reportTab === name;
+                tab.classList.toggle('active', selected);
+                tab.setAttribute('aria-pressed', selected ? 'true' : 'false');
+            });
+            sections.forEach(section => section.classList.toggle('active', section.dataset.reportSection === name));
+        };
+        tabs.forEach(tab => tab.addEventListener('click', () => showSection(tab.dataset.reportTab)));
 
-        if (!ctx) {
-            return;
-        }
-
-        const labels = @json($monthlyTrends['labels'] ?? []);
-        const values = @json($monthlyTrends['series'] ?? []);
-
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Incidents',
-                    data: values,
-                    borderColor: '#0d6efd',
-                    backgroundColor: 'rgba(13, 110, 253, 0.18)',
-                    fill: true,
-                    tension: 0.35,
-                    pointRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+        const chartCanvas = document.getElementById('incidentTrendChart');
+        if (chartCanvas && typeof Chart !== 'undefined') {
+            new Chart(chartCanvas, {
+                type: 'line',
+                data: {
+                    labels: @json($monthlyTrends['labels'] ?? []),
+                    datasets: [{
+                        label: 'Incidents',
+                        data: @json($monthlyTrends['series'] ?? []),
+                        borderColor: '#014cfd',
+                        backgroundColor: 'rgba(1, 76, 253, 0.14)',
+                        fill: true,
+                        tension: 0.2,
+                        pointRadius: 4
+                    }]
                 },
-                plugins: {
-                    legend: {
-                        display: false
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#eef4ff',
+                                precision: 0
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#eef4ff'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#eef4ff'
+                            }
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
     });
 </script>
-
 @endsection
