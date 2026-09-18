@@ -346,7 +346,11 @@ $activeTab = in_array($activeTab, $validTabs, true) ? $activeTab : 'overview';
                                     <th>Response to scene</th>
                                 </tr>
                             </thead>
-                            <tbody>@forelse($responseTimeMetrics['dispatches'] ?? [] as $dispatch) @php($incident = $dispatch->incident) <tr>
+                            <tbody>@forelse($responseTimeMetrics['dispatches'] ?? [] as $dispatch)
+                                @php
+                                $incident = $dispatch->incident;
+                                @endphp
+                                <tr>
                                     <td>{{ $incident?->incident_number ?? 'N/A' }}</td>
                                     <td>{{ $incident?->incident_type ?? 'N/A' }}</td>
                                     <td>{{ $incident?->call_received_at?->format('M d, Y H:i') ?? 'N/A' }}</td>
@@ -355,7 +359,8 @@ $activeTab = in_array($activeTab, $validTabs, true) ? $activeTab : 'overview';
                                     <td>{{ $incident && $incident->response_at && $incident->at_scene_at ? $incident->response_at->diffInMinutes($incident->at_scene_at) . ' min' : 'N/A' }}</td>
                                 </tr> @empty<tr>
                                     <td colspan="6" class="empty-row">No response-time records found.</td>
-                                </tr>@endforelse</tbody>
+                                </tr>@endforelse
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -417,7 +422,11 @@ $activeTab = in_array($activeTab, $validTabs, true) ? $activeTab : 'overview';
                             <th>Availability</th>
                         </tr>
                     </thead>
-                    <tbody>@forelse($fleetVehicles as $item) @php($vehicle = $item->ambulance) <tr>
+                    <tbody>@forelse($fleetVehicles as $item)
+                        @php
+                        $vehicle = $item->ambulance;
+                        @endphp
+                        <tr>
                             <td>{{ $vehicle?->vehicle_name ?? 'Vehicle' }}
                                 <div class="report-note">{{ $vehicle?->plate_number ?? 'No plate number' }}</div>
                             </td>
@@ -427,7 +436,8 @@ $activeTab = in_array($activeTab, $validTabs, true) ? $activeTab : 'overview';
                             <td>{{ $item->availability_rate }}%</td>
                         </tr>@empty<tr>
                             <td colspan="5" class="empty-row">No vehicle records found.</td>
-                        </tr>@endforelse</tbody>
+                        </tr>@endforelse
+                    </tbody>
                 </table>
             </div>
         </div>
