@@ -68,7 +68,15 @@
                     <h5 class="fw-bold mb-3">Recent Completed Dispatches</h5>
                     <div class="list-group list-group-flush">
                         @forelse($dispatches->take(8) as $dispatch)
-                        @php($responseMinutes = $dispatch->incident?->call_received_at && $dispatch->incident?->at_scene_at ? $dispatch->incident->call_received_at->diffInMinutes($dispatch->incident->at_scene_at, false) : ($dispatch->incident?->response_at && $dispatch->incident?->at_scene_at ? $dispatch->incident->response_at->diffInMinutes($dispatch->incident->at_scene_at, false) : ($dispatch->assigned_at && $dispatch->arrived_at ? $dispatch->assigned_at->diffInMinutes($dispatch->arrived_at, false) : null)))
+                        @php
+                        $responseMinutes = $dispatch->incident?->call_received_at && $dispatch->incident?->at_scene_at
+                        ? $dispatch->incident->call_received_at->diffInMinutes($dispatch->incident->at_scene_at, false)
+                        : ($dispatch->incident?->response_at && $dispatch->incident?->at_scene_at
+                        ? $dispatch->incident->response_at->diffInMinutes($dispatch->incident->at_scene_at, false)
+                        : ($dispatch->assigned_at && $dispatch->arrived_at
+                        ? $dispatch->assigned_at->diffInMinutes($dispatch->arrived_at, false)
+                        : null));
+                        @endphp
                         <div class="list-group-item px-0 py-2">
                             <div class="d-flex justify-content-between align-items-start gap-2">
                                 <div>

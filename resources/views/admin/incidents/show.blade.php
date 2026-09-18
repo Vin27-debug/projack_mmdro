@@ -550,8 +550,8 @@
         <div class="card border-0 shadow-sm mb-3">
             <div class="card-header bg-dark text-white"><i class="bi bi-list-check me-2"></i>Incident Timeline</div>
             <div class="card-body">
-                @php($latestDispatch = $incident->dispatches->sortByDesc('created_at')->first())
                 @php
+                $latestDispatch = $incident->dispatches->sortByDesc('created_at')->first();
                 $timelineEntries = [
                 'Incident Reported' => $incident->created_at,
                 'Dispatch Created' => $latestDispatch?->created_at,

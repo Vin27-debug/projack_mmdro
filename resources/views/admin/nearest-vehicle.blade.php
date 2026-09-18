@@ -4,7 +4,6 @@
 
 <div class="container-fluid">
 
-    ```
     <h2 class="mb-4">
         🚑 Nearest Vehicle Recommendation
     </h2>
@@ -138,8 +137,6 @@
         </div>
 
     </div>
-    ```
-
 </div>
 
 @endsection

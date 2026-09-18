@@ -4,7 +4,7 @@
 
 <div class="container-fluid">
 
-    ```
+
     <div class="row mb-4">
         <div class="col">
             <h2 class="fw-bold">
@@ -134,8 +134,6 @@
         </div>
 
     </div>
-    ```
-
 </div>
 
 @endsection
