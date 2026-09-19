@@ -160,9 +160,15 @@
                     <button type="button" id="searchLocationBtn" class="btn btn-primary btn-sm">
                         📍 Search Location
                     </button>
+
+                    <button type="button" id="useGpsBtn" class="btn btn-success btn-sm">
+                        🛰️ Use My Current Location
+                    </button>
+
                     <button type="button" id="useMapPointBtn" class="btn btn-outline-secondary btn-sm">
                         📌 Use Current Map Point
                     </button>
+
                     <button type="button" id="resetMapBtn" class="btn btn-outline-secondary btn-sm">
                         ↩ Reset Map
                     </button>
@@ -226,6 +232,7 @@
 
         const locationStatus = document.getElementById('locationStatus');
         const searchLocationBtn = document.getElementById('searchLocationBtn');
+        const useGpsBtn = document.getElementById('useGpsBtn');
         const useMapPointBtn = document.getElementById('useMapPointBtn');
         const resetMapBtn = document.getElementById('resetMapBtn');
 
@@ -1110,6 +1117,117 @@
         }
 
         // ============================================================
+        // BROWSER GPS / CURRENT LOCATION
+        // ============================================================
+
+        function useBrowserLocation() {
+            if (!navigator.geolocation) {
+                setStatus(
+                    'Geolocation is not supported by this browser.',
+                    'danger'
+                );
+                return;
+            }
+
+            if (!map || !marker) {
+                setStatus(
+                    'Map is not ready yet.',
+                    'warning'
+                );
+                return;
+            }
+
+            setStatus(
+                'Getting your current location...',
+                'muted'
+            );
+
+            useGpsBtn.disabled = true;
+            useGpsBtn.textContent = '🛰️ Locating...';
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    console.log('BROWSER GPS LAT:', lat);
+                    console.log('BROWSER GPS LNG:', lng);
+                    console.log(
+                        'GPS ACCURACY:',
+                        position.coords.accuracy,
+                        'meters'
+                    );
+
+                    // Move map to the actual GPS position
+                    map.setView(
+                        [lat, lng],
+                        18, {
+                            animate: true
+                        }
+                    );
+
+                    // Move marker
+                    marker.setLatLng([lat, lng]);
+
+                    // Save coordinates
+                    setCoordinates(lat, lng);
+
+                    // Keep the manually entered address unchanged
+                    updateFullLocation();
+
+                    marker.bindPopup(
+                        '<strong>My Current Location</strong><br>' +
+                        'GPS accuracy: approximately ' +
+                        Math.round(position.coords.accuracy) +
+                        ' meters'
+                    ).openPopup();
+
+                    setStatus(
+                        'Your current GPS location has been selected.',
+                        'success'
+                    );
+
+                    useGpsBtn.disabled = false;
+                    useGpsBtn.textContent = '🛰️ Use My Current Location';
+                },
+
+                function(error) {
+                    console.error('GPS ERROR:', error);
+
+                    let message = 'Unable to get your current location.';
+
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            message =
+                                'Location permission was denied. Please allow location access in your browser.';
+                            break;
+
+                        case error.POSITION_UNAVAILABLE:
+                            message =
+                                'Your current location is unavailable.';
+                            break;
+
+                        case error.TIMEOUT:
+                            message =
+                                'GPS location request timed out. Please try again.';
+                            break;
+                    }
+
+                    setStatus(message, 'danger');
+
+                    useGpsBtn.disabled = false;
+                    useGpsBtn.textContent = '🛰️ Use My Current Location';
+                },
+
+                {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        // ============================================================
         // EVENTS
         // ============================================================
 
@@ -1158,6 +1276,13 @@
                     searchLocation();
                 }
             }
+
+            useGpsBtn.addEventListener(
+                'click',
+                function() {
+                    useBrowserLocation();
+                }
+            );
         );
 
         searchLocationBtn.addEventListener(

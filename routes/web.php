@@ -371,14 +371,7 @@ Route::middleware([
         ->name('admin.audit-logs.index');
 
 
-    Route::get('/admin/backups', [BackupController::class, 'index'])
-        ->name('admin.backups.index');
 
-    Route::post('/admin/backups', [BackupController::class, 'create'])
-        ->name('admin.backups.create');
-
-    Route::post('/admin/backups/{backup}/restore', [BackupController::class, 'restore'])
-        ->name('admin.backups.restore');
 
     Route::resource('nearest-vehicle', NearestVehicleController::class);
 
