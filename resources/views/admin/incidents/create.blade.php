@@ -787,6 +787,30 @@
             );
         }
 
+        function normalizeAdministrativeName(value) {
+            return normalizeText(value)
+                .replace(/\b(city|municipality|province|barangay|brgy|mun)\s+of\b/g, ' ')
+                .replace(/\b(barangay|brgy|municipality|mun|city|province)\b/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function matchesAdministrativeName(values, expected) {
+            const wanted = normalizeAdministrativeName(expected);
+
+            return values.some(value => {
+                const actual = normalizeAdministrativeName(value);
+
+                return Boolean(
+                    actual &&
+                    wanted &&
+                    (actual === wanted ||
+                        actual.includes(wanted) ||
+                        wanted.includes(actual))
+                );
+            });
+        }
+
         function getResultLocalities(result) {
             const address = result?.address || {};
             const properties = result?.properties || {};
@@ -832,6 +856,8 @@
                 result.name,
                 result.type,
                 result.class,
+                ...Object.values(result.address || {}),
+                ...Object.values(result.properties || {}),
                 result.properties?.name,
                 result.properties?.type,
                 result.properties?.osm_key,
@@ -848,61 +874,76 @@
             };
             const localities = getResultLocalities(result);
             const text = getResultText(result);
-            const checks = [
-                ['Barangay', expected.barangay, localities.barangays],
-                ['City', expected.city, localities.cities],
-                ['Province', expected.province, localities.provinces]
-            ];
-
-            for (const [label, wanted, actualValues] of checks) {
-                if (
-                    wanted &&
-                    actualValues.length &&
-                    !actualValues.some(value => includesLocality(value, wanted))
-                ) {
-                    return {
-                        accepted: false,
-                        score: 0,
-                        reason: `${label} mismatch: expected ${wanted}, found ${actualValues.join(', ')}`
-                    };
-                }
-            }
-
-            const localityMatches = [
-                ['Barangay', expected.barangay],
-                ['City', expected.city],
-                ['Province', expected.province]
-            ].filter(([, wanted]) => wanted && includesLocality(text, wanted));
-
-            if (
-                expected.city &&
-                !localities.cities.length &&
-                !includesLocality(text, expected.city)
-            ) {
-                return {
-                    accepted: false,
-                    score: 0,
-                    reason: `City mismatch: expected ${expected.city}, not present in result`
-                };
-            }
+            const matchedComponents = [];
+            const softMismatches = [];
+            const provinceMatch = expected.province && (
+                matchesAdministrativeName(localities.provinces, expected.province) ||
+                includesLocality(text, expected.province)
+            );
+            const cityMatch = expected.city && (
+                matchesAdministrativeName(localities.cities, expected.city) ||
+                includesLocality(text, expected.city)
+            );
+            const barangayMatch = expected.barangay && (
+                matchesAdministrativeName(localities.barangays, expected.barangay) ||
+                includesLocality(text, expected.barangay)
+            );
 
             if (
                 expected.province &&
-                !localities.provinces.length &&
-                !includesLocality(text, expected.province)
+                localities.provinces.length &&
+                !matchesAdministrativeName(localities.provinces, expected.province)
             ) {
                 return {
                     accepted: false,
                     score: 0,
-                    reason: `Province mismatch: expected ${expected.province}, not present in result`
+                    reason: `Province mismatch: expected ${expected.province}, found ${localities.provinces.join(', ')}`,
+                    matchedComponents
                 };
             }
 
-            let score = localityMatches.length * 100;
+            if (
+                expected.city &&
+                localities.cities.length &&
+                !matchesAdministrativeName(localities.cities, expected.city)
+            ) {
+                return {
+                    accepted: false,
+                    score: 0,
+                    reason: `City mismatch: expected ${expected.city}, found ${localities.cities.join(', ')}`,
+                    matchedComponents
+                };
+            }
+
+            let score = 0;
+
+            if (provinceMatch) {
+                score += 45;
+                matchedComponents.push('province');
+            } else if (expected.province) {
+                softMismatches.push('province not confirmed');
+            }
+
+            if (cityMatch) {
+                score += 65;
+                matchedComponents.push('city/municipality');
+            } else if (expected.city) {
+                softMismatches.push('city/municipality not confirmed');
+            }
+
+            if (barangayMatch) {
+                score += 35;
+                matchedComponents.push('barangay');
+            } else if (expected.barangay) {
+                score -= 20;
+                softMismatches.push('neighboring or different barangay label');
+            }
+
             const wantedStreet = normalizeText(expected.street);
 
             if (wantedStreet && text.includes(wantedStreet)) {
-                score += 25;
+                score += 28;
+                matchedComponents.push('street/purok/landmark exact');
             }
 
             wantedStreet
@@ -910,7 +951,7 @@
                 .filter(token => token.length >= 3)
                 .forEach(token => {
                     if (text.includes(token)) {
-                        score += 3;
+                        score += 4;
                     }
                 });
 
@@ -932,20 +973,42 @@
 
             poiWords.forEach(word => {
                 if (text.includes(word)) {
-                    score += 10;
+                    score += 8;
+                    matchedComponents.push('landmark type');
                 }
             });
 
-            if (provider === 'photon') {
+            const addressText = normalizeText([
+                result.display_name,
+                ...localities.barangays,
+                ...localities.cities,
+                ...localities.provinces,
+                result.address?.road,
+                result.address?.house_number,
+                result.properties?.street
+            ].filter(Boolean).join(' '));
+
+            if (expected.street && addressText.includes(wantedStreet)) {
+                score += 12;
+                matchedComponents.push('address component');
+            }
+
+            if (provider === 'photon' && matchedComponents.length) {
                 score += 2;
             }
 
+            const hasRequiredAdministrativeEvidence =
+                (!expected.province || provinceMatch) &&
+                (!expected.city || cityMatch);
+            const accepted = score >= 100 && hasRequiredAdministrativeEvidence;
+
             return {
-                accepted: true,
+                accepted,
                 score,
-                reason: localityMatches.length ?
-                    `Locality matched: ${localityMatches.map(([label]) => label).join(', ')}` :
-                    'No reliable structured locality mismatch found'
+                reason: accepted ?
+                    `Confidence score ${score}; matched ${matchedComponents.join(', ') || 'supporting evidence'}` : `Confidence score ${score} below threshold 100 or missing required province/city evidence; ${softMismatches.join(', ') || 'insufficient supporting evidence'}`,
+                matchedComponents,
+                softMismatches
             };
         }
 
@@ -1049,6 +1112,8 @@
                     result.display_name || result.name || 'Unnamed result',
                     'Score:',
                     evaluation.score,
+                    'Matched:',
+                    evaluation.matchedComponents,
                     'Reason:',
                     evaluation.reason
                 );
