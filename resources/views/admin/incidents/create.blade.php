@@ -810,8 +810,10 @@
 
         function applyGeocodedAddress(result) {
             const address = result?.address || result?.properties || {};
-            if (!houseNumber.value.trim() && (address.house_number || address.housenumber)) houseNumber.value = address.house_number || address.housenumber;
-            if (!street.value.trim() && (address.road || address.street)) street.value = address.road || address.street;
+            if (!houseNumber.value.trim() && (address.house_number || address.housenumber)) {
+                houseNumber.value = address.house_number || address.housenumber;
+            }
+
             updateFullLocation();
         }
 
