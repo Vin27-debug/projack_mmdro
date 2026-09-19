@@ -310,7 +310,6 @@
 
         let map = null;
         let marker = null;
-        let searchTimer = null;
         let searchRequestId = 0;
 
         function getSelectedText(element) {
@@ -767,47 +766,153 @@
 
         function normalizeText(value) {
             return String(value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
                 .toLowerCase()
                 .replace(/[.,()'"’\-_/]/g, ' ')
                 .replace(/\s+/g, ' ')
                 .trim();
         }
 
-        function scoreResult(result, provider) {
-            const wanted = normalizeText(
-                street.value
-            );
+        function includesLocality(value, expected) {
+            const actual = normalizeText(value);
+            const wanted = normalizeText(expected);
 
-            const text = normalizeText(
-                [
-                    result.display_name,
-                    result.name,
-                    result.type,
-                    result.class,
-                    result.properties?.name,
-                    result.properties?.type,
-                    result.properties?.osm_key,
-                    result.properties?.osm_value
-                ]
+            return Boolean(
+                actual &&
+                wanted &&
+                (actual === wanted ||
+                    actual.includes(wanted) ||
+                    wanted.includes(actual))
+            );
+        }
+
+        function getResultLocalities(result) {
+            const address = result?.address || {};
+            const properties = result?.properties || {};
+
+            const values = (...keys) => [...new Set(
+                keys
+                .map(key => address[key] || properties[key])
                 .filter(Boolean)
-                .join(' ')
+                .map(value => String(value).trim())
+            )];
+
+            const cities = values(
+                'city',
+                'town',
+                'municipality'
             );
 
-            let score = 0;
-
-            if (wanted && text.includes(wanted)) {
-                score += 150;
+            if (!cities.length) {
+                cities.push(...values('county'));
             }
 
-            const tokens = wanted
-                .split(' ')
-                .filter(token => token.length >= 3);
+            return {
+                barangays: values(
+                    'suburb',
+                    'neighbourhood',
+                    'village',
+                    'district',
+                    'quarter',
+                    'city_district'
+                ),
+                cities,
+                provinces: values(
+                    'province',
+                    'state',
+                    'state_district'
+                )
+            };
+        }
 
-            tokens.forEach(token => {
-                if (text.includes(token)) {
-                    score += 15;
+        function getResultText(result) {
+            return normalizeText([
+                result.display_name,
+                result.name,
+                result.type,
+                result.class,
+                result.properties?.name,
+                result.properties?.type,
+                result.properties?.osm_key,
+                result.properties?.osm_value
+            ].filter(Boolean).join(' '));
+        }
+
+        function evaluateResult(result, provider) {
+            const expected = {
+                barangay: getSelectedText(barangay),
+                city: getSelectedText(city),
+                province: getSelectedText(province),
+                street: street.value.trim()
+            };
+            const localities = getResultLocalities(result);
+            const text = getResultText(result);
+            const checks = [
+                ['Barangay', expected.barangay, localities.barangays],
+                ['City', expected.city, localities.cities],
+                ['Province', expected.province, localities.provinces]
+            ];
+
+            for (const [label, wanted, actualValues] of checks) {
+                if (
+                    wanted &&
+                    actualValues.length &&
+                    !actualValues.some(value => includesLocality(value, wanted))
+                ) {
+                    return {
+                        accepted: false,
+                        score: 0,
+                        reason: `${label} mismatch: expected ${wanted}, found ${actualValues.join(', ')}`
+                    };
                 }
-            });
+            }
+
+            const localityMatches = [
+                ['Barangay', expected.barangay],
+                ['City', expected.city],
+                ['Province', expected.province]
+            ].filter(([, wanted]) => wanted && includesLocality(text, wanted));
+
+            if (
+                expected.city &&
+                !localities.cities.length &&
+                !includesLocality(text, expected.city)
+            ) {
+                return {
+                    accepted: false,
+                    score: 0,
+                    reason: `City mismatch: expected ${expected.city}, not present in result`
+                };
+            }
+
+            if (
+                expected.province &&
+                !localities.provinces.length &&
+                !includesLocality(text, expected.province)
+            ) {
+                return {
+                    accepted: false,
+                    score: 0,
+                    reason: `Province mismatch: expected ${expected.province}, not present in result`
+                };
+            }
+
+            let score = localityMatches.length * 100;
+            const wantedStreet = normalizeText(expected.street);
+
+            if (wantedStreet && text.includes(wantedStreet)) {
+                score += 25;
+            }
+
+            wantedStreet
+                .split(' ')
+                .filter(token => token.length >= 3)
+                .forEach(token => {
+                    if (text.includes(token)) {
+                        score += 3;
+                    }
+                });
 
             const poiWords = [
                 'school',
@@ -827,15 +932,21 @@
 
             poiWords.forEach(word => {
                 if (text.includes(word)) {
-                    score += 25;
+                    score += 10;
                 }
             });
 
             if (provider === 'photon') {
-                score += 10;
+                score += 2;
             }
 
-            return score;
+            return {
+                accepted: true,
+                score,
+                reason: localityMatches.length ?
+                    `Locality matched: ${localityMatches.map(([label]) => label).join(', ')}` :
+                    'No reliable structured locality mismatch found'
+            };
         }
 
         // ============================================================
@@ -921,27 +1032,46 @@
                 return null;
             }
 
+            const accepted = [];
+
             results.forEach(result => {
-                result._score = scoreResult(
+                const evaluation = evaluateResult(
                     result,
                     result.provider
                 );
+
+                result._score = evaluation.score;
+                result._accepted = evaluation.accepted;
+                result._reason = evaluation.reason;
+
+                console.log(
+                    evaluation.accepted ? 'ACCEPTED:' : 'REJECTED:',
+                    result.display_name || result.name || 'Unnamed result',
+                    'Score:',
+                    evaluation.score,
+                    'Reason:',
+                    evaluation.reason
+                );
+
+                if (evaluation.accepted) {
+                    accepted.push(result);
+                }
             });
 
-            results.sort(
+            accepted.sort(
                 (a, b) => b._score - a._score
             );
 
             console.log(
                 'MAP CANDIDATES:',
-                results.slice(0, 10).map(result => ({
+                accepted.slice(0, 10).map(result => ({
                     score: result._score,
                     provider: result.provider,
                     name: result.display_name
                 }))
             );
 
-            return results[0];
+            return accepted[0] || null;
         }
 
         function applyGeocodedAddress(result) {
@@ -989,6 +1119,15 @@
             setStatus(
                 'Searching for the exact school / landmark...',
                 'muted'
+            );
+
+            console.log(
+                'MAP SEARCH LOCATION:', {
+                    province: getSelectedText(province),
+                    city: getSelectedText(city),
+                    barangay: getSelectedText(barangay),
+                    street: street.value.trim()
+                }
             );
 
             console.log(
@@ -1195,8 +1334,18 @@
                             );
 
                         if (fallbackResults.length) {
-                            const fallback =
-                                fallbackResults[0];
+                            const fallback = chooseBestResult(
+                                fallbackResults
+                            );
+
+                            if (!fallback) {
+                                setStatus(
+                                    'Exact location was not found. Please verify the map point or move the marker manually.',
+                                    'warning'
+                                );
+
+                                return;
+                            }
 
                             const lat = Number(
                                 fallback.lat
@@ -1252,7 +1401,7 @@
                 }
 
                 setStatus(
-                    'Location was not found automatically. You may click the map only if needed.',
+                    'Exact location was not found. Please verify the map point or move the marker manually.',
                     'warning'
                 );
 
@@ -1267,24 +1416,6 @@
                     'danger'
                 );
             }
-        }
-
-        function debounceMapSearch() {
-            clearTimeout(searchTimer);
-
-            searchTimer = setTimeout(
-                function() {
-                    if (
-                        province.value ||
-                        city.value ||
-                        barangay.value ||
-                        street.value.trim()
-                    ) {
-                        searchLocation();
-                    }
-                },
-                1400
-            );
         }
 
         // ============================================================
@@ -1442,8 +1573,6 @@
                 );
 
                 updateFullLocation();
-
-                debounceMapSearch();
             }
         );
 
@@ -1457,8 +1586,6 @@
                 );
 
                 updateFullLocation();
-
-                debounceMapSearch();
             }
         );
 
@@ -1466,8 +1593,6 @@
             'change',
             function() {
                 updateFullLocation();
-
-                debounceMapSearch();
             }
         );
 
@@ -1475,8 +1600,6 @@
             'input',
             function() {
                 updateFullLocation();
-
-                debounceMapSearch();
             }
         );
 
