@@ -127,7 +127,10 @@
 
             <div class="mb-3">
                 <label for="house_number" class="form-label">House Number</label>
-                <input type="text" id="house_number" name="house_number" class="form-control" value="{{ old('house_number') }}" placeholder="Example: 123">
+                <input type="text" id="house_number" name="house_number"
+                    class="form-control"
+                    value="{{ old('house_number') }}"
+                    placeholder="Example: 123">
             </div>
 
             <div class="mb-3">
@@ -136,6 +139,7 @@
                     value="{{ old('street') }}"
                     placeholder="Example: Purok 3, Bonifacio Barangay Hall"
                     autocomplete="off">
+
                 <small class="text-muted">
                     Enter a street, purok, landmark, school, subdivision, or nearby place.
                 </small>
@@ -144,7 +148,10 @@
             <div class="mb-3">
                 <label for="full_location" class="form-label">Full Location</label>
                 <input type="text" id="full_location" name="location"
-                    class="form-control" value="{{ old('location') }}" readonly>
+                    class="form-control"
+                    value="{{ old('location') }}"
+                    readonly>
+
                 <small id="locationStatus" class="text-muted">
                     Select Province → City/Municipality → Barangay, then enter the street or landmark.
                 </small>
@@ -157,21 +164,31 @@
                     style="height:450px;width:100%;border-radius:10px;overflow:hidden;"></div>
 
                 <div class="d-flex flex-wrap gap-2 mt-2">
-                    <button type="button" id="searchLocationBtn" class="btn btn-primary btn-sm">
+
+                    <button type="button"
+                        id="searchLocationBtn"
+                        class="btn btn-primary btn-sm">
                         📍 Search Location
                     </button>
 
-                    <button type="button" id="useGpsBtn" class="btn btn-success btn-sm">
+                    <button type="button"
+                        id="useGpsBtn"
+                        class="btn btn-success btn-sm">
                         🛰️ Use My Current Location
                     </button>
 
-                    <button type="button" id="useMapPointBtn" class="btn btn-outline-secondary btn-sm">
+                    <button type="button"
+                        id="useMapPointBtn"
+                        class="btn btn-outline-secondary btn-sm">
                         📌 Use Current Map Point
                     </button>
 
-                    <button type="button" id="resetMapBtn" class="btn btn-outline-secondary btn-sm">
+                    <button type="button"
+                        id="resetMapBtn"
+                        class="btn btn-outline-secondary btn-sm">
                         ↩ Reset Map
                     </button>
+
                 </div>
 
                 <small class="text-muted d-block mt-2">
@@ -181,34 +198,70 @@
             </div>
 
             <div class="row">
+
                 <div class="col-md-6 mb-3">
                     <label for="latitude_display" class="form-label">Latitude</label>
-                    <input type="text" id="latitude_display" class="form-control" readonly>
-                    <input type="hidden" id="latitude" name="latitude" value="{{ old('latitude') }}">
+
+                    <input type="text"
+                        id="latitude_display"
+                        class="form-control"
+                        readonly>
+
+                    <input type="hidden"
+                        id="latitude"
+                        name="latitude"
+                        value="{{ old('latitude') }}">
                 </div>
 
                 <div class="col-md-6 mb-3">
                     <label for="longitude_display" class="form-label">Longitude</label>
-                    <input type="text" id="longitude_display" class="form-control" readonly>
-                    <input type="hidden" id="longitude" name="longitude" value="{{ old('longitude') }}">
+
+                    <input type="text"
+                        id="longitude_display"
+                        class="form-control"
+                        readonly>
+
+                    <input type="hidden"
+                        id="longitude"
+                        name="longitude"
+                        value="{{ old('longitude') }}">
                 </div>
+
             </div>
         </div>
 
         <div class="mb-4">
             <label for="description" class="form-label">Description</label>
-            <textarea id="description" name="description" rows="4" class="form-control"
+
+            <textarea id="description"
+                name="description"
+                rows="4"
+                class="form-control"
                 placeholder="Describe the incident...">{{ old('description') }}</textarea>
         </div>
 
         <div class="mb-4">
-            <label for="attachments" class="form-label fw-semibold">Photos / Documents</label>
-            <input type="file" id="attachments" name="attachments[]" class="form-control" multiple
+            <label for="attachments" class="form-label fw-semibold">
+                Photos / Documents
+            </label>
+
+            <input type="file"
+                id="attachments"
+                name="attachments[]"
+                class="form-control"
+                multiple
                 accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx">
-            <div class="form-text">Attach up to 10 official photos or documents. Maximum 10 MB per file. Attachments are retained with the incident record.</div>
+
+            <div class="form-text">
+                Attach up to 10 official photos or documents.
+                Maximum 10 MB per file.
+                Attachments are retained with the incident record.
+            </div>
         </div>
 
-        <button type="submit" class="btn btn-success">Save Incident</button>
+        <button type="submit" class="btn btn-success">
+            Save Incident
+        </button>
     </form>
 </div>
 
@@ -231,6 +284,7 @@
         const longitudeDisplay = document.getElementById('longitude_display');
 
         const locationStatus = document.getElementById('locationStatus');
+
         const searchLocationBtn = document.getElementById('searchLocationBtn');
         const useGpsBtn = document.getElementById('useGpsBtn');
         const useMapPointBtn = document.getElementById('useMapPointBtn');
@@ -260,7 +314,9 @@
         let searchRequestId = 0;
 
         function getSelectedText(element) {
-            if (!element?.selectedOptions?.length) return '';
+            if (!element?.selectedOptions?.length) {
+                return '';
+            }
 
             const value = element.selectedOptions[0].textContent.trim();
 
@@ -278,7 +334,9 @@
         }
 
         function setStatus(message, type = 'muted') {
-            if (!locationStatus) return;
+            if (!locationStatus) {
+                return;
+            }
 
             locationStatus.textContent = message;
 
@@ -296,10 +354,13 @@
             lat = Number(lat);
             lng = Number(lng);
 
-            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                return;
+            }
 
             latitude.value = lat.toFixed(7);
             longitude.value = lng.toFixed(7);
+
             latitudeDisplay.value = lat.toFixed(6);
             longitudeDisplay.value = lng.toFixed(6);
         }
@@ -371,7 +432,10 @@
                 }
             ).addTo(map);
 
-            setCoordinates(DEFAULT_LAT, DEFAULT_LNG);
+            setCoordinates(
+                DEFAULT_LAT,
+                DEFAULT_LNG
+            );
 
             marker.bindPopup(
                 '<strong>Incident Location</strong><br>Cabanatuan City'
@@ -380,7 +444,10 @@
             marker.on('dragend', function(event) {
                 const position = event.target.getLatLng();
 
-                setCoordinates(position.lat, position.lng);
+                setCoordinates(
+                    position.lat,
+                    position.lng
+                );
 
                 setStatus(
                     'Marker moved. Coordinates updated.',
@@ -392,8 +459,15 @@
                 const lat = event.latlng.lat;
                 const lng = event.latlng.lng;
 
-                marker.setLatLng([lat, lng]);
-                setCoordinates(lat, lng);
+                marker.setLatLng([
+                    lat,
+                    lng
+                ]);
+
+                setCoordinates(
+                    lat,
+                    lng
+                );
 
                 marker.bindPopup(
                     '<strong>Selected Incident Location</strong>'
@@ -405,7 +479,9 @@
                 );
             });
 
-            setTimeout(() => map.invalidateSize(), 300);
+            setTimeout(function() {
+                map.invalidateSize();
+            }, 300);
         }
 
         // ============================================================
@@ -414,7 +490,10 @@
 
         async function loadProvinces() {
             try {
-                setLoading(province, 'Loading provinces...');
+                setLoading(
+                    province,
+                    'Loading provinces...'
+                );
 
                 const response = await fetchJson(
                     PSGC_BASE + '/provinces'
@@ -424,11 +503,17 @@
                     response :
                     (response.data || []);
 
-                clearSelect(province, 'Select Province');
+                clearSelect(
+                    province,
+                    'Select Province'
+                );
 
                 provinces.forEach(item => {
                     province.appendChild(
-                        new Option(item.name, item.code)
+                        new Option(
+                            item.name,
+                            item.code
+                        )
                     );
                 });
 
@@ -438,13 +523,21 @@
 
                 if (oldProvince) {
                     province.value = oldProvince;
-                    province.dispatchEvent(new Event('change'));
+                    province.dispatchEvent(
+                        new Event('change')
+                    );
                 }
 
-                console.log('PROVINCES LOADED:', provinces.length);
+                console.log(
+                    'PROVINCES LOADED:',
+                    provinces.length
+                );
 
             } catch (error) {
-                console.error('PROVINCE ERROR:', error);
+                console.error(
+                    'PROVINCE ERROR:',
+                    error
+                );
 
                 clearSelect(
                     province,
@@ -476,6 +569,7 @@
                     city,
                     'Select City / Municipality'
                 );
+
                 return;
             }
 
@@ -498,7 +592,10 @@
 
                 cities.forEach(item => {
                     city.appendChild(
-                        new Option(item.name, item.code)
+                        new Option(
+                            item.name,
+                            item.code
+                        )
                     );
                 });
 
@@ -508,13 +605,22 @@
 
                 if (oldCity) {
                     city.value = oldCity;
-                    city.dispatchEvent(new Event('change'));
+
+                    city.dispatchEvent(
+                        new Event('change')
+                    );
                 }
 
-                console.log('CITIES LOADED:', cities.length);
+                console.log(
+                    'CITIES LOADED:',
+                    cities.length
+                );
 
             } catch (error) {
-                console.error('CITY ERROR:', error);
+                console.error(
+                    'CITY ERROR:',
+                    error
+                );
 
                 clearSelect(
                     city,
@@ -539,6 +645,7 @@
                     barangay,
                     'Select Barangay'
                 );
+
                 return;
             }
 
@@ -561,7 +668,10 @@
 
                 barangays.forEach(item => {
                     barangay.appendChild(
-                        new Option(item.name, item.code)
+                        new Option(
+                            item.name,
+                            item.code
+                        )
                     );
                 });
 
@@ -571,13 +681,22 @@
 
                 if (oldBarangay) {
                     barangay.value = oldBarangay;
-                    barangay.dispatchEvent(new Event('change'));
+
+                    barangay.dispatchEvent(
+                        new Event('change')
+                    );
                 }
 
-                console.log('BARANGAYS LOADED:', barangays.length);
+                console.log(
+                    'BARANGAYS LOADED:',
+                    barangays.length
+                );
 
             } catch (error) {
-                console.error('BARANGAY ERROR:', error);
+                console.error(
+                    'BARANGAY ERROR:',
+                    error
+                );
 
                 clearSelect(
                     barangay,
@@ -604,7 +723,6 @@
             const queries = [];
 
             if (streetText) {
-                // Most specific: school / landmark + barangay + city + province
                 queries.push([
                     streetText,
                     barangayText,
@@ -613,7 +731,6 @@
                     'Philippines'
                 ].filter(Boolean).join(', '));
 
-                // Shorter query helps when the long address is not indexed.
                 queries.push([
                     streetText,
                     cityText,
@@ -657,7 +774,9 @@
         }
 
         function scoreResult(result, provider) {
-            const wanted = normalizeText(street.value);
+            const wanted = normalizeText(
+                street.value
+            );
 
             const text = normalizeText(
                 [
@@ -669,7 +788,9 @@
                     result.properties?.type,
                     result.properties?.osm_key,
                     result.properties?.osm_value
-                ].filter(Boolean).join(' ')
+                ]
+                .filter(Boolean)
+                .join(' ')
             );
 
             let score = 0;
@@ -733,11 +854,13 @@
                     countrycodes: 'ph'
                 });
 
-            const results = await fetchJson(url, {
-                headers: {
-                    'Accept': 'application/json'
+            const results = await fetchJson(
+                url, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
                 }
-            });
+            );
 
             return results.map(result => ({
                 ...result,
@@ -764,7 +887,9 @@
             return (response.features || [])
                 .filter(feature =>
                     feature.geometry &&
-                    Array.isArray(feature.geometry.coordinates)
+                    Array.isArray(
+                        feature.geometry.coordinates
+                    )
                 )
                 .map(feature => {
                     const p = feature.properties || {};
@@ -778,19 +903,23 @@
                         class: p.osm_key || '',
                         properties: p,
                         display_name: [
-                            p.name,
-                            p.street,
-                            p.district,
-                            p.city,
-                            p.state,
-                            p.country
-                        ].filter(Boolean).join(', ')
+                                p.name,
+                                p.street,
+                                p.district,
+                                p.city,
+                                p.state,
+                                p.country
+                            ]
+                            .filter(Boolean)
+                            .join(', ')
                     };
                 });
         }
 
         function chooseBestResult(results) {
-            if (!results.length) return null;
+            if (!results.length) {
+                return null;
+            }
 
             results.forEach(result => {
                 result._score = scoreResult(
@@ -816,9 +945,20 @@
         }
 
         function applyGeocodedAddress(result) {
-            const address = result?.address || result?.properties || {};
-            if (!houseNumber.value.trim() && (address.house_number || address.housenumber)) {
-                houseNumber.value = address.house_number || address.housenumber;
+            const address =
+                result?.address ||
+                result?.properties || {};
+
+            if (
+                !houseNumber.value.trim() &&
+                (
+                    address.house_number ||
+                    address.housenumber
+                )
+            ) {
+                houseNumber.value =
+                    address.house_number ||
+                    address.housenumber;
             }
 
             updateFullLocation();
@@ -829,7 +969,9 @@
         // ============================================================
 
         async function searchLocation() {
-            if (!map || !marker) return;
+            if (!map || !marker) {
+                return;
+            }
 
             const queries = buildSearchQueries();
 
@@ -838,6 +980,7 @@
                     'Select a location first.',
                     'warning'
                 );
+
                 return;
             }
 
@@ -857,8 +1000,12 @@
 
             try {
                 // Nominatim exact + shorter search.
-                for (let i = 0; i < Math.min(queries.length, 2); i++) {
-                    if (requestId !== searchRequestId) return;
+                for (
+                    let i = 0; i < Math.min(queries.length, 2); i++
+                ) {
+                    if (requestId !== searchRequestId) {
+                        return;
+                    }
 
                     try {
                         console.log(
@@ -872,10 +1019,13 @@
                             ))
                         );
 
-                        // Public Nominatim should not be hammered.
                         if (i === 0) {
                             await new Promise(
-                                resolve => setTimeout(resolve, 1100)
+                                resolve =>
+                                setTimeout(
+                                    resolve,
+                                    1100
+                                )
                             );
                         }
 
@@ -887,7 +1037,9 @@
                     }
                 }
 
-                if (requestId !== searchRequestId) return;
+                if (requestId !== searchRequestId) {
+                    return;
+                }
 
                 // Photon is the important fallback for named POIs.
                 try {
@@ -920,7 +1072,9 @@
                     );
                 }
 
-                if (requestId !== searchRequestId) return;
+                if (requestId !== searchRequestId) {
+                    return;
+                }
 
                 // Remove duplicate coordinates.
                 const unique = [];
@@ -942,13 +1096,17 @@
                         ',' +
                         lng.toFixed(5);
 
-                    if (seen.has(key)) return;
+                    if (seen.has(key)) {
+                        return;
+                    }
 
                     seen.add(key);
                     unique.push(result);
                 });
 
-                const best = chooseBestResult(unique);
+                const best = chooseBestResult(
+                    unique
+                );
 
                 // Exact or strong matching result.
                 if (best) {
@@ -957,19 +1115,26 @@
 
                     map.setView(
                         [lat, lng],
-                        best._score >= 150 ? 18 : 16, {
+                        best._score >= 150 ?
+                        18 :
+                        16, {
                             animate: true
                         }
                     );
 
-                    marker.setLatLng([lat, lng]);
+                    marker.setLatLng([
+                        lat,
+                        lng
+                    ]);
 
                     setCoordinates(
                         lat,
                         lng
                     );
 
-                    applyGeocodedAddress(best);
+                    applyGeocodedAddress(
+                        best
+                    );
 
                     const name =
                         best.display_name ||
@@ -1014,11 +1179,13 @@
 
                 // Final fallback: barangay area.
                 const fallbackQuery = [
-                    getSelectedText(barangay),
-                    getSelectedText(city),
-                    getSelectedText(province),
-                    'Philippines'
-                ].filter(Boolean).join(', ');
+                        getSelectedText(barangay),
+                        getSelectedText(city),
+                        getSelectedText(province),
+                        'Philippines'
+                    ]
+                    .filter(Boolean)
+                    .join(', ');
 
                 if (fallbackQuery) {
                     try {
@@ -1075,6 +1242,7 @@
                                 return;
                             }
                         }
+
                     } catch (error) {
                         console.warn(
                             'AREA FALLBACK FAILED:',
@@ -1104,16 +1272,19 @@
         function debounceMapSearch() {
             clearTimeout(searchTimer);
 
-            searchTimer = setTimeout(() => {
-                if (
-                    province.value ||
-                    city.value ||
-                    barangay.value ||
-                    street.value.trim()
-                ) {
-                    searchLocation();
-                }
-            }, 1400);
+            searchTimer = setTimeout(
+                function() {
+                    if (
+                        province.value ||
+                        city.value ||
+                        barangay.value ||
+                        street.value.trim()
+                    ) {
+                        searchLocation();
+                    }
+                },
+                1400
+            );
         }
 
         // ============================================================
@@ -1126,6 +1297,7 @@
                     'Geolocation is not supported by this browser.',
                     'danger'
                 );
+
                 return;
             }
 
@@ -1134,6 +1306,7 @@
                     'Map is not ready yet.',
                     'warning'
                 );
+
                 return;
             }
 
@@ -1143,22 +1316,33 @@
             );
 
             useGpsBtn.disabled = true;
-            useGpsBtn.textContent = '🛰️ Locating...';
+            useGpsBtn.textContent =
+                '🛰️ Locating...';
 
             navigator.geolocation.getCurrentPosition(
                 function(position) {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
+                    const lat =
+                        position.coords.latitude;
 
-                    console.log('BROWSER GPS LAT:', lat);
-                    console.log('BROWSER GPS LNG:', lng);
+                    const lng =
+                        position.coords.longitude;
+
+                    console.log(
+                        'BROWSER GPS LAT:',
+                        lat
+                    );
+
+                    console.log(
+                        'BROWSER GPS LNG:',
+                        lng
+                    );
+
                     console.log(
                         'GPS ACCURACY:',
                         position.coords.accuracy,
                         'meters'
                     );
 
-                    // Move map to the actual GPS position
                     map.setView(
                         [lat, lng],
                         18, {
@@ -1166,19 +1350,25 @@
                         }
                     );
 
-                    // Move marker
-                    marker.setLatLng([lat, lng]);
+                    marker.setLatLng([
+                        lat,
+                        lng
+                    ]);
 
-                    // Save coordinates
-                    setCoordinates(lat, lng);
+                    setCoordinates(
+                        lat,
+                        lng
+                    );
 
-                    // Keep the manually entered address unchanged
+                    // Keep the manually entered address unchanged.
                     updateFullLocation();
 
                     marker.bindPopup(
                         '<strong>My Current Location</strong><br>' +
                         'GPS accuracy: approximately ' +
-                        Math.round(position.coords.accuracy) +
+                        Math.round(
+                            position.coords.accuracy
+                        ) +
                         ' meters'
                     ).openPopup();
 
@@ -1188,13 +1378,19 @@
                     );
 
                     useGpsBtn.disabled = false;
-                    useGpsBtn.textContent = '🛰️ Use My Current Location';
+
+                    useGpsBtn.textContent =
+                        '🛰️ Use My Current Location';
                 },
 
                 function(error) {
-                    console.error('GPS ERROR:', error);
+                    console.error(
+                        'GPS ERROR:',
+                        error
+                    );
 
-                    let message = 'Unable to get your current location.';
+                    let message =
+                        'Unable to get your current location.';
 
                     switch (error.code) {
                         case error.PERMISSION_DENIED:
@@ -1213,10 +1409,15 @@
                             break;
                     }
 
-                    setStatus(message, 'danger');
+                    setStatus(
+                        message,
+                        'danger'
+                    );
 
                     useGpsBtn.disabled = false;
-                    useGpsBtn.textContent = '🛰️ Use My Current Location';
+
+                    useGpsBtn.textContent =
+                        '🛰️ Use My Current Location';
                 },
 
                 {
@@ -1235,8 +1436,13 @@
             'change',
             async function() {
                 updateFullLocation();
-                await loadCities(this.value);
+
+                await loadCities(
+                    this.value
+                );
+
                 updateFullLocation();
+
                 debounceMapSearch();
             }
         );
@@ -1245,8 +1451,13 @@
             'change',
             async function() {
                 updateFullLocation();
-                await loadBarangays(this.value);
+
+                await loadBarangays(
+                    this.value
+                );
+
                 updateFullLocation();
+
                 debounceMapSearch();
             }
         );
@@ -1255,6 +1466,7 @@
             'change',
             function() {
                 updateFullLocation();
+
                 debounceMapSearch();
             }
         );
@@ -1263,6 +1475,7 @@
             'input',
             function() {
                 updateFullLocation();
+
                 debounceMapSearch();
             }
         );
@@ -1272,33 +1485,42 @@
             function(event) {
                 if (event.key === 'Enter') {
                     event.preventDefault();
+
                     updateFullLocation();
+
                     searchLocation();
                 }
             }
-
-            useGpsBtn.addEventListener(
-                'click',
-                function() {
-                    useBrowserLocation();
-                }
-            );
         );
 
+        // GPS BUTTON
+        useGpsBtn.addEventListener(
+            'click',
+            function() {
+                useBrowserLocation();
+            }
+        );
+
+        // SEARCH BUTTON
         searchLocationBtn.addEventListener(
             'click',
             function() {
                 updateFullLocation();
+
                 searchLocation();
             }
         );
 
+        // USE CURRENT MAP POINT BUTTON
         useMapPointBtn.addEventListener(
             'click',
             function() {
-                if (!map || !marker) return;
+                if (!map || !marker) {
+                    return;
+                }
 
-                const position = marker.getLatLng();
+                const position =
+                    marker.getLatLng();
 
                 setCoordinates(
                     position.lat,
@@ -1312,13 +1534,19 @@
             }
         );
 
+        // RESET MAP BUTTON
         resetMapBtn.addEventListener(
             'click',
             function() {
-                if (!map || !marker) return;
+                if (!map || !marker) {
+                    return;
+                }
 
                 map.setView(
-                    [DEFAULT_LAT, DEFAULT_LNG],
+                    [
+                        DEFAULT_LAT,
+                        DEFAULT_LNG
+                    ],
                     DEFAULT_ZOOM
                 );
 
@@ -1343,7 +1571,12 @@
             }
         );
 
+        // ============================================================
+        // INITIALIZE
+        // ============================================================
+
         initializeMap();
+
         loadProvinces();
 
         console.log(
