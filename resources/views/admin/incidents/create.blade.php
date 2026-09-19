@@ -774,19 +774,6 @@
                 .trim();
         }
 
-        function includesLocality(value, expected) {
-            const actual = normalizeText(value);
-            const wanted = normalizeText(expected);
-
-            return Boolean(
-                actual &&
-                wanted &&
-                (actual === wanted ||
-                    actual.includes(wanted) ||
-                    wanted.includes(actual))
-            );
-        }
-
         function normalizeAdministrativeName(value) {
             return normalizeText(value)
                 .replace(/\b(city|municipality|province|barangay|brgy|mun)\s+of\b/g, ' ')
@@ -804,11 +791,27 @@
                 return Boolean(
                     actual &&
                     wanted &&
-                    (actual === wanted ||
-                        actual.includes(wanted) ||
-                        wanted.includes(actual))
+                    actual === wanted
                 );
             });
+        }
+
+        function classifyBarangayMatch(values, expected) {
+            if (!expected) {
+                return 'not selected';
+            }
+
+            if (!values.length) {
+                return 'missing';
+            }
+
+            if (matchesAdministrativeName(values, expected)) {
+                return values.length === 1 ?
+                    'exact normalized match' :
+                    'exact normalized match among multiple locality labels';
+            }
+
+            return values.length > 1 ? 'ambiguous/different locality' : 'different locality';
         }
 
         function getResultLocalities(result) {
@@ -828,10 +831,6 @@
                 'municipality'
             );
 
-            if (!cities.length) {
-                cities.push(...values('county'));
-            }
-
             return {
                 barangays: values(
                     'suburb',
@@ -842,11 +841,9 @@
                     'city_district'
                 ),
                 cities,
-                provinces: values(
-                    'province',
-                    'state',
-                    'state_district'
-                )
+                ambiguousCities: values('county'),
+                provinces: values('province'),
+                ambiguousProvinces: values('state', 'state_district', 'region')
             };
         }
 
@@ -876,18 +873,41 @@
             const text = getResultText(result);
             const matchedComponents = [];
             const softMismatches = [];
-            const provinceMatch = expected.province && (
-                matchesAdministrativeName(localities.provinces, expected.province) ||
-                includesLocality(text, expected.province)
+            const provinceMatch = expected.province && matchesAdministrativeName(
+                localities.provinces,
+                expected.province
             );
-            const cityMatch = expected.city && (
-                matchesAdministrativeName(localities.cities, expected.city) ||
-                includesLocality(text, expected.city)
+            const ambiguousProvinceMatch = expected.province && matchesAdministrativeName(
+                localities.ambiguousProvinces,
+                expected.province
             );
-            const barangayMatch = expected.barangay && (
-                matchesAdministrativeName(localities.barangays, expected.barangay) ||
-                includesLocality(text, expected.barangay)
+            const cityMatch = expected.city && matchesAdministrativeName(
+                localities.cities,
+                expected.city
             );
+            const ambiguousCityMatch = expected.city && matchesAdministrativeName(
+                localities.ambiguousCities,
+                expected.city
+            );
+            const barangayMatch = expected.barangay && matchesAdministrativeName(
+                localities.barangays,
+                expected.barangay
+            );
+            const barangayMatchStatus = classifyBarangayMatch(
+                localities.barangays,
+                expected.barangay
+            );
+            const returned = {
+                province: localities.provinces,
+                ambiguousProvince: localities.ambiguousProvinces,
+                city: localities.cities,
+                ambiguousCity: localities.ambiguousCities,
+                barangay: localities.barangays,
+                street: [
+                    result.address?.road,
+                    result.properties?.street
+                ].filter(Boolean)
+            };
 
             if (
                 expected.province &&
@@ -898,7 +918,10 @@
                     accepted: false,
                     score: 0,
                     reason: `Province mismatch: expected ${expected.province}, found ${localities.provinces.join(', ')}`,
-                    matchedComponents
+                    matchedComponents,
+                    returned,
+                    expected,
+                    barangayMatchStatus
                 };
             }
 
@@ -911,7 +934,10 @@
                     accepted: false,
                     score: 0,
                     reason: `City mismatch: expected ${expected.city}, found ${localities.cities.join(', ')}`,
-                    matchedComponents
+                    matchedComponents,
+                    returned,
+                    expected,
+                    barangayMatchStatus
                 };
             }
 
@@ -920,23 +946,37 @@
             if (provinceMatch) {
                 score += 45;
                 matchedComponents.push('province');
+            } else if (ambiguousProvinceMatch) {
+                score += 15;
+                matchedComponents.push('province (ambiguous provider field)');
             } else if (expected.province) {
-                softMismatches.push('province not confirmed');
+                softMismatches.push(
+                    localities.ambiguousProvinces.length ?
+                    `province ambiguous: ${localities.ambiguousProvinces.join(', ')}` :
+                    'province missing'
+                );
             }
 
             if (cityMatch) {
                 score += 65;
                 matchedComponents.push('city/municipality');
+            } else if (ambiguousCityMatch) {
+                score += 25;
+                matchedComponents.push('city/municipality (ambiguous provider field)');
             } else if (expected.city) {
-                softMismatches.push('city/municipality not confirmed');
+                softMismatches.push(
+                    localities.ambiguousCities.length ?
+                    `city/municipality ambiguous: ${localities.ambiguousCities.join(', ')}` :
+                    'city/municipality missing'
+                );
             }
 
             if (barangayMatch) {
                 score += 35;
-                matchedComponents.push('barangay');
+                matchedComponents.push(`barangay (${barangayMatchStatus})`);
             } else if (expected.barangay) {
                 score -= 20;
-                softMismatches.push('neighboring or different barangay label');
+                softMismatches.push(barangayMatchStatus);
             }
 
             const wantedStreet = normalizeText(expected.street);
@@ -955,29 +995,6 @@
                     }
                 });
 
-            const poiWords = [
-                'school',
-                'college',
-                'university',
-                'hospital',
-                'clinic',
-                'barangay hall',
-                'government',
-                'police',
-                'fire station',
-                'market',
-                'mall',
-                'church',
-                'chapel'
-            ];
-
-            poiWords.forEach(word => {
-                if (text.includes(word)) {
-                    score += 8;
-                    matchedComponents.push('landmark type');
-                }
-            });
-
             const addressText = normalizeText([
                 result.display_name,
                 ...localities.barangays,
@@ -993,22 +1010,34 @@
                 matchedComponents.push('address component');
             }
 
+            const meaningfulLandmark = wantedStreet.length >= 4 &&
+                !/^purok\s+\w+$/.test(wantedStreet) &&
+                !/^(street|road|sitio|phase|block|lot)\s+\w+$/.test(wantedStreet);
+
+            if (meaningfulLandmark && text.includes(wantedStreet)) {
+                score += 18;
+                matchedComponents.push('landmark/name supplied by user');
+            }
+
             if (provider === 'photon' && matchedComponents.length) {
                 score += 2;
             }
 
             const hasRequiredAdministrativeEvidence =
-                (!expected.province || provinceMatch) &&
-                (!expected.city || cityMatch);
+                (!expected.province || provinceMatch || ambiguousProvinceMatch) &&
+                (!expected.city || cityMatch || ambiguousCityMatch);
             const accepted = score >= 100 && hasRequiredAdministrativeEvidence;
 
             return {
                 accepted,
                 score,
+                expected,
+                returned,
                 reason: accepted ?
-                    `Confidence score ${score}; matched ${matchedComponents.join(', ') || 'supporting evidence'}` : `Confidence score ${score} below threshold 100 or missing required province/city evidence; ${softMismatches.join(', ') || 'insufficient supporting evidence'}`,
+                    `Confidence score ${score}; ${barangayMatchStatus}; matched ${matchedComponents.join(', ') || 'supporting evidence'}` : `Confidence score ${score} below threshold 100 or missing required province/city evidence; ${barangayMatchStatus}; ${softMismatches.join(', ') || 'insufficient supporting evidence'}`,
                 matchedComponents,
-                softMismatches
+                softMismatches,
+                barangayMatchStatus
             };
         }
 
@@ -1108,14 +1137,21 @@
                 result._reason = evaluation.reason;
 
                 console.log(
-                    evaluation.accepted ? 'ACCEPTED:' : 'REJECTED:',
-                    result.display_name || result.name || 'Unnamed result',
-                    'Score:',
-                    evaluation.score,
-                    'Matched:',
-                    evaluation.matchedComponents,
-                    'Reason:',
-                    evaluation.reason
+                    'CANDIDATE EVALUATION:', {
+                        name: result.display_name || result.name || 'Unnamed result',
+                        expected: evaluation.expected || {
+                            province: getSelectedText(province),
+                            city: getSelectedText(city),
+                            barangay: getSelectedText(barangay),
+                            street: street.value.trim()
+                        },
+                        returned: evaluation.returned || {},
+                        matches: evaluation.matchedComponents || [],
+                        barangayMatchStatus: evaluation.barangayMatchStatus || 'unknown',
+                        score: evaluation.score,
+                        accepted: evaluation.accepted,
+                        reason: evaluation.reason
+                    }
                 );
 
                 if (evaluation.accepted) {
