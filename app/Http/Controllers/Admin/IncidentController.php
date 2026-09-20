@@ -162,6 +162,101 @@ class IncidentController extends Controller
             'response-completed' => ['target' => 'incident', 'column' => 'completed_at', 'label' => 'Response Completed'],
         ];
 
+        if ($field === 'bulk') {
+            $dispatch = $incident->dispatches()->latest('created_at')->first();
+            $validated = $request->validate([
+                'timestamps' => ['required', 'array'],
+                'timestamps.*' => ['nullable', 'date_format:Y-m-d\\TH:i'],
+            ]);
+            $submitted = $validated['timestamps'];
+
+            foreach (['dispatch-created', 'driver-accepted', 'en-route'] as $dispatchField) {
+                if (!$dispatch && filled($submitted[$dispatchField] ?? null)) {
+                    return back()->withErrors(['timestamps' => 'A dispatch record is required before dispatch timestamps can be edited.'])->withInput();
+                }
+            }
+
+            $sequence = [
+                'incident-reported' => $incident->created_at,
+                'call-received' => $incident->call_received_at,
+                'dispatch-created' => $dispatch?->created_at,
+                'driver-accepted' => $dispatch?->accepted_at,
+                'response-started' => $incident->response_at,
+                'en-route' => $dispatch?->en_route_at,
+                'arrived-at-scene' => $incident->at_scene_at,
+                'at-patient' => $incident->at_patient_at,
+                'departed-from-scene' => $incident->depart_scene_at,
+                'arrived-at-hospital' => $incident->at_hospital_at,
+                'return-to-base' => $incident->return_to_base_at,
+                'response-completed' => $incident->completed_at,
+            ];
+
+            foreach ($timestampMap as $event => $definition) {
+                if (array_key_exists($event, $submitted)) {
+                    $sequence[$event] = filled($submitted[$event])
+                        ? Carbon::createFromFormat('Y-m-d\\TH:i', $submitted[$event])
+                        : null;
+                }
+            }
+
+            $previous = null;
+            foreach ($sequence as $event => $timestamp) {
+                if ($timestamp && $previous && $timestamp->lt($previous['time'])) {
+                    return back()->withErrors([
+                        'timestamps' => sprintf('%s cannot be earlier than %s.', $timestampMap[$event]['label'], $previous['label']),
+                    ])->withInput();
+                }
+
+                if ($timestamp) {
+                    $previous = ['label' => $timestampMap[$event]['label'], 'time' => $timestamp];
+                }
+            }
+
+            DB::transaction(function () use ($incident, $dispatch, $submitted, $timestampMap): void {
+                foreach ($timestampMap as $event => $definition) {
+                    if (!array_key_exists($event, $submitted)) {
+                        continue;
+                    }
+
+                    $newValue = filled($submitted[$event])
+                        ? Carbon::createFromFormat('Y-m-d\\TH:i', $submitted[$event])
+                        : null;
+                    $record = $definition['target'] === 'dispatch' ? $dispatch : $incident;
+                    $oldValue = $record?->getAttribute($definition['column']);
+                    $changed = ($oldValue === null) !== ($newValue === null)
+                        || ($oldValue && $newValue && !$oldValue->equalTo($newValue));
+
+                    if ($record && $changed) {
+                        $record->update([$definition['column'] => $newValue]);
+
+                        if ($event === 'arrived-at-scene' && $dispatch) {
+                            $dispatch->update(['arrived_at' => $newValue]);
+                        }
+
+                        if ($event === 'response-completed' && $dispatch) {
+                            $dispatch->update(['completed_at' => $newValue]);
+                        }
+
+                        AuditService::log(
+                            'updated',
+                            'Emergency Time Record',
+                            sprintf(
+                                'MDRRMO management user updated Emergency Time Record for %s (incident ID %d, dispatch ID %s). Event: %s. Old: %s. New: %s.',
+                                $incident->incident_number,
+                                $incident->id,
+                                $dispatch?->id ?? 'N/A',
+                                $definition['label'],
+                                $oldValue?->format('M d, Y h:i A') ?? 'Not yet recorded',
+                                $newValue?->format('M d, Y h:i A') ?? 'Not yet recorded'
+                            )
+                        );
+                    }
+                }
+            });
+
+            return redirect()->route('admin.incidents.show', $incident)->with('success', 'Emergency time record updated.');
+        }
+
         abort_unless(isset($timestampMap[$field]), 404);
 
         $definition = $timestampMap[$field];

@@ -318,10 +318,15 @@
             <div class="card-body">
                 @php
                 $canEditTimestamps = auth()->user()?->hasRole(['admin', 'super-admin']);
+                $latestDispatch = $incident->dispatches->sortByDesc('created_at')->first();
                 $timeLabels = [
+                'Incident Reported' => ['timestamp' => $incident->created_at, 'field' => 'incident-reported'],
                 'Call Received' => ['timestamp' => $incident->call_received_at, 'field' => 'call-received'],
-                'En Route' => ['timestamp' => $incident->response_at, 'field' => 'en-route'],
-                'Arrived at Scene' => ['timestamp' => $incident->at_scene_at, 'field' => 'arrived-at-scene'],
+                'Dispatch Created' => ['timestamp' => $latestDispatch?->created_at, 'field' => 'dispatch-created'],
+                'Driver Accepted' => ['timestamp' => $latestDispatch?->accepted_at, 'field' => 'driver-accepted'],
+                'Response Started' => ['timestamp' => $incident->response_at, 'field' => 'response-started'],
+                'En Route' => ['timestamp' => $latestDispatch?->en_route_at, 'field' => 'en-route'],
+                'Arrived at Scene' => ['timestamp' => $incident->at_scene_at ?? $latestDispatch?->arrived_at, 'field' => 'arrived-at-scene'],
                 'At Patient' => ['timestamp' => $incident->at_patient_at, 'field' => 'at-patient'],
                 'Departed from Scene' => ['timestamp' => $incident->depart_scene_at, 'field' => 'departed-from-scene'],
                 'Arrived at Hospital' => ['timestamp' => $incident->at_hospital_at, 'field' => 'arrived-at-hospital'],
@@ -355,21 +360,24 @@
                     </div>
                     <div class="modal-body">
                         <p class="small text-white-50">Update one operational event at a time. Chronological validation remains enforced when saving.</p>
-                        @foreach($timeLabels as $label => $event)
-                        <form method="POST" action="{{ route('admin.incidents.timestamp.update', [$incident, $event['field']]) }}" class="row g-2 align-items-end border-bottom pb-3 mb-3">
+                        <form method="POST" action="{{ route('admin.incidents.timestamp.update', [$incident, 'bulk']) }}">
                             @csrf
-                            <div class="col-md-8">
-                                <label for="modal-timestamp-{{ $event['field'] }}" class="form-label">{{ $label }}</label>
-                                <input type="datetime-local" id="modal-timestamp-{{ $event['field'] }}" name="timestamp" class="form-control" value="{{ $event['timestamp']?->format('Y-m-d\\TH:i') }}" required>
+                            <div class="row g-3">
+                                @foreach($timeLabels as $label => $event)
+                                <div class="col-md-6">
+                                    <label for="modal-timestamp-{{ $event['field'] }}" class="form-label">{{ $label }}</label>
+                                    <input type="datetime-local" id="modal-timestamp-{{ $event['field'] }}" name="timestamps[{{ $event['field'] }}]" class="form-control" value="{{ $event['timestamp']?->format('Y-m-d\\TH:i') }}">
+                                </div>
+                                @endforeach
                             </div>
-                            <div class="col-md-4">
-                                <button type="submit" class="btn btn-primary w-100">
+                            <div class="d-flex justify-content-end gap-2 mt-4">
+                                <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-save me-1"></i>
-                                    Save {{ $label }}
+                                    Save All Times
                                 </button>
                             </div>
                         </form>
-                        @endforeach
                     </div>
                 </div>
             </div>
