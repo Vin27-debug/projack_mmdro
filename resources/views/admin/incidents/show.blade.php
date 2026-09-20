@@ -302,23 +302,26 @@
 
         <div class="card border-0 shadow-sm mb-4">
 
-            <div class="card-header bg-dark text-white">
-                <i class="bi bi-stopwatch me-2"></i>
-                Emergency Time Record
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="bi bi-stopwatch me-2"></i>
+                    Emergency Time Record
+                </span>
+                @if(auth()->user()?->hasRole(['admin', 'super-admin']))
+                <button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#editTimeRecordModal">
+                    <i class="bi bi-pencil-square me-1"></i>
+                    Edit Time Record
+                </button>
+                @endif
             </div>
 
             <div class="card-body">
                 @php
                 $canEditTimestamps = auth()->user()?->hasRole(['admin', 'super-admin']);
-                $latestDispatch = $incident->dispatches->sortByDesc('created_at')->first();
                 $timeLabels = [
-                'Incident Reported' => ['timestamp' => $incident->created_at, 'field' => 'incident-reported'],
                 'Call Received' => ['timestamp' => $incident->call_received_at, 'field' => 'call-received'],
-                'Dispatch Created' => ['timestamp' => $latestDispatch?->created_at, 'field' => 'dispatch-created'],
-                'Driver Accepted' => ['timestamp' => $latestDispatch?->accepted_at, 'field' => 'driver-accepted'],
-                'Response Started' => ['timestamp' => $incident->response_at, 'field' => 'response-started'],
-                'En Route' => ['timestamp' => $latestDispatch?->en_route_at, 'field' => 'en-route'],
-                'Arrived at Scene' => ['timestamp' => $incident->at_scene_at ?? $latestDispatch?->arrived_at, 'field' => 'arrived-at-scene'],
+                'En Route' => ['timestamp' => $incident->response_at, 'field' => 'en-route'],
+                'Arrived at Scene' => ['timestamp' => $incident->at_scene_at, 'field' => 'arrived-at-scene'],
                 'At Patient' => ['timestamp' => $incident->at_patient_at, 'field' => 'at-patient'],
                 'Departed from Scene' => ['timestamp' => $incident->depart_scene_at, 'field' => 'departed-from-scene'],
                 'Arrived at Hospital' => ['timestamp' => $incident->at_hospital_at, 'field' => 'arrived-at-hospital'],
@@ -332,27 +335,46 @@
                     <span class="fw-semibold">{{ $label }}</span>
                     <div class="d-flex align-items-center gap-2">
                         <span class="text-muted">{{ $event['timestamp']?->format('M d, Y h:i A') ?? 'Not yet recorded' }}</span>
-                        @if($canEditTimestamps)
-                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#edit-time-{{ $event['field'] }}" aria-expanded="false">Edit</button>
-                        @endif
                     </div>
                 </div>
-                @if($canEditTimestamps)
-                <div class="collapse py-2" id="edit-time-{{ $event['field'] }}">
-                    <form method="POST" action="{{ route('admin.incidents.timestamp.update', [$incident, $event['field']]) }}" class="d-flex flex-wrap align-items-end gap-2">
-                        @csrf
-                        <div>
-                            <label for="timestamp-{{ $event['field'] }}" class="form-label small mb-1">{{ $label }}</label>
-                            <input type="datetime-local" id="timestamp-{{ $event['field'] }}" name="timestamp" class="form-control form-control-sm" value="{{ $event['timestamp']?->format('Y-m-d\\TH:i') }}" required>
-                        </div>
-                        <button type="submit" class="btn btn-sm btn-primary">Save Time</button>
-                    </form>
-                </div>
-                @endif
                 @endforeach
             </div>
 
         </div>
+
+        @if($canEditTimestamps)
+        <div class="modal fade" id="editTimeRecordModal" tabindex="-1" aria-labelledby="editTimeRecordModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content bg-dark text-white">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editTimeRecordModalLabel">
+                            <i class="bi bi-pencil-square me-2"></i>
+                            Edit Time Record
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="small text-white-50">Update one operational event at a time. Chronological validation remains enforced when saving.</p>
+                        @foreach($timeLabels as $label => $event)
+                        <form method="POST" action="{{ route('admin.incidents.timestamp.update', [$incident, $event['field']]) }}" class="row g-2 align-items-end border-bottom pb-3 mb-3">
+                            @csrf
+                            <div class="col-md-8">
+                                <label for="modal-timestamp-{{ $event['field'] }}" class="form-label">{{ $label }}</label>
+                                <input type="datetime-local" id="modal-timestamp-{{ $event['field'] }}" name="timestamp" class="form-control" value="{{ $event['timestamp']?->format('Y-m-d\\TH:i') }}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-save me-1"></i>
+                                    Save {{ $label }}
+                                </button>
+                            </div>
+                        </form>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
 
         {{-- ATTACHMENTS --}}
 
