@@ -69,6 +69,7 @@ class Incident extends Model
         'at_patient_at',
         'depart_scene_at',
         'at_hospital_at',
+        'return_to_base_at',
         'archived_at',
         'archived_by',
         'completed_at',
@@ -99,6 +100,7 @@ class Incident extends Model
             'at_patient_at' => 'datetime',
             'depart_scene_at' => 'datetime',
             'at_hospital_at' => 'datetime',
+            'return_to_base_at' => 'datetime',
             'archived_at' => 'datetime',
             'latitude' => 'float',
             'longitude' => 'float',
@@ -140,10 +142,10 @@ class Incident extends Model
         }
 
         return match (strtolower(trim($priority))) {
-            'low' => 'Green — Low',
-            'medium' => 'Yellow — Medium',
-            'high' => 'Red — High',
-            'critical' => 'Black — Critical',
+            'low' => 'Green — Minor/Minimal',
+            'medium' => 'Yellow — Delayed',
+            'high' => 'Red — Immediate/Critical',
+            'critical' => 'Black — Disease',
             default => (string) $priority,
         };
     }

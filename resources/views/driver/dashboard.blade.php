@@ -939,7 +939,7 @@ is_numeric($incidentLng);
                             @if($currentDispatch->incident?->at_scene_at === null)
                             <div class="alert alert-warning mb-0 flex-fill">
                                 <i class="bi bi-geo-alt-fill me-1"></i>
-                                En Route. GPS will record At Scene when you enter the incident area.
+                                En Route. GPS will record Arrived at Scene when you enter the incident area.
                             </div>
                             @elseif($currentDispatch->incident?->at_patient_at === null)
                             <form method="POST" action="{{ route('driver.incidents.at-patient', $currentDispatch->incident) }}" class="flex-fill">
@@ -952,14 +952,22 @@ is_numeric($incidentLng);
                             @elseif($currentDispatch->incident?->depart_scene_at === null)
                             <div class="alert alert-info mb-0 flex-fill">
                                 <i class="bi bi-truck-front me-1"></i>
-                                At Patient. GPS will record Depart Scene after you leave the incident area.
+                                At Patient. GPS will record Departed from Scene after you leave the incident area.
                             </div>
                             @elseif($currentDispatch->incident?->at_hospital_at === null)
                             <form method="POST" action="{{ route('driver.incidents.at-hospital', $currentDispatch->incident) }}" class="flex-fill">
                                 @csrf
                                 <button type="submit" class="btn btn-success w-100 driver-action-btn">
                                     <i class="bi bi-hospital me-1"></i>
-                                    Mark At Hospital
+                                    Mark Arrived at Hospital
+                                </button>
+                            </form>
+                            @elseif($currentDispatch->incident?->return_to_base_at === null)
+                            <form method="POST" action="{{ route('driver.incidents.returning', $currentDispatch->incident) }}" class="flex-fill">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-secondary w-100 driver-action-btn">
+                                    <i class="bi bi-arrow-repeat me-1"></i>
+                                    Mark Returned to Base
                                 </button>
                             </form>
                             @else
@@ -991,14 +999,22 @@ is_numeric($incidentLng);
                             @elseif($currentDispatch->incident?->depart_scene_at === null)
                             <div class="alert alert-info mb-0 flex-fill">
                                 <i class="bi bi-truck-front me-1"></i>
-                                At Patient. GPS will record Depart Scene after you leave the incident area.
+                                At Patient. GPS will record Departed from Scene after you leave the incident area.
                             </div>
                             @elseif($currentDispatch->incident?->at_hospital_at === null)
                             <form method="POST" action="{{ route('driver.incidents.at-hospital', $currentDispatch->incident) }}" class="flex-fill">
                                 @csrf
                                 <button type="submit" class="btn btn-success w-100 driver-action-btn">
                                     <i class="bi bi-hospital me-1"></i>
-                                    Mark At Hospital
+                                    Mark Arrived at Hospital
+                                </button>
+                            </form>
+                            @elseif($currentDispatch->incident?->return_to_base_at === null)
+                            <form method="POST" action="{{ route('driver.incidents.returning', $currentDispatch->incident) }}" class="flex-fill">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-secondary w-100 driver-action-btn">
+                                    <i class="bi bi-arrow-repeat me-1"></i>
+                                    Mark Returned to Base
                                 </button>
                             </form>
                             @else
@@ -1104,15 +1120,7 @@ is_numeric($incidentLng);
 
                             </a>
 
-                            @if($driver->status === \App\Models\Driver::STATUS_RETURNING)
-                            <form method="POST" action="{{ route('driver.incidents.returning', $reportableDispatch->incident) }}" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-outline-secondary driver-action-btn">
-                                    <i class="bi bi-arrow-repeat me-1"></i>
-                                    Mark Returned to Base
-                                </button>
-                            </form>
-
+                            @if($reportableDispatch->incident->return_to_base_at)
                             <form method="POST" action="{{ route('driver.incidents.ready', $reportableDispatch->incident) }}" class="d-inline">
                                 @csrf
                                 <button type="submit" class="btn btn-success driver-action-btn">

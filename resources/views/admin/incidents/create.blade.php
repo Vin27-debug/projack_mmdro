@@ -94,10 +94,10 @@
         <div class="mb-4">
             <label for="priority" class="form-label">Priority</label>
             <select id="priority" name="priority" class="form-select">
-                <option value="Low" {{ old('priority') === 'Low' ? 'selected' : '' }}>🟢 Green — Low</option>
-                <option value="Medium" {{ old('priority', 'Medium') === 'Medium' ? 'selected' : '' }}>🟡 Yellow — Medium</option>
-                <option value="High" {{ old('priority') === 'High' ? 'selected' : '' }}>🔴 Red — High</option>
-                <option value="Critical" {{ old('priority') === 'Critical' ? 'selected' : '' }}>⚫ Black — Critical</option>
+                <option value="Low" {{ old('priority') === 'Low' ? 'selected' : '' }}>🟢 Green — Minor/Minimal</option>
+                <option value="Medium" {{ old('priority', 'Medium') === 'Medium' ? 'selected' : '' }}>🟡 Yellow — Delayed</option>
+                <option value="High" {{ old('priority') === 'High' ? 'selected' : '' }}>🔴 Red — Immediate/Critical</option>
+                <option value="Critical" {{ old('priority') === 'Critical' ? 'selected' : '' }}>⚫ Black — Disease</option>
             </select>
         </div>
 

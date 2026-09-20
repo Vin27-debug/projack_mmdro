@@ -43,10 +43,10 @@ class IncidentPriorityConsistencyTest extends TestCase
 
     public function test_priority_display_mapping_is_consistent(): void
     {
-        $this->assertSame('Green — Low', Incident::priorityDisplayLabel(Incident::PRIORITY_LOW));
-        $this->assertSame('Yellow — Medium', Incident::priorityDisplayLabel(Incident::PRIORITY_MEDIUM));
-        $this->assertSame('Red — High', Incident::priorityDisplayLabel(Incident::PRIORITY_HIGH));
-        $this->assertSame('Black — Critical', Incident::priorityDisplayLabel(Incident::PRIORITY_CRITICAL));
+        $this->assertSame('Green — Minor/Minimal', Incident::priorityDisplayLabel(Incident::PRIORITY_LOW));
+        $this->assertSame('Yellow — Delayed', Incident::priorityDisplayLabel(Incident::PRIORITY_MEDIUM));
+        $this->assertSame('Red — Immediate/Critical', Incident::priorityDisplayLabel(Incident::PRIORITY_HIGH));
+        $this->assertSame('Black — Disease', Incident::priorityDisplayLabel(Incident::PRIORITY_CRITICAL));
     }
 
     public function test_incident_creation_form_uses_consistent_priority_labels(): void
@@ -58,10 +58,10 @@ class IncidentPriorityConsistencyTest extends TestCase
         $response = $this->actingAs($user)->get(route('admin.incidents.create'));
 
         $response->assertOk();
-        $response->assertSee('Green — Low');
-        $response->assertSee('Yellow — Medium');
-        $response->assertSee('Red — High');
-        $response->assertSee('Black — Critical');
+        $response->assertSee('Green — Minor/Minimal');
+        $response->assertSee('Yellow — Delayed');
+        $response->assertSee('Red — Immediate/Critical');
+        $response->assertSee('Black — Disease');
         $response->assertDontSee('Dead On Spot');
         $response->assertDontSee('Dead on Spot');
     }

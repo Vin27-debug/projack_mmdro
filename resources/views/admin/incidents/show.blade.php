@@ -309,21 +309,46 @@
 
             <div class="card-body">
                 @php
+                $canEditTimestamps = auth()->user()?->hasRole(['admin', 'super-admin']);
+                $latestDispatch = $incident->dispatches->sortByDesc('created_at')->first();
                 $timeLabels = [
-                'Call Received' => $incident->call_received_at,
-                'Response' => $incident->response_at,
-                'At Scene' => $incident->at_scene_at,
-                'At Patient' => $incident->at_patient_at,
-                'Depart Scene' => $incident->depart_scene_at,
-                'At Hospital' => $incident->at_hospital_at,
+                'Incident Reported' => ['timestamp' => $incident->created_at, 'field' => 'incident-reported'],
+                'Call Received' => ['timestamp' => $incident->call_received_at, 'field' => 'call-received'],
+                'Dispatch Created' => ['timestamp' => $latestDispatch?->created_at, 'field' => 'dispatch-created'],
+                'Driver Accepted' => ['timestamp' => $latestDispatch?->accepted_at, 'field' => 'driver-accepted'],
+                'Response Started' => ['timestamp' => $incident->response_at, 'field' => 'response-started'],
+                'En Route' => ['timestamp' => $latestDispatch?->en_route_at, 'field' => 'en-route'],
+                'Arrived at Scene' => ['timestamp' => $incident->at_scene_at ?? $latestDispatch?->arrived_at, 'field' => 'arrived-at-scene'],
+                'At Patient' => ['timestamp' => $incident->at_patient_at, 'field' => 'at-patient'],
+                'Departed from Scene' => ['timestamp' => $incident->depart_scene_at, 'field' => 'departed-from-scene'],
+                'Arrived at Hospital' => ['timestamp' => $incident->at_hospital_at, 'field' => 'arrived-at-hospital'],
+                'Return to Base' => ['timestamp' => $incident->return_to_base_at, 'field' => 'return-to-base'],
+                'Response Completed' => ['timestamp' => $incident->completed_at ?? $latestDispatch?->completed_at, 'field' => 'response-completed'],
                 ];
                 @endphp
 
-                @foreach($timeLabels as $label => $timestamp)
+                @foreach($timeLabels as $label => $event)
                 <div class="d-flex justify-content-between align-items-center border-bottom py-2">
                     <span class="fw-semibold">{{ $label }}</span>
-                    <span class="text-muted">{{ $timestamp?->format('M d, Y h:i A') ?? 'Not yet recorded' }}</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted">{{ $event['timestamp']?->format('M d, Y h:i A') ?? 'Not yet recorded' }}</span>
+                        @if($canEditTimestamps)
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#edit-time-{{ $event['field'] }}" aria-expanded="false">Edit</button>
+                        @endif
+                    </div>
                 </div>
+                @if($canEditTimestamps)
+                <div class="collapse py-2" id="edit-time-{{ $event['field'] }}">
+                    <form method="POST" action="{{ route('admin.incidents.timestamp.update', [$incident, $event['field']]) }}" class="d-flex flex-wrap align-items-end gap-2">
+                        @csrf
+                        <div>
+                            <label for="timestamp-{{ $event['field'] }}" class="form-label small mb-1">{{ $label }}</label>
+                            <input type="datetime-local" id="timestamp-{{ $event['field'] }}" name="timestamp" class="form-control form-control-sm" value="{{ $event['timestamp']?->format('Y-m-d\\TH:i') }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary">Save Time</button>
+                    </form>
+                </div>
+                @endif
                 @endforeach
             </div>
 
@@ -551,20 +576,19 @@
             <div class="card-header bg-dark text-white"><i class="bi bi-list-check me-2"></i>Incident Timeline</div>
             <div class="card-body">
                 @php
-                $latestDispatch = $incident->dispatches->sortByDesc('created_at')->first();
                 $timelineEntries = [
                 'Incident Reported' => $incident->created_at,
                 'Dispatch Created' => $latestDispatch?->created_at,
                 'Driver Accepted' => $latestDispatch?->accepted_at,
                 'En Route' => $latestDispatch?->en_route_at,
-                'At Scene' => $latestDispatch?->arrived_at ?? $incident->at_scene_at,
+                'Arrived at Scene' => $incident->at_scene_at ?? $latestDispatch?->arrived_at,
                 'At Patient' => $incident->at_patient_at,
-                'Depart Scene' => $incident->depart_scene_at,
-                'At Hospital' => $incident->at_hospital_at,
-                'Response Completed' => $incident->completed_at ?: $latestDispatch?->completed_at,
+                'Departed from Scene' => $incident->depart_scene_at,
+                'Arrived at Hospital' => $incident->at_hospital_at,
+                'Return to Base' => $incident->return_to_base_at,
+                'Response Completed' => $incident->completed_at ?? $latestDispatch?->completed_at,
                 'Report Submitted' => $incident->report?->submitted_at,
                 'Report Approved' => $incident->report?->status === 'approved' ? $incident->report->updated_at : null,
-                'Return to Base / Report to Station' => $incident->completed_at,
                 'Ready for Next Mission' => $incident->closed_at,
                 ];
                 @endphp

@@ -500,15 +500,15 @@ class DashboardController extends Controller
         $dispatch = $this->getDriverDispatchForIncident($incident, $driver, [Dispatch::STATUS_EN_ROUTE]);
 
         if (!$dispatch) {
-            abort(403, 'Dispatch is not eligible to be marked at scene.');
+            abort(403, 'Dispatch is not eligible to be marked as arrived at scene.');
         }
 
         if ($incident->response_at === null) {
-            return back()->with('error', 'Response time must be recorded before at scene.');
+            return back()->with('error', 'Response time must be recorded before arriving at scene.');
         }
 
         if ($incident->at_scene_at) {
-            return back()->with('error', 'At scene time has already been recorded.');
+            return back()->with('error', 'Arrived at Scene time has already been recorded.');
         }
 
         DB::transaction(function () use ($incident, $dispatch, $driver) {
@@ -527,7 +527,7 @@ class DashboardController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Scene arrival time recorded.');
+        return back()->with('success', 'Arrived at Scene time recorded.');
     }
 
     /**
@@ -589,7 +589,7 @@ class DashboardController extends Controller
         }
 
         if ($incident->depart_scene_at) {
-            return back()->with('error', 'Depart scene time has already been recorded.');
+            return back()->with('error', 'Departed from Scene time has already been recorded.');
         }
 
         $incident->update([
@@ -597,7 +597,7 @@ class DashboardController extends Controller
             'status' => Incident::STATUS_RESPONDING,
         ]);
 
-        return back()->with('success', 'Depart scene time recorded.');
+        return back()->with('success', 'Departed from Scene time recorded.');
     }
 
     /**
@@ -624,14 +624,14 @@ class DashboardController extends Controller
         }
 
         if ($incident->at_hospital_at) {
-            return back()->with('error', 'At hospital time has already been recorded.');
+            return back()->with('error', 'Arrived at Hospital time has already been recorded.');
         }
 
         $incident->update([
             'at_hospital_at' => now(),
         ]);
 
-        return back()->with('success', 'At hospital time recorded.');
+        return back()->with('success', 'Arrived at Hospital time recorded.');
     }
 
     /**
@@ -664,10 +664,6 @@ class DashboardController extends Controller
             abort(403, 'Dispatch is not eligible to complete this incident.');
         }
 
-        if ($incident->at_hospital_at === null) {
-            return back()->with('error', 'At hospital time must be recorded before completing the incident.');
-        }
-
         if ($incident->completed_at) {
             return back()->with('error', 'Incident has already been completed.');
         }
@@ -675,6 +671,7 @@ class DashboardController extends Controller
         DB::transaction(function () use ($incident, $dispatch, $driver) {
             $incident->update([
                 'status' => Incident::STATUS_COMPLETED,
+                'return_to_base_at' => $incident->return_to_base_at ?? now(),
                 'completed_at' => now(),
             ]);
 
@@ -707,17 +704,25 @@ class DashboardController extends Controller
             abort(403, 'Driver profile not found.');
         }
 
-        $dispatch = $this->getDriverDispatchForIncident($incident, $driver, [Dispatch::STATUS_COMPLETED]);
+        $dispatch = $this->getDriverDispatchForIncident($incident, $driver, [Dispatch::STATUS_ARRIVED]);
 
         if (!$dispatch) {
             abort(403, 'This incident is not in a return-to-base state.');
         }
 
-        if ($incident->status !== Incident::STATUS_COMPLETED) {
-            return back()->with('error', 'This incident must be completed before the vehicle can be checked back in.');
+        if ($incident->at_hospital_at === null) {
+            return back()->with('error', 'Hospital arrival must be recorded before returning to base.');
         }
 
-        DB::transaction(function () use ($driver, $dispatch) {
+        if ($incident->return_to_base_at) {
+            return back()->with('error', 'Return to base time has already been recorded.');
+        }
+
+        DB::transaction(function () use ($incident, $driver, $dispatch) {
+            $incident->update([
+                'return_to_base_at' => now(),
+            ]);
+
             $driver->update([
                 'status' => Driver::STATUS_RETURNING,
             ]);

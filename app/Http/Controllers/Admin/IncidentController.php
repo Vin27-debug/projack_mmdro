@@ -147,42 +147,91 @@ class IncidentController extends Controller
     {
         abort_unless(auth()->user()?->hasRole(['admin', 'super-admin']), 403, 'You are not authorized to update emergency timestamps.');
 
-        $allowedFields = [
-            'call_received_at',
-            'response_at',
-            'at_scene_at',
-            'at_patient_at',
-            'depart_scene_at',
-            'at_hospital_at',
+        $timestampMap = [
+            'incident-reported' => ['target' => 'incident', 'column' => 'created_at', 'label' => 'Incident Reported'],
+            'call-received' => ['target' => 'incident', 'column' => 'call_received_at', 'label' => 'Call Received'],
+            'dispatch-created' => ['target' => 'dispatch', 'column' => 'created_at', 'label' => 'Dispatch Created'],
+            'driver-accepted' => ['target' => 'dispatch', 'column' => 'accepted_at', 'label' => 'Driver Accepted'],
+            'response-started' => ['target' => 'incident', 'column' => 'response_at', 'label' => 'Response Started'],
+            'en-route' => ['target' => 'dispatch', 'column' => 'en_route_at', 'label' => 'En Route'],
+            'arrived-at-scene' => ['target' => 'incident', 'column' => 'at_scene_at', 'label' => 'Arrived at Scene'],
+            'at-patient' => ['target' => 'incident', 'column' => 'at_patient_at', 'label' => 'At Patient'],
+            'departed-from-scene' => ['target' => 'incident', 'column' => 'depart_scene_at', 'label' => 'Departed from Scene'],
+            'arrived-at-hospital' => ['target' => 'incident', 'column' => 'at_hospital_at', 'label' => 'Arrived at Hospital'],
+            'return-to-base' => ['target' => 'incident', 'column' => 'return_to_base_at', 'label' => 'Return to Base'],
+            'response-completed' => ['target' => 'incident', 'column' => 'completed_at', 'label' => 'Response Completed'],
         ];
 
-        abort_unless(in_array($field, $allowedFields, true), 404);
+        abort_unless(isset($timestampMap[$field]), 404);
 
-        $request->validate([
-            'timestamp' => ['required', 'date'],
+        $definition = $timestampMap[$field];
+        $dispatch = $incident->dispatches()->latest('created_at')->first();
+
+        if ($definition['target'] === 'dispatch' && !$dispatch) {
+            return back()->withErrors(['timestamp' => 'A dispatch record is required before this event can be edited.']);
+        }
+
+        $validated = $request->validate([
+            'timestamp' => ['required', 'date_format:Y-m-d\\TH:i'],
         ]);
 
-        $newValue = Carbon::parse($request->input('timestamp'));
-        $oldValue = $incident->getAttribute($field);
+        $newValue = Carbon::createFromFormat('Y-m-d\\TH:i', $validated['timestamp']);
+        $sequence = [
+            'incident-reported' => $incident->created_at,
+            'call-received' => $incident->call_received_at,
+            'dispatch-created' => $dispatch?->created_at,
+            'driver-accepted' => $dispatch?->accepted_at,
+            'response-started' => $incident->response_at,
+            'en-route' => $dispatch?->en_route_at,
+            'arrived-at-scene' => $incident->at_scene_at,
+            'at-patient' => $incident->at_patient_at,
+            'departed-from-scene' => $incident->depart_scene_at,
+            'arrived-at-hospital' => $incident->at_hospital_at,
+            'return-to-base' => $incident->return_to_base_at,
+            'response-completed' => $incident->completed_at,
+        ];
+        $sequence[$field] = $newValue;
 
-        $incident->update([$field => $newValue]);
+        $previous = null;
+        foreach ($sequence as $event => $timestamp) {
+            if ($timestamp && $previous && $timestamp->lt($previous['time'])) {
+                return back()->withErrors([
+                    'timestamp' => sprintf('%s cannot be earlier than %s.', $definition['label'], $previous['label']),
+                ])->withInput();
+            }
 
-        $label = match ($field) {
-            'call_received_at' => 'Call Received',
-            'response_at' => 'Response',
-            'at_scene_at' => 'At Scene',
-            'at_patient_at' => 'At Patient',
-            'depart_scene_at' => 'Depart Scene',
-            'at_hospital_at' => 'At Hospital',
-        };
+            if ($timestamp) {
+                $previous = ['label' => $timestampMap[$event]['label'], 'time' => $timestamp];
+            }
+        }
+
+        $oldValue = $definition['target'] === 'dispatch'
+            ? $dispatch?->getAttribute($definition['column'])
+            : $incident->getAttribute($definition['column']);
+
+        if ($definition['target'] === 'dispatch') {
+            $dispatch->update([$definition['column'] => $newValue]);
+        } else {
+            $incident->update([$definition['column'] => $newValue]);
+        }
+
+        if ($field === 'arrived-at-scene' && $dispatch) {
+            $dispatch->update(['arrived_at' => $newValue]);
+        }
+
+        if ($field === 'response-completed' && $dispatch) {
+            $dispatch->update(['completed_at' => $newValue]);
+        }
 
         AuditService::log(
             'updated',
             'Emergency Time Record',
             sprintf(
-                'Admin updated Emergency Time Record for %s. Field: %s. Old: %s. New: %s.',
+                'MDRRMO management user updated Emergency Time Record for %s (incident ID %d, dispatch ID %s). Event: %s. Old: %s. New: %s.',
                 $incident->incident_number,
-                $label,
+                $incident->id,
+                $dispatch?->id ?? 'N/A',
+                $definition['label'],
                 $oldValue ? $oldValue->format('M d, Y h:i A') : 'Not yet recorded',
                 $newValue->format('M d, Y h:i A')
             )
