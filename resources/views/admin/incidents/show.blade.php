@@ -716,24 +716,24 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: .04em;
-        color: #6c757d;
+        color: #94a3b8;
         margin-bottom: 4px;
     }
 
     .field-value {
-        color: #212529;
+        color: #f8fafc;
         font-size: 0.95rem;
         font-weight: 500;
     }
 
     .assignment-row {
         padding-bottom: 10px;
-        border-bottom: 1px solid #e9ecef;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .dispatch-history-item {
         padding: 12px 0;
-        border-bottom: 1px solid #e9ecef;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .dispatch-history-item:last-child {

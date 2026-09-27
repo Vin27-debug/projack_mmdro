@@ -86,13 +86,14 @@
             place-items: center;
             padding: 0.3rem;
             background: #0b2c68;
-            border: 1px solid rgba(255, 255, 255, 0.14);
+            --mr-bg: #08172f;
         }
 
+        --mr-surface: #0f2345;
+
         .admin-brand-mark img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
+            --mr-text: #f8fafc;
+            --mr-muted: #94a3b8;
         }
 
         .admin-brand-copy,
@@ -107,57 +108,68 @@
         .admin-sidebar:focus-within .admin-brand-copy,
         body.admin-sidebar-expanded .admin-brand-copy,
         .admin-sidebar:hover .nav-label,
+        background: var(--mr-bg);
+        color: var(--mr-text);
         .admin-sidebar:focus-within .nav-label,
         body.admin-sidebar-expanded .nav-label,
         .admin-sidebar:hover .admin-nav-group summary span,
         .admin-sidebar:focus-within .admin-nav-group summary span,
         body.admin-sidebar-expanded .admin-nav-group summary span,
+        background: var(--mr-bg);
+
         .admin-sidebar:hover .control-label,
         .admin-sidebar:focus-within .control-label,
         body.admin-sidebar-expanded .control-label,
         .admin-sidebar:hover .admin-user-copy,
         .admin-sidebar:focus-within .admin-user-copy,
         body.admin-sidebar-expanded .admin-user-copy {
+            background: var(--mr-bg);
             display: block;
         }
 
         @media (min-width: 992px) {
             .admin-sidebar:not(:hover):not(:focus-within) .admin-brand {
                 justify-content: center;
-            }
+                background: #0f2345;
 
-            .admin-sidebar:not(:hover):not(:focus-within) .admin-nav-group summary {
+                color: #f8fafc;
                 display: none;
             }
 
             .admin-sidebar:not(:hover):not(:focus-within) .nav-link,
-            .admin-sidebar:not(:hover):not(:focus-within) .admin-control,
-            .admin-sidebar:not(:hover):not(:focus-within) .admin-logout,
-            .admin-sidebar:not(:hover):not(:focus-within) .admin-user {
-                justify-content: center;
-            }
+            background: #0f2345;
+            border-color: #014cfd;
+            box-shadow: 0 0 0 0.25rem rgba(1, 76, 253, 0.16);
+            justify-content: center;
+        }
 
-            .admin-sidebar:not(:hover):not(:focus-within) .nav-link,
-            .admin-sidebar:not(:hover):not(:focus-within) .admin-control,
-            .admin-sidebar:not(:hover):not(:focus-within) .admin-logout {
-                padding-left: 0.6rem;
-                padding-right: 0.6rem;
-            }
+        .form-control::placeholder,
+        .form-select::placeholder,
+        .form-text {
+            color: #94a3b8;
+        }
 
-            .admin-sidebar:not(:hover):not(:focus-within) .admin-sidebar-footer .admin-user {
-                padding-left: 0;
-                padding-right: 0;
-            }
+        .admin-sidebar:not(:hover):not(:focus-within) .nav-link,
+        .admin-sidebar:not(:hover):not(:focus-within) .admin-control,
+        .admin-sidebar:not(:hover):not(:focus-within) .admin-logout {
+            padding-left: 0.6rem;
+            padding-right: 0.6rem;
+        }
 
-            .admin-sidebar:not(:hover):not(:focus-within) .admin-sidebar .badge {
-                display: none;
-            }
+        .admin-sidebar:not(:hover):not(:focus-within) .admin-sidebar-footer .admin-user {
+            padding-left: 0;
+            padding-right: 0;
+        }
 
-            .admin-sidebar:hover .admin-nav-group summary,
-            .admin-sidebar:focus-within .admin-nav-group summary,
-            body.admin-sidebar-expanded .admin-nav-group summary {
-                display: flex;
-            }
+        .admin-sidebar:not(:hover):not(:focus-within) .admin-sidebar .badge {
+            display: none;
+        }
+
+        .admin-sidebar:hover .admin-nav-group summary,
+        .admin-sidebar:focus-within .admin-nav-group summary,
+        body.admin-sidebar-expanded .admin-nav-group summary {
+            display: flex;
+        }
         }
 
         .admin-brand-title {
@@ -714,144 +726,144 @@ return Route::has($name) ? route($name) : '#';
     <div class="admin-layout">
         <aside class="admin-sidebar" id="adminSidebar" aria-label="Admin sidebar">
 
-    <div class="admin-brand">
-        <div class="admin-brand-mark">
-            <img src="{{ asset('favicon.ico') }}" alt="MuniResQ logo">
-        </div>
-
-        <div class="admin-brand-copy">
-            <div class="admin-brand-title">MuniResQ</div>
-            <div class="admin-brand-subtitle">Admin Command</div>
-        </div>
-    </div>
-
-    <nav class="admin-nav" aria-label="Admin navigation">
-
-        <details class="admin-nav-group" open>
-            <summary><span>Operations</span></summary>
-
-            <nav class="nav flex-column">
-                <a href="{{ route('admin.dashboard') }}"
-                   class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                    <i class="bi bi-speedometer2"></i>
-                    <span class="nav-label">Dashboard</span>
-                </a>
-
-                <a href="{{ url('/admin/incidents') }}"
-                   class="nav-link {{ request()->is('admin/incidents*') ? 'active' : '' }}">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    <span class="nav-label">Incidents</span>
-                </a>
-
-                <a href="{{ $adminRoute('admin.dispatches.index') }}"
-                   class="nav-link {{ request()->routeIs('admin.dispatches.*') ? 'active' : '' }}">
-                    <i class="bi bi-broadcast-pin"></i>
-                    <span class="nav-label">Dispatch Center</span>
-                </a>
-
-                <a href="{{ $adminRoute('admin.gps.monitoring') }}"
-                   class="nav-link {{ request()->routeIs('admin.gps.monitoring') ? 'active' : '' }}">
-                    <i class="bi bi-geo-alt"></i>
-                    <span class="nav-label">GPS Monitoring</span>
-                </a>
-
-                <a href="{{ $adminRoute('admin.operations.center') }}"
-                   class="nav-link {{ request()->routeIs('admin.operations.center') ? 'active' : '' }}">
-                    <i class="bi bi-crosshair"></i>
-                    <span class="nav-label">Operations Center</span>
-                </a>
-            </nav>
-        </details>
-
-        <details class="admin-nav-group" open>
-            <summary><span>Communication</span></summary>
-
-            <nav class="nav flex-column">
-                <a href="{{ $adminRoute('admin.notifications.index') }}"
-                   class="nav-link {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
-                    <i class="bi bi-bell"></i>
-                    <span class="nav-label">Notifications</span>
-                    <span class="badge bg-danger ms-auto" data-unread-badge>
-                        {{ $unreadNotifications ?? 0 }}
-                    </span>
-                </a>
-            </nav>
-        </details>
-
-        <details class="admin-nav-group" open>
-            <summary><span>Fleet</span></summary>
-
-            <nav class="nav flex-column">
-                <a href="{{ $adminRoute('admin.ambulances.index') }}"
-                   class="nav-link {{ request()->routeIs('admin.ambulances.*') ? 'active' : '' }}">
-                    <i class="bi bi-truck-front"></i>
-                    <span class="nav-label">Ambulances</span>
-                </a>
-            </nav>
-        </details>
-
-        <details class="admin-nav-group" open>
-            <summary><span>Information</span></summary>
-
-            <nav class="nav flex-column">
-                <a href="{{ $adminRoute('admin.vulnerable-areas.index') }}"
-                   class="nav-link {{ request()->routeIs('admin.vulnerable-areas.*') ? 'active' : '' }}">
-                    <i class="bi bi-people"></i>
-                    <span class="nav-label">Vulnerable Areas</span>
-                </a>
-            </nav>
-        </details>
-
-        <details class="admin-nav-group" open>
-            <summary><span>System</span></summary>
-
-            <nav class="nav flex-column">
-                <a href="{{ route('admin.audit-logs.index') }}"
-                   class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
-                    <i class="bi bi-journal-text"></i>
-                    <span class="nav-label">Audit Logs</span>
-                </a>
-            </nav>
-        </details>
-
-    </nav>
-
-    <div class="admin-sidebar-footer">
-
-        <div class="admin-user">
-            <i class="bi bi-person-circle admin-user-icon"></i>
-
-            <div class="admin-user-copy">
-                <div class="admin-user-name">
-                    {{ auth()->user()->name ?? 'Administrator' }}
+            <div class="admin-brand">
+                <div class="admin-brand-mark">
+                    <img src="{{ asset('favicon.ico') }}" alt="MuniResQ logo">
                 </div>
 
-                <div class="admin-user-role">
-                    Admin account
+                <div class="admin-brand-copy">
+                    <div class="admin-brand-title">MuniResQ</div>
+                    <div class="admin-brand-subtitle">Admin Command</div>
                 </div>
             </div>
-        </div>
 
-        <button type="button"
-                class="admin-control"
-                data-bs-toggle="modal"
-                data-bs-target="#adminHelpModal">
-            <i class="bi bi-question-circle"></i>
-            <span class="control-label">Help</span>
-        </button>
+            <nav class="admin-nav" aria-label="Admin navigation">
 
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
+                <details class="admin-nav-group" open>
+                    <summary><span>Operations</span></summary>
 
-            <button type="submit" class="admin-logout">
-                <i class="bi bi-box-arrow-right"></i>
-                <span class="control-label">Logout</span>
-            </button>
-        </form>
+                    <nav class="nav flex-column">
+                        <a href="{{ route('admin.dashboard') }}"
+                            class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                            <i class="bi bi-speedometer2"></i>
+                            <span class="nav-label">Dashboard</span>
+                        </a>
 
-    </div>
+                        <a href="{{ url('/admin/incidents') }}"
+                            class="nav-link {{ request()->is('admin/incidents*') ? 'active' : '' }}">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <span class="nav-label">Incidents</span>
+                        </a>
 
-</aside>
+                        <a href="{{ $adminRoute('admin.dispatches.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.dispatches.*') ? 'active' : '' }}">
+                            <i class="bi bi-broadcast-pin"></i>
+                            <span class="nav-label">Dispatch Center</span>
+                        </a>
+
+                        <a href="{{ $adminRoute('admin.gps.monitoring') }}"
+                            class="nav-link {{ request()->routeIs('admin.gps.monitoring') ? 'active' : '' }}">
+                            <i class="bi bi-geo-alt"></i>
+                            <span class="nav-label">GPS Monitoring</span>
+                        </a>
+
+                        <a href="{{ $adminRoute('admin.operations.center') }}"
+                            class="nav-link {{ request()->routeIs('admin.operations.center') ? 'active' : '' }}">
+                            <i class="bi bi-crosshair"></i>
+                            <span class="nav-label">Operations Center</span>
+                        </a>
+                    </nav>
+                </details>
+
+                <details class="admin-nav-group" open>
+                    <summary><span>Communication</span></summary>
+
+                    <nav class="nav flex-column">
+                        <a href="{{ $adminRoute('admin.notifications.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
+                            <i class="bi bi-bell"></i>
+                            <span class="nav-label">Notifications</span>
+                            <span class="badge bg-danger ms-auto" data-unread-badge>
+                                {{ $unreadNotifications ?? 0 }}
+                            </span>
+                        </a>
+                    </nav>
+                </details>
+
+                <details class="admin-nav-group" open>
+                    <summary><span>Fleet</span></summary>
+
+                    <nav class="nav flex-column">
+                        <a href="{{ $adminRoute('admin.ambulances.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.ambulances.*') ? 'active' : '' }}">
+                            <i class="bi bi-truck-front"></i>
+                            <span class="nav-label">Ambulances</span>
+                        </a>
+                    </nav>
+                </details>
+
+                <details class="admin-nav-group" open>
+                    <summary><span>Information</span></summary>
+
+                    <nav class="nav flex-column">
+                        <a href="{{ $adminRoute('admin.vulnerable-areas.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.vulnerable-areas.*') ? 'active' : '' }}">
+                            <i class="bi bi-people"></i>
+                            <span class="nav-label">Vulnerable Areas</span>
+                        </a>
+                    </nav>
+                </details>
+
+                <details class="admin-nav-group" open>
+                    <summary><span>System</span></summary>
+
+                    <nav class="nav flex-column">
+                        <a href="{{ route('admin.audit-logs.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
+                            <i class="bi bi-journal-text"></i>
+                            <span class="nav-label">Audit Logs</span>
+                        </a>
+                    </nav>
+                </details>
+
+            </nav>
+
+            <div class="admin-sidebar-footer">
+
+                <div class="admin-user">
+                    <i class="bi bi-person-circle admin-user-icon"></i>
+
+                    <div class="admin-user-copy">
+                        <div class="admin-user-name">
+                            {{ auth()->user()->name ?? 'Administrator' }}
+                        </div>
+
+                        <div class="admin-user-role">
+                            Admin account
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button"
+                    class="admin-control"
+                    data-bs-toggle="modal"
+                    data-bs-target="#adminHelpModal">
+                    <i class="bi bi-question-circle"></i>
+                    <span class="control-label">Help</span>
+                </button>
+
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+
+                    <button type="submit" class="admin-logout">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span class="control-label">Logout</span>
+                    </button>
+                </form>
+
+            </div>
+
+        </aside>
 
         <div class="admin-sidebar-backdrop" data-admin-sidebar-close></div>
 
@@ -952,5 +964,3 @@ return Route::has($name) ? route($name) : '#';
 </body>
 
 </html>
-
-
