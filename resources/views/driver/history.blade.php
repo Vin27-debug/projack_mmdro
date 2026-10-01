@@ -238,6 +238,9 @@
             dateFrom.value = '';
             dateTo.value = '';
             statusFilter.value = '';
+            statusFilter.dispatchEvent(new Event('change', {
+                bubbles: true
+            }));
             applyFilters();
         });
 

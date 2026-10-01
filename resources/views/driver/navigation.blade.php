@@ -901,9 +901,9 @@
 
 
                 <a
-                    href="{{ route('driver.my-assignment') }}"
+                    href="{{ route('driver.assignment') }}"
                     class="sidebar-link
-                    {{ request()->routeIs('driver.my-assignment') ? 'active' : '' }}">
+                    {{ request()->routeIs('driver.assignment') ? 'active' : '' }}">
 
                     <i class="bi bi-list-check fs-5"></i>
 
@@ -915,9 +915,9 @@
 
 
                 <a
-                    href="{{ route('driver.incidents.report') }}"
+                    href="{{ route('driver.report.create') }}"
                     class="sidebar-link
-                    {{ request()->routeIs('driver.incidents.report') ? 'active' : '' }}">
+                    {{ request()->routeIs('driver.report.create') ? 'active' : '' }}">
 
                     <i class="bi bi-file-earmark-medical fs-5"></i>
 
@@ -957,9 +957,9 @@
 
 
                 <a
-                    href="{{ route('profile') }}"
+                    href="{{ route('profile.edit') }}"
                     class="sidebar-link
-                    {{ request()->routeIs('profile') ? 'active' : '' }}">
+                    {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
 
                     <i class="bi bi-person-circle fs-5"></i>
 
@@ -1145,9 +1145,9 @@
 
 
                 <a
-                    href="{{ route('driver.my-assignment') }}"
+                    href="{{ route('driver.assignment') }}"
                     class="sidebar-link
-                    {{ request()->routeIs('driver.my-assignment') ? 'active' : '' }}">
+                    {{ request()->routeIs('driver.assignment') ? 'active' : '' }}">
 
                     <i class="bi bi-list-check fs-5"></i>
 
@@ -1159,9 +1159,9 @@
 
 
                 <a
-                    href="{{ route('driver.incidents.report') }}"
+                    href="{{ route('driver.report.create') }}"
                     class="sidebar-link
-                    {{ request()->routeIs('driver.incidents.report') ? 'active' : '' }}">
+                    {{ request()->routeIs('driver.report.create') ? 'active' : '' }}">
 
                     <i class="bi bi-file-earmark-medical fs-5"></i>
 
@@ -1201,9 +1201,9 @@
 
 
                 <a
-                    href="{{ route('profile') }}"
+                    href="{{ route('profile.edit') }}"
                     class="sidebar-link
-                    {{ request()->routeIs('profile') ? 'active' : '' }}">
+                    {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
 
                     <i class="bi bi-person-circle fs-5"></i>
 
@@ -1333,12 +1333,22 @@
                             </div>
                         </div>
 
+                        @php
+                        $incident = $dispatch?->incident;
+                        $incidentLat = $incident && is_numeric($incident->latitude) ? (float) $incident->latitude : null;
+                        $incidentLng = $incident && is_numeric($incident->longitude) ? (float) $incident->longitude : null;
+                        $incidentAddress = is_object($incident) && method_exists($incident, 'formattedAddress')
+                        ? ($incident->formattedAddress() ?: ($incident->location ?? $incident->address ?? 'Address unavailable'))
+                        : ($incident->location ?? $incident->address ?? 'Address unavailable');
+                        @endphp
+
+                        @if($dispatch && $incident && $incidentLat !== null && $incidentLng !== null)
                         <div class="card shadow-sm border-0 mb-3">
                             <div class="card-body">
-                                <h5 class="mb-1">{{ $dispatch->incident->incident_code ?? 'INC-005' }}</h5>
-                                <p class="text-muted">{{ $dispatch->incident->address ?? 'alvarez st., Poblacion East, Rizal, Nueva Ecija' }}</p>
-                                <p class="small">{{ $dispatch->incident->contact_numbers ?? 'alvarez st., 0304923026, 0304923000, 0304900000' }}</p>
-                                <a href="https://www.google.com/maps/dir/?api=1&destination={{ $dispatch->incident->latitude ?? 15.7109371 }},{{ $dispatch->incident->longitude ?? 121.1062369 }}" target="_blank" class="btn btn-success">
+                                <h5 class="mb-1">{{ $incident->incident_code ?? 'INC-005' }}</h5>
+                                <p class="text-muted">{{ $incidentAddress }}</p>
+                                <p class="small">{{ $incident->contact_numbers ?? 'No contact numbers available' }}</p>
+                                <a href="https://www.google.com/maps/search/?api=1&query={{ $incidentLat }},{{ $incidentLng }}" target="_blank" class="btn btn-success">
                                     🧭 Open in Google Maps
                                 </a>
                             </div>
@@ -1372,10 +1382,16 @@
                                     id="map"
                                     class="rounded-3"
                                     style="height: 500px; width: 100%;"
-                                    data-incident-lat="{{ $dispatch->incident->latitude ?? 15.5000 }}"
-                                    data-incident-lng="{{ $dispatch->incident->longitude ?? 120.8500 }}"></div>
+                                    data-incident-lat="{{ $incidentLat }}"
+                                    data-incident-lng="{{ $incidentLng }}"></div>
                             </div>
                         </div>
+                        @else
+                        <div class="alert alert-warning border-0 rounded-4 shadow-sm">
+                            <h5 class="mb-2">Mission coordinates unavailable</h5>
+                            <p class="mb-0">No valid incident coordinates are available for this mission, so the map and navigation route cannot be generated safely.</p>
+                        </div>
+                        @endif
                     </div>
 
                 </div>
@@ -1409,8 +1425,17 @@
 
             const mapEl = document.getElementById('map');
 
-            const incidentLat = parseFloat(mapEl.dataset.incidentLat);
-            const incidentLng = parseFloat(mapEl.dataset.incidentLng);
+            if (!mapEl) {
+                return;
+            }
+
+            const incidentLat = Number.parseFloat(mapEl.dataset.incidentLat);
+            const incidentLng = Number.parseFloat(mapEl.dataset.incidentLng);
+
+            if (!Number.isFinite(incidentLat) || !Number.isFinite(incidentLng)) {
+                console.warn('No valid incident coordinates are available for the driver navigation route.');
+                return;
+            }
 
             const map = L.map('map', {
                 zoomControl: true,

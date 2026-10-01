@@ -46,9 +46,6 @@
                                     @case('panic')
                                     <i class="bi bi-exclamation-triangle-fill"></i>
                                     @break
-                                    @case('hijack')
-                                    <i class="bi bi-shield-exclamation"></i>
-                                    @break
                                     @case('incident')
                                     <i class="bi bi-exclamation-triangle-fill"></i>
                                     @break

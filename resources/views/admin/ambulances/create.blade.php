@@ -39,8 +39,8 @@
      {{-- FORM --}}
      <div class="card border-0 shadow-sm rounded-4">
 
-         <div class="card-header bg-white border-0 p-4">
-             <h5 class="fw-bold mb-1">
+         <div class="card-header bg-slate-900/90 border-0 p-4">
+             <h5 class="fw-bold mb-1 text-white">
                  Vehicle Information
              </h5>
 
@@ -140,7 +140,7 @@
                  </div>
 
                  {{-- STATUS INFO --}}
-                 <div class="alert alert-light border rounded-3 mb-4">
+                 <div class="alert alert-dark border border-slate-700 rounded-3 mb-4 text-slate-100">
                      <i class="bi bi-info-circle me-2"></i>
                      New vehicles will automatically be registered with
                      <strong>Available</strong> status.

@@ -15,7 +15,7 @@
             <tr>
                 <td>{{ $incident->incident_number }}</td>
                 <td>{{ $incident->incident_type }}</td>
-                @if(!$compact)<td><span class="status-label">{{ $incident->priority ?: 'Not set' }}</span></td>@endif
+                @if(!$compact)<td><span class="status-label">{{ \App\Models\Incident::priorityDisplayLabel($incident->priority) }}</span></td>@endif
                 <td><span class="status-label">{{ ucfirst(str_replace('_', ' ', $incident->status)) }}</span></td>
                 <td>{{ $incident->formattedAddress() }}</td>
                 <td>{{ $incident->created_at?->format('M d, Y H:i') ?? 'N/A' }}</td>

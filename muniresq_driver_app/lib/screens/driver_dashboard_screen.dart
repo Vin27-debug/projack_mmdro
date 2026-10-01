@@ -112,8 +112,6 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             Row(
               children: [
                 Expanded(child: PrimaryButton(label: 'Panic', onPressed: () {})),
-                const SizedBox(width: 12),
-                Expanded(child: DangerButton(label: 'Hijack', onPressed: () {})),
               ],
             ),
             const SizedBox(height: 16),
@@ -157,13 +155,6 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   subtitle: 'Notify command center immediately.',
                   icon: Icons.warning_amber_rounded,
                   color: AppColors.danger,
-                  onTap: () {},
-                ),
-                EmergencyActionCard(
-                  title: 'Hijack Alert',
-                  subtitle: 'Send emergency hijack notification.',
-                  icon: Icons.lock,
-                  color: AppColors.primary,
                   onTap: () {},
                 ),
                 EmergencyActionCard(

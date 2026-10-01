@@ -27,14 +27,13 @@ class DriverController extends Controller
             'license_expiry' => 'nullable|date',
         ]);
 
-        // Create user account
+        // Create user account and leave it pending until a super-admin approves it.
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'status' => 'approved',
-            'approved_by' => auth()->id(),
-            'approved_at' => now(),
+            'status' => 'pending',
+            'created_by' => auth()->id(),
         ]);
 
         // Make sure driver role exists
@@ -56,7 +55,7 @@ class DriverController extends Controller
 
         return redirect()
             ->route('superadmin.drivers')
-            ->with('success', 'Driver account created successfully.');
+            ->with('success', 'Driver account created successfully and is pending approval.');
     }
 
     protected function generateBadgeId(): string

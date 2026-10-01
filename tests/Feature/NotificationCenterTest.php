@@ -255,7 +255,7 @@ class NotificationCenterTest extends TestCase
             'user_id' => null,
             'title' => 'Shared Alert',
             'message' => 'Global notification',
-            'type' => 'hijack',
+            'type' => 'panic',
             'is_read' => false,
         ]);
 

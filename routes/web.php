@@ -21,7 +21,6 @@ use App\Http\Controllers\Admin\AutoDispatchController;
 use App\Http\Controllers\Admin\IncidentController as AdminIncidentController;
 use App\Http\Controllers\Admin\OperationsCenterController;
 use App\Http\Controllers\Admin\ResponseTimeAnalyticsController;
-use App\Http\Controllers\Admin\HijackAlertController;
 use App\Http\Controllers\Admin\PanicAlertController as AdminPanicAlertController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\AuditLogController;
@@ -36,7 +35,6 @@ use App\Http\Controllers\Driver\GpsController;
 use App\Http\Controllers\Driver\MyAssignmentController;
 use App\Http\Controllers\Driver\PanicController;
 use App\Http\Controllers\Driver\IncidentReportController;
-use App\Http\Controllers\Driver\HijackController;
 use App\Http\Controllers\Driver\DriverAssignmentController;
 use App\Http\Controllers\Driver\NavigationController;
 use App\Http\Controllers\Driver\DriverHistoryController;
@@ -63,6 +61,20 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
+    $user = auth()->user();
+
+    if ($user && ($user->hasRole('super-admin') || $user->hasRole('superadmin'))) {
+        return redirect()->route('superadmin.dashboard');
+    }
+
+    if ($user && $user->hasRole('admin')) {
+        return redirect()->route('admin.dashboard');
+    }
+
+    if ($user && $user->hasRole('driver')) {
+        return redirect()->route('driver.dashboard');
+    }
+
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -122,9 +134,6 @@ Route::middleware([
 
     Route::post('/driver/panic', [PanicController::class, 'trigger'])
         ->name('driver.panic.trigger');
-
-    Route::post('/driver/hijack', [HijackController::class, 'trigger'])
-        ->name('driver.hijack.trigger');
 
     Route::post('/driver/dispatches/{dispatch}/accept', [DriverDashboardController::class, 'acceptDispatch'])
         ->name('driver.dispatch.accept');
@@ -207,7 +216,7 @@ Route::middleware([
     Route::get('/geocode', [GeocodingController::class, 'search'])
         ->name('geocode.search');
 
-    Route::resource('ambulances',adminAmbulanceController::class)
+    Route::resource('ambulances', adminAmbulanceController::class)
         ->except(['show'])
         ->names('admin.ambulances');
 
@@ -234,9 +243,6 @@ Route::middleware([
 
     Route::get('/panic-alerts', [AdminPanicAlertController::class, 'index'])
         ->name('admin.panic.index');
-
-    Route::get('/hijack-alerts', [HijackAlertController::class, 'index'])
-        ->name('admin.hijack.index');
 
     Route::get('/admin/reports/response-time', [ResponseTimeController::class, 'index'])
         ->name('admin.reports.response-time');

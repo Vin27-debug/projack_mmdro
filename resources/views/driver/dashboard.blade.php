@@ -264,17 +264,6 @@ is_numeric($incidentLng);
 
                             </button>
 
-                            {{-- HIJACK --}}
-                            <button
-                                id="hijackBtn"
-                                type="button"
-                                class="btn btn-sm btn-warning driver-action-btn">
-
-                                <i class="bi bi-shield-exclamation me-1"></i>
-                                HIJACK ALERT
-
-                            </button>
-
                         </div>
 
                     </div>
@@ -1573,10 +1562,6 @@ is_numeric($incidentLng);
                 @json(route('driver.panic.trigger'));
 
 
-            const hijackUrl =
-                @json(route('driver.hijack.trigger'));
-
-
             /* =====================================================
                INCIDENT COORDINATES
             ====================================================== */
@@ -2357,33 +2342,6 @@ is_numeric($incidentLng);
                         triggerEmergency(
                             panicUrl,
                             'PANIC'
-                        );
-
-                    }
-                );
-
-            }
-
-
-            /* =====================================================
-               HIJACK
-            ====================================================== */
-
-            const hijackBtn =
-                document.getElementById(
-                    'hijackBtn'
-                );
-
-
-            if (hijackBtn) {
-
-                hijackBtn.addEventListener(
-                    'click',
-                    function() {
-
-                        triggerEmergency(
-                            hijackUrl,
-                            'HIJACK'
                         );
 
                     }

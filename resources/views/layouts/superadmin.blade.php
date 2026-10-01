@@ -7,6 +7,7 @@
     <title>MuniResQ Super Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         :root {
             --mr-bg: #071a38;
@@ -26,21 +27,26 @@
         }
 
         .super-layout {
+            --mr-bg: #08172f;
+            --mr-surface: #0f2345;
+            --mr-text: #f8fafc;
+            --mr-muted: #94a3b8;
             display: flex;
+            align-items: stretch;
             min-height: 100vh;
-        }
-
-        .main-content {
-            min-height: 100vh;
-            padding: 1.5rem 1.75rem 2.5rem;
+            width: 100%;
+            background: var(--mr-bg);
+            color: var(--mr-text);
         }
 
         .super-sidebar {
-            position: fixed;
-            inset: 0 auto 0 0;
+            position: sticky;
+            top: 0;
             z-index: 1040;
-            width: 68px;
             display: flex;
+            width: 68px;
+            min-width: 68px;
+            min-height: 100vh;
             flex-direction: column;
             overflow-x: hidden;
             overflow-y: auto;
@@ -50,20 +56,20 @@
         }
 
         .super-sidebar:hover,
-        .super-sidebar:focus-within,
         body.super-sidebar-expanded .super-sidebar {
             width: 240px;
         }
 
         .super-content {
-            width: 100%;
+            flex: 1 1 auto;
             min-width: 0;
-            margin-left: 68px;
-            transition: margin-left 160ms ease;
+            width: 100%;
+            background: var(--mr-bg);
         }
 
-        body.super-sidebar-expanded .super-content {
-            margin-left: 240px;
+        .form-control::placeholder,
+        .form-select::placeholder {
+            color: #94a3b8;
         }
 
         .super-brand-title,
@@ -525,7 +531,12 @@
 
         @media (max-width: 991.98px) {
             .super-sidebar {
+                position: fixed;
+                left: 0;
+                bottom: 0;
                 width: 240px;
+                min-width: 240px;
+                height: 100vh;
                 transform: translateX(-100%);
                 transition: transform 160ms ease;
             }
@@ -628,7 +639,7 @@
                     <summary><span>Fleet</span></summary>
                     <nav class="nav flex-column">
                         <a href="{{ route('superadmin.ambulances.index') }}" class="nav-link {{ request()->routeIs('superadmin.ambulances.*') ? 'active' : '' }}"><i class="bi bi-truck"></i><span class="nav-label">Ambulances / Vehicles</span></a>
-                        <a href="{{ route('assignments.index') }}" class="nav-link {{ request()->routeIs('assignments.*') ? 'active' : '' }}"><i class="bi bi-arrows-move"></i><span class="nav-label">Assignments</span></a>
+
                     </nav>
                 </details>
                 <details class="super-nav-group" open>

@@ -20,7 +20,7 @@
 </div>
 <div class="card shadow-sm border-0">
     <div class="table-responsive">
-        <table class="table align-middle mb-0">
+        <table class="table incident-history-table align-middle mb-0">
             <thead class="table-light">
                 <tr>
                     <th>Incident</th>
@@ -57,6 +57,17 @@
 
     body {
         background: #fff !important
+    }
+</style>
+
+<style>
+    .incident-history-table th {
+        background: #003399 !important;
+        color: #f8fafc !important;
+    }
+
+    .incident-history-table td {
+        color: #f8fafc !important;
     }
 </style>
 @endsection

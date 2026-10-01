@@ -108,7 +108,7 @@
     }
 
     .advisory.critical {
-        border-left-color: #dc3545;
+        border-left-color: #111827;
     }
 
     .advisory-priority {
@@ -259,7 +259,7 @@ $readyPercent = $totalFleet > 0 ? round((($availableVehicles ?? 0) / $totalFleet
                     $statusLabel = $incident->status === \App\Models\Incident::STATUS_PENDING ? 'Awaiting dispatch' : 'Unit assigned';
                     @endphp
                     <article class="advisory {{ strtolower((string) $incident->priority) === 'critical' ? 'critical' : '' }}">
-                        <div class="d-flex justify-content-between gap-2"><span class="advisory-priority {{ strtolower((string) $incident->priority) === 'critical' ? 'text-danger' : 'text-warning' }}">{{ $incident->priority ?: 'Priority not set' }}</span><span class="advisory-meta">{{ ($incident->call_received_at ?? $incident->created_at)?->diffForHumans() }}</span></div>
+                        <div class="d-flex justify-content-between gap-2"><span class="advisory-priority {{ strtolower((string) $incident->priority) === 'critical' ? 'text-light' : 'text-danger' }}">{{ \App\Models\Incident::priorityDisplayLabel($incident->priority) }}</span><span class="advisory-meta">{{ ($incident->call_received_at ?? $incident->created_at)?->diffForHumans() }}</span></div>
                         <div class="advisory-title mt-1">{{ $incident->incident_type }}</div>
                         <div class="advisory-meta">{{ $incident->formattedAddress() }}</div>
                         <div class="advisory-meta mt-1">Status: {{ $statusLabel }}{{ $dispatch?->status ? ' · '.ucwords(str_replace('_', ' ', $dispatch->status)) : '' }}</div>

@@ -64,10 +64,6 @@ class ApiRepository {
     await _dio.post('/api/panic/send');
   }
 
-  Future<void> sendHijackAlert() async {
-    await _dio.post('/api/hijack/send');
-  }
-
   Future<void> submitIncidentReport(IncidentReport report) async {
     await _dio.post('/api/report/store', data: report.toJson());
   }

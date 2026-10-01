@@ -41,13 +41,6 @@ class EmergencyActionsScreen extends StatelessWidget {
                   onTap: () {},
                 ),
                 EmergencyActionCard(
-                  title: 'Hijack Alert',
-                  subtitle: 'Trigger hijack response workflow.',
-                  icon: Icons.lock,
-                  color: AppColors.primary,
-                  onTap: () {},
-                ),
-                EmergencyActionCard(
                   title: 'Incident Report',
                   subtitle: 'Submit an incident summary.',
                   icon: Icons.report,

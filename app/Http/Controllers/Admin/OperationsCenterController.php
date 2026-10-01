@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Ambulance;
 use App\Models\Dispatch;
-use App\Models\HijackAlert;
 use App\Models\Incident;
 use App\Models\PanicAlert;
 
@@ -48,19 +47,6 @@ class OperationsCenterController extends Controller
         */
 
         $panicAlerts = PanicAlert::query()
-            ->with('driver.user')
-            ->latest()
-            ->take(20)
-            ->get();
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | HIJACK ALERTS
-        |--------------------------------------------------------------------------
-        */
-
-        $hijackAlerts = HijackAlert::query()
             ->with('driver.user')
             ->latest()
             ->take(20)
@@ -118,10 +104,6 @@ class OperationsCenterController extends Controller
 
             'panic_alerts' => $panicAlerts
                 ->where('resolved', false)
-                ->count(),
-
-            'hijack_alerts' => $hijackAlerts
-                ->where('status', 'active')
                 ->count(),
 
             'priority_incidents' => $incidents
@@ -293,48 +275,6 @@ class OperationsCenterController extends Controller
                 ->all(),
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | HIJACK ALERTS
-            |--------------------------------------------------------------------------
-            */
-
-            'hijackAlerts' => $hijackAlerts
-                ->filter(function ($alert) {
-
-                    return is_numeric($alert->latitude)
-                        && is_numeric($alert->longitude)
-                        && $alert->latitude >= -90
-                        && $alert->latitude <= 90
-                        && $alert->longitude >= -180
-                        && $alert->longitude <= 180;
-                })
-                ->map(function ($alert) {
-
-                    return [
-                        'id' => $alert->id,
-
-                        'type' => 'hijack',
-
-                        'title' => 'Hijack Alert',
-
-                        'status' => $alert->status
-                            ?? 'active',
-
-                        'latitude' => (float) $alert->latitude,
-
-                        'longitude' => (float) $alert->longitude,
-
-                        'driver_name' => $alert->driver?->user?->name
-                            ?? 'Driver',
-
-                        'triggered_at' => $alert->triggered_at
-                            ? $alert->triggered_at->format('M d, H:i')
-                            : 'Recently',
-                    ];
-                })
-                ->values()
-                ->all(),
         ];
 
 
@@ -350,7 +290,6 @@ class OperationsCenterController extends Controller
                 'incidents',
                 'vehicles',
                 'panicAlerts',
-                'hijackAlerts',
                 'activeDispatches',
                 'stats',
                 'mapData'

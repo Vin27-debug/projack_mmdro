@@ -23,7 +23,6 @@ import 'package:muniresq_driver_app/screens/incident_report_screen.dart';
 import 'package:muniresq_driver_app/screens/dispatch_history_screen.dart';
 import 'package:muniresq_driver_app/screens/emergency_actions_screen.dart';
 import 'package:muniresq_driver_app/screens/panic_alert_screen.dart';
-import 'package:muniresq_driver_app/screens/hijack_alert_screen.dart';
 import 'package:muniresq_driver_app/screens/driver_profile_screen.dart';
 import 'package:muniresq_driver_app/screens/settings_screen.dart';
 import 'package:muniresq_driver_app/screens/notification_center_screen.dart';
@@ -82,7 +81,6 @@ class MuniResQDriverApp extends StatelessWidget {
         AppRoutes.dispatchHistory: (_) => const DispatchHistoryScreen(),
         AppRoutes.emergencyActions: (_) => const EmergencyActionsScreen(),
         AppRoutes.panicAlert: (_) => const PanicAlertScreen(),
-        AppRoutes.hijackAlert: (_) => const HijackAlertScreen(),
         AppRoutes.profile: (_) => const DriverProfileScreen(),
         AppRoutes.settings: (_) => const SettingsScreen(),
         AppRoutes.notifications: (_) => const NotificationCenterScreen(),

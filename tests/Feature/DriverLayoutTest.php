@@ -43,4 +43,23 @@ class DriverLayoutTest extends TestCase
 
         $this->assertStringContainsString('Driver Operations Center', $view);
     }
+
+    public function test_driver_navigation_does_not_use_hardcoded_fallback_coordinates_for_missing_mission(): void
+    {
+        $dispatch = new \stdClass();
+        $dispatch->incident = new \stdClass();
+        $dispatch->incident->incident_code = 'INC-005';
+        $dispatch->incident->address = null;
+        $dispatch->incident->latitude = null;
+        $dispatch->incident->longitude = null;
+
+        $view = view('driver.navigation', [
+            'dispatch' => $dispatch,
+        ])->render();
+
+        $this->assertStringNotContainsString('15.5000', $view);
+        $this->assertStringNotContainsString('120.8500', $view);
+        $this->assertStringNotContainsString('alvarez st., Poblacion East, Rizal, Nueva Ecija', $view);
+        $this->assertStringContainsString('No valid incident coordinates are available', $view);
+    }
 }

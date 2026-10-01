@@ -5,57 +5,39 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
-    /* Fix dropdown text visibility in dark admin theme */
-    .form-select {
-        color: #ffffff !important;
-        background-color: #0f1b33 !important;
-        border-color: #334155 !important;
+    /* Keep native select options inside the dark MuniResQ theme without forcing white option panels. */
+    .form-select,
+    .form-control,
+    textarea {
+        color: #eef4ff !important;
+        background-color: #0d1f3a !important;
+        border-color: rgba(148, 163, 184, 0.38) !important;
     }
 
-    .form-select option {
-        color: #000000 !important;
-        background-color: #ffffff !important;
-    }
-
-    .form-select option:checked {
-        color: #ffffff !important;
-        background-color: #2563eb !important;
+    .form-select option,
+    .form-select optgroup {
+        background-color: #0a1730 !important;
+        color: #eef4ff !important;
     }
 
     .form-select:disabled {
-        color: #94a3b8 !important;
-        background-color: #e5e7eb !important;
-    }
-
-    /* Helps Chrome/Windows render native dropdown correctly */
-    select.form-select {
-        color-scheme: dark;
-    }
-
-    select.form-select option {
-        color-scheme: light;
-    }
-
-    /* Fix text visibility while typing */
-    .form-control,
-    .form-select,
-    textarea {
-        color: #ffffff !important;
-        background-color: #0f1b33 !important;
-        border-color: #334155 !important;
+        color: rgba(226, 232, 240, 0.7) !important;
+        background-color: rgba(15, 23, 42, 0.9) !important;
     }
 
     .form-control::placeholder,
     textarea::placeholder {
-        color: #94a3b8 !important;
+        color: #9bb1cc !important;
         opacity: 1 !important;
     }
 
     .form-control:focus,
     .form-select:focus,
     textarea:focus {
-        color: #ffffff !important;
-        background-color: #0f1b33 !important;
+        color: #eef4ff !important;
+        background-color: #0a1730 !important;
+        border-color: rgba(59, 130, 246, 0.65) !important;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.18) !important;
     }
 </style>
 

@@ -86,14 +86,16 @@
             place-items: center;
             padding: 0.3rem;
             background: #0b2c68;
-            --mr-bg: #08172f;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 0.75rem;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
-        --mr-surface: #0f2345;
-
         .admin-brand-mark img {
-            --mr-text: #f8fafc;
-            --mr-muted: #94a3b8;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
         }
 
         .admin-brand-copy,
@@ -108,22 +110,17 @@
         .admin-sidebar:focus-within .admin-brand-copy,
         body.admin-sidebar-expanded .admin-brand-copy,
         .admin-sidebar:hover .nav-label,
-        background: var(--mr-bg);
-        color: var(--mr-text);
         .admin-sidebar:focus-within .nav-label,
         body.admin-sidebar-expanded .nav-label,
         .admin-sidebar:hover .admin-nav-group summary span,
         .admin-sidebar:focus-within .admin-nav-group summary span,
         body.admin-sidebar-expanded .admin-nav-group summary span,
-        background: var(--mr-bg);
-
         .admin-sidebar:hover .control-label,
         .admin-sidebar:focus-within .control-label,
         body.admin-sidebar-expanded .control-label,
         .admin-sidebar:hover .admin-user-copy,
         .admin-sidebar:focus-within .admin-user-copy,
         body.admin-sidebar-expanded .admin-user-copy {
-            background: var(--mr-bg);
             display: block;
         }
 
@@ -131,16 +128,14 @@
             .admin-sidebar:not(:hover):not(:focus-within) .admin-brand {
                 justify-content: center;
                 background: #0f2345;
-
                 color: #f8fafc;
-                display: none;
             }
 
             .admin-sidebar:not(:hover):not(:focus-within) .nav-link,
-            background: #0f2345;
-            border-color: #014cfd;
-            box-shadow: 0 0 0 0.25rem rgba(1, 76, 253, 0.16);
-            justify-content: center;
+            .admin-sidebar:not(:hover):not(:focus-within) .admin-control,
+            .admin-sidebar:not(:hover):not(:focus-within) .admin-logout {
+                justify-content: center;
+            }
         }
 
         .form-control::placeholder,
@@ -170,6 +165,12 @@
         body.admin-sidebar-expanded .admin-nav-group summary {
             display: flex;
         }
+
+        .admin-shell,
+        .admin-layout,
+        .admin-content,
+        .main-content {
+            background: var(--mr-bg);
         }
 
         .admin-brand-title {
@@ -790,17 +791,7 @@ return Route::has($name) ? route($name) : '#';
                     </nav>
                 </details>
 
-                <details class="admin-nav-group" open>
-                    <summary><span>Fleet</span></summary>
 
-                    <nav class="nav flex-column">
-                        <a href="{{ $adminRoute('admin.ambulances.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.ambulances.*') ? 'active' : '' }}">
-                            <i class="bi bi-truck-front"></i>
-                            <span class="nav-label">Ambulances</span>
-                        </a>
-                    </nav>
-                </details>
 
                 <details class="admin-nav-group" open>
                     <summary><span>Information</span></summary>

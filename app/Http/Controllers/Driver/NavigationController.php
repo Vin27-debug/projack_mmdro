@@ -15,8 +15,15 @@ class NavigationController extends Controller
         if (!$dispatch && $driver) {
             $dispatch = Dispatch::with(['incident', 'vehicle'])
                 ->where('driver_id', $driver->id)
-                ->inProgress()
-                ->latest()
+                ->whereIn('status', [
+                    Dispatch::STATUS_PENDING,
+                    Dispatch::STATUS_ASSIGNED,
+                    Dispatch::STATUS_ACCEPTED,
+                    Dispatch::STATUS_EN_ROUTE,
+                    Dispatch::STATUS_ARRIVED,
+                ])
+                ->orderByDesc('assigned_at')
+                ->orderByDesc('created_at')
                 ->first();
         }
 

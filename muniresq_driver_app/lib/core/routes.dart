@@ -17,7 +17,6 @@ class AppRoutes {
   static const dispatchHistory = '/dispatch-history';
   static const emergencyActions = '/emergency-actions';
   static const panicAlert = '/panic-alert';
-  static const hijackAlert = '/hijack-alert';
   static const profile = '/profile';
   static const settings = '/settings';
   static const notifications = '/notifications';

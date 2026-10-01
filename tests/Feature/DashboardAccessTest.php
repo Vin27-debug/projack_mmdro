@@ -168,4 +168,53 @@ class DashboardAccessTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    public function test_superadmin_created_driver_account_stays_pending_until_approval(): void
+    {
+        Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+
+        $superAdmin = User::factory()->create(['status' => 'approved']);
+        $superAdmin->assignRole('super-admin');
+
+        $response = $this->actingAs($superAdmin)->post(route('superadmin.drivers.store'), [
+            'name' => 'Pending Driver',
+            'email' => 'pending-driver@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'contact_number' => '09123456793',
+            'license_number' => 'LIC-100',
+            'license_expiry' => '2030-01-01',
+        ]);
+
+        $response->assertRedirect(route('superadmin.drivers'));
+
+        $user = User::where('email', 'pending-driver@example.com')->firstOrFail();
+        $this->assertSame('pending', $user->status);
+        $this->assertNull($user->approved_at);
+    }
+
+    public function test_superadmin_registration_controller_keeps_new_admin_account_pending(): void
+    {
+        Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+
+        $superAdmin = User::factory()->create(['status' => 'approved']);
+        $superAdmin->assignRole('super-admin');
+
+        $request = new \Illuminate\Http\Request([
+            'name' => 'Pending Admin',
+            'email' => 'pending-admin@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $controller = new \App\Http\Controllers\SuperAdmin\AdminRegistrationController();
+        $response = $controller->store($request);
+
+        $user = User::where('email', 'pending-admin@example.com')->firstOrFail();
+        $this->assertSame('pending', $user->status);
+        $this->assertNull($user->approved_at);
+        $this->assertTrue($user->hasRole('admin'));
+        $this->assertSame('Administrator account created successfully and is pending approval.', $response->getSession()->get('success'));
+    }
 }

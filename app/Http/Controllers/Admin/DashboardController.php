@@ -7,7 +7,6 @@ use App\Models\Incident;
 use App\Models\Driver;
 use App\Models\Ambulance;
 use App\Models\PanicAlert;
-use App\Models\HijackAlert;
 use App\Models\IncidentReport;
 use App\Models\Dispatch;
 use App\Models\Notification;
@@ -95,13 +94,6 @@ class DashboardController extends Controller
 
         $panicCount = $activePanicAlerts->count();
 
-        $activeHijackAlerts = HijackAlert::with(
-            'driver.user'
-        )
-            ->where('status', 'active')
-            ->latest()
-            ->get();
-
         $averageResponseTime = Dispatch::query()
             ->whereNotNull('assigned_at')
             ->whereNotNull('arrived_at')
@@ -181,7 +173,6 @@ class DashboardController extends Controller
                 'approvedReports',
                 'submittedReports',
                 'activePanicAlerts',
-                'activeHijackAlerts',
                 'panicCount',
                 'responseTime',
                 'unreadNotifications',

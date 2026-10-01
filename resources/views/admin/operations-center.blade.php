@@ -33,7 +33,7 @@
     <div class="row g-3 mb-4">
 
         {{-- LIVE INCIDENTS --}}
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-4 col-md-6">
             <div class="card admin-stat-card border-0 shadow-sm h-100 admin-card">
                 <div class="card-body">
 
@@ -51,7 +51,7 @@
 
 
         {{-- ACTIVE AMBULANCES --}}
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-4 col-md-6">
             <div class="card admin-stat-card border-0 shadow-sm h-100 admin-card">
                 <div class="card-body">
 
@@ -69,7 +69,7 @@
 
 
         {{-- PANIC ALERTS --}}
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-4 col-md-6">
             <div class="card admin-stat-card border-0 shadow-sm h-100 admin-card">
                 <div class="card-body">
 
@@ -85,23 +85,6 @@
             </div>
         </div>
 
-
-        {{-- HIJACK ALERTS --}}
-        <div class="col-xl-3 col-md-6">
-            <div class="card admin-stat-card border-0 shadow-sm h-100 admin-card">
-                <div class="card-body">
-
-                    <div class="small text-uppercase fw-semibold">
-                        Hijack Alerts
-                    </div>
-
-                    <div class="display-6 fw-bold mt-2">
-                        {{ $stats['hijack_alerts'] ?? 0 }}
-                    </div>
-
-                </div>
-            </div>
-        </div>
 
     </div>
 
@@ -155,11 +138,6 @@
                 <span class="small">
                     <span class="legend-dot legend-panic"></span>
                     Panic
-                </span>
-
-                <span class="small">
-                    <span class="legend-dot legend-hijack"></span>
-                    Hijack
                 </span>
 
                 <span class="small">
@@ -384,54 +362,6 @@
             </div>
 
 
-            {{-- =================================================
-                 HIJACK ALERTS
-            ================================================== --}}
-            <div class="card border-0 shadow-sm">
-
-                <div class="card-header bg-dark text-white">
-
-                    <i class="bi bi-car-front-fill"></i>
-                    Hijack Alerts
-
-                </div>
-
-                <div class="card-body">
-
-                    @forelse($hijackAlerts->where('status', 'active') as $alert)
-
-                    <div class="border rounded p-2 mb-2">
-
-                        <div class="fw-semibold">
-                            {{ $alert->driver?->user?->name ?? 'Driver' }}
-                        </div>
-
-                        <div class="small text-muted">
-                            {{ $alert->triggered_at?->diffForHumans() ?? 'Recently triggered' }}
-                        </div>
-
-                        <div class="mt-1">
-
-                            <span class="badge bg-dark">
-                                ACTIVE
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                    @empty
-
-                    <div class="text-muted small">
-                        No hijack alerts.
-                    </div>
-
-                    @endforelse
-
-                </div>
-
-            </div>
-
         </div>
 
     </div>
@@ -486,10 +416,6 @@
 
     .legend-panic {
         background: #fd7e14;
-    }
-
-    .legend-hijack {
-        background: #000000;
     }
 
     .legend-vehicle {
@@ -658,10 +584,6 @@
             mapData.panicAlerts : [];
 
 
-        const hijackAlerts = Array.isArray(mapData?.hijackAlerts) ?
-            mapData.hijackAlerts : [];
-
-
         /*
         |--------------------------------------------------------------------------
         | VALID COORDINATES
@@ -733,12 +655,6 @@
                 color: '#fd7e14',
                 radius: 11,
                 fillColor: '#fd7e14'
-            },
-
-            hijack: {
-                color: '#000000',
-                radius: 11,
-                fillColor: '#000000'
             },
 
             vehicle: {
@@ -999,32 +915,6 @@
                 addMarker(
                     item,
                     'panic'
-                );
-
-            }
-
-        });
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | HIJACK ALERTS
-        |--------------------------------------------------------------------------
-        */
-
-        hijackAlerts.forEach(function(item) {
-
-            const coordinates =
-                getCoordinates(item);
-
-
-            if (coordinates) {
-
-                validPoints.push(coordinates);
-
-                addMarker(
-                    item,
-                    'hijack'
                 );
 
             }

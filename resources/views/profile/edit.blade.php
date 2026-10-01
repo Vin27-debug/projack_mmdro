@@ -11,7 +11,7 @@ $user = $user ?? auth()->user();
 
         <div class="row g-4">
             <div class="col-lg-4">
-                <div class="card h-100 border-0 bg-light">
+                <div class="card h-100 border-0 bg-slate-900/90">
                     <div class="card-body">
                         <h5 class="card-title">Account Overview</h5>
                         <p class="text-muted mb-2">Badge ID</p>

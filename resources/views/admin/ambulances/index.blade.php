@@ -39,8 +39,8 @@
     {{-- VEHICLES --}}
     <div class="card border-0 shadow-sm rounded-4">
 
-        <div class="card-header bg-white border-0 p-4">
-            <h5 class="fw-bold mb-1">
+        <div class="card-header bg-slate-900/90 border-0 p-4">
+            <h5 class="fw-bold mb-1 text-white">
                 Registered Vehicles
             </h5>
 
@@ -271,7 +271,8 @@
         align-items: center;
         justify-content: center;
 
-        background: #f1f5f9;
+        background: rgba(37, 99, 235, 0.16);
+        color: #bfdbfe;
 
         border-radius: 12px;
 
