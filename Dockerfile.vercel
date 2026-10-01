@@ -1,0 +1,51 @@
+FROM node:22-bookworm-slim AS assets
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY resources ./resources
+COPY public ./public
+COPY vite.config.js postcss.config.js tailwind.config.js ./
+RUN npm run build
+
+FROM php:8.4-cli-bookworm
+
+WORKDIR /var/www/html
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libzip-dev \
+    unzip \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j"$(nproc)" dom gd mbstring pdo_mysql xml xmlreader xmlwriter zip \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+COPY composer.json composer.lock ./
+COPY . .
+COPY --from=assets /app/public/build ./public/build
+
+ENV APP_ENV=production \
+    APP_DEBUG=false \
+    DB_CONNECTION=mysql \
+    PORT=80
+
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --prefer-dist \
+    --optimize-autoloader \
+    && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \
+    && chmod -R ug+rwX storage bootstrap/cache
+
+EXPOSE 80
+
+CMD ["sh", "-c", "test -n \"${APP_KEY:-}\" || { echo 'APP_KEY is required for production.' >&2; exit 1; }; exec php artisan serve --host=0.0.0.0 --port=\"${PORT:-80}\""]
