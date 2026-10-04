@@ -7,6 +7,7 @@ use App\Models\Incident;
 use App\Models\Driver;
 use App\Models\Ambulance;
 use App\Models\Dispatch;
+use App\Services\AuditService;
 use Illuminate\Support\Facades\DB;
 
 class AutoDispatchController extends Controller
@@ -41,7 +42,7 @@ class AutoDispatchController extends Controller
         }
 
         DB::transaction(function () use ($incident, $driver, $vehicle) {
-            Dispatch::updateOrCreate(
+            $dispatch = Dispatch::updateOrCreate(
                 [
                     'incident_id' => $incident->id,
                     'driver_id' => $driver->id,
@@ -66,6 +67,8 @@ class AutoDispatchController extends Controller
             $vehicle->update([
                 'status' => Ambulance::STATUS_ON_DUTY,
             ]);
+
+            AuditService::logDispatch($dispatch, 'dispatch_assigned');
         });
 
         return back()->with(

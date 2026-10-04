@@ -12,6 +12,7 @@ use App\Models\Dispatch;
 use App\Models\Notification;
 use App\Models\AuditLog;
 use App\Models\GpsLocation;
+use App\Services\GpsFreshnessService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -227,7 +228,7 @@ class DashboardController extends Controller
     /**
      * Get live command map data for ambulances, incidents, and drivers.
      */
-    public function gpsLocations()
+    public function gpsLocations(GpsFreshnessService $gpsFreshness)
     {
         // Get latest GPS location per driver more efficiently using subquery
         $latestDriverLocations = GpsLocation::with('driver.user')
@@ -239,34 +240,36 @@ class DashboardController extends Controller
             ->get()
             ->keyBy('driver_id');
 
-        $ambulances = $latestDriverLocations->map(function ($location) {
-            $driver = $location?->driver;
-            $assignment = $driver?->activeVehicleAssignment()->first();
-            $ambulance = $assignment?->ambulance;
-
-            if (!$ambulance || !$location?->latitude || !$location?->longitude) {
-                return null;
-            }
-
-            $status = strtolower((string) ($ambulance->status ?? 'available'));
-            $mapStatus = $this->resolveMapStatus($status, $driver?->status);
+        $ambulances = Ambulance::with([
+            'driverAssignments' => fn($query) => $query
+                ->where('status', 'active')
+                ->with('driver.user')
+                ->latest('assigned_at'),
+        ])->get()->map(function ($ambulance) use ($latestDriverLocations, $gpsFreshness) {
+            $driver = $ambulance->driverAssignments->first()?->driver;
+            $location = $driver ? $latestDriverLocations->get($driver->id) : null;
+            $mapStatus = $this->resolveMapStatus(
+                strtolower((string) ($ambulance->status ?? 'available')),
+                $driver?->status
+            );
 
             return [
                 'id' => $ambulance->id,
                 'name' => $ambulance->vehicle_name ?? 'Ambulance',
                 'plate_number' => $ambulance->plate_number,
-                'latitude' => (float) $location->latitude,
-                'longitude' => (float) $location->longitude,
+                'latitude' => $location?->latitude !== null ? (float) $location->latitude : null,
+                'longitude' => $location?->longitude !== null ? (float) $location->longitude : null,
                 'status' => $ambulance->status ?? 'available',
                 'status_key' => $mapStatus,
                 'driver_name' => $driver?->user?->name ?? 'Unassigned',
-                'last_updated' => $location->recorded_at?->format('M d, Y H:i') ?? 'Unknown',
-                'speed_kmh' => $location->speed_kmh,
-                'speed_status' => $location->speed_status,
-                'speed_limit_kmh' => $location->speed_limit_kmh,
+                'last_updated' => $location?->recorded_at?->format('M d, Y H:i') ?? 'Unknown',
+                'speed_kmh' => $location?->speed_kmh,
+                'speed_status' => $location?->speed_status,
+                'speed_limit_kmh' => $location?->speed_limit_kmh,
                 'type' => 'ambulance',
+                ...$gpsFreshness->metadata($location),
             ];
-        })->filter();
+        });
 
         $incidents = Incident::whereNotIn('status', ['completed', 'closed'])
             ->whereNotNull('latitude')
@@ -291,7 +294,7 @@ class DashboardController extends Controller
                 ];
             });
 
-        $drivers = $latestDriverLocations->map(function ($location) {
+        $drivers = $latestDriverLocations->map(function (GpsLocation $location) use ($gpsFreshness) {
             $driver = $location?->driver;
             $assignment = $driver?->activeVehicleAssignment()->first();
             $ambulance = $assignment?->ambulance;
@@ -316,6 +319,7 @@ class DashboardController extends Controller
                 'speed_status' => $location->speed_status,
                 'speed_limit_kmh' => $location->speed_limit_kmh,
                 'type' => 'driver',
+                ...$gpsFreshness->metadata($location),
             ];
         })->filter();
 
@@ -327,9 +331,9 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function liveCommandMapData()
+    public function liveCommandMapData(GpsFreshnessService $gpsFreshness)
     {
-        return $this->gpsLocations();
+        return $this->gpsLocations($gpsFreshness);
     }
 
     protected function resolveMapStatus(string $status, ?string $fallback = null): string

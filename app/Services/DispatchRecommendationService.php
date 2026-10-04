@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Ambulance;
 use App\Models\Driver;
 use App\Models\Incident;
+use Carbon\Carbon;
 
 class DispatchRecommendationService
 {
@@ -13,22 +14,31 @@ class DispatchRecommendationService
         $drivers = $drivers ?? Driver::where('status', 'available')->get();
         $vehicles = $vehicles ?? Ambulance::where('status', 'available')->get();
 
-        $nearestDriver = null;
-        $nearestDriverDistance = null;
-
         if (!is_numeric($incident->latitude) || !is_numeric($incident->longitude)) {
             return [
                 'nearestDriver' => null,
                 'nearestDriverDistance' => null,
                 'nearestAmbulance' => null,
                 'nearestAmbulanceDistance' => null,
+                'eligibleDrivers' => [],
+                'rankedDrivers' => [],
+                'eligibleVehicles' => [],
+                'rankedVehicles' => [],
             ];
         }
+
+        $staleLimitMinutes = (int) config('services.muniresq.location_stale_limit_minutes', 5);
+        $eligibleDrivers = [];
 
         foreach ($drivers as $driver) {
             $gps = $driver->gpsLocations()->latest('recorded_at')->first();
 
             if (!$gps || !is_numeric($gps->latitude) || !is_numeric($gps->longitude)) {
+                continue;
+            }
+
+            $recordedAt = $gps->recorded_at instanceof Carbon ? $gps->recorded_at : Carbon::parse($gps->recorded_at);
+            if ($recordedAt->diffInMinutes(now()) > $staleLimitMinutes) {
                 continue;
             }
 
@@ -39,15 +49,14 @@ class DispatchRecommendationService
                 $gps->longitude
             );
 
-            if ($nearestDriver === null || $nearestDriverDistance === null || $distance < $nearestDriverDistance) {
-                $nearestDriverDistance = $distance;
-                $nearestDriver = $driver;
-            }
+            $driver->distance = round($distance, 2);
+            $driver->gps_age_minutes = (int) $recordedAt->diffInMinutes(now());
+            $eligibleDrivers[] = $driver;
         }
 
-        $nearestAmbulance = null;
-        $nearestAmbulanceDistance = null;
+        usort($eligibleDrivers, fn($left, $right) => ($left->distance ?? PHP_FLOAT_MAX) <=> ($right->distance ?? PHP_FLOAT_MAX));
 
+        $eligibleVehicles = [];
         foreach ($vehicles as $vehicle) {
             if (blank($vehicle->latitude) || blank($vehicle->longitude)) {
                 continue;
@@ -60,17 +69,26 @@ class DispatchRecommendationService
                 $vehicle->longitude
             );
 
-            if ($nearestAmbulance === null || $distance < $nearestAmbulanceDistance) {
-                $nearestAmbulanceDistance = $distance;
-                $nearestAmbulance = $vehicle;
-            }
+            $vehicle->distance = round($distance, 2);
+            $eligibleVehicles[] = $vehicle;
         }
+
+        usort($eligibleVehicles, fn($left, $right) => ($left->distance ?? PHP_FLOAT_MAX) <=> ($right->distance ?? PHP_FLOAT_MAX));
+
+        $nearestDriver = $eligibleDrivers[0] ?? null;
+        $nearestDriverDistance = $nearestDriver?->distance ?? null;
+        $nearestAmbulance = $eligibleVehicles[0] ?? null;
+        $nearestAmbulanceDistance = $nearestAmbulance?->distance ?? null;
 
         return [
             'nearestDriver' => $nearestDriver,
             'nearestDriverDistance' => $nearestDriverDistance,
             'nearestAmbulance' => $nearestAmbulance,
             'nearestAmbulanceDistance' => $nearestAmbulanceDistance,
+            'eligibleDrivers' => $eligibleDrivers,
+            'rankedDrivers' => $eligibleDrivers,
+            'eligibleVehicles' => $eligibleVehicles,
+            'rankedVehicles' => $eligibleVehicles,
         ];
     }
 

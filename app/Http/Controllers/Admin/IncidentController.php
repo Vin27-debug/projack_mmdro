@@ -162,6 +162,8 @@ class IncidentController extends Controller
             'response-completed' => ['target' => 'incident', 'column' => 'completed_at', 'label' => 'Response Completed'],
         ];
 
+        $field = $field === 'at_scene_at' ? 'arrived-at-scene' : $field;
+
         if ($field === 'bulk') {
             $dispatch = $incident->dispatches()->latest('created_at')->first();
             $validated = $request->validate([
@@ -177,7 +179,7 @@ class IncidentController extends Controller
             }
 
             $sequence = [
-                'incident-reported' => $incident->created_at,
+                'incident-reported' => null,
                 'call-received' => $incident->call_received_at,
                 'dispatch-created' => $dispatch?->created_at,
                 'driver-accepted' => $dispatch?->accepted_at,
@@ -267,12 +269,15 @@ class IncidentController extends Controller
         }
 
         $validated = $request->validate([
-            'timestamp' => ['required', 'date_format:Y-m-d\\TH:i'],
+            'timestamp' => ['required', 'date_format:Y-m-d\\TH:i,Y-m-d H:i:s'],
         ]);
 
-        $newValue = Carbon::createFromFormat('Y-m-d\\TH:i', $validated['timestamp']);
+        $timestampFormat = str_contains($validated['timestamp'], 'T')
+            ? 'Y-m-d\\TH:i'
+            : 'Y-m-d H:i:s';
+        $newValue = Carbon::createFromFormat($timestampFormat, $validated['timestamp']);
         $sequence = [
-            'incident-reported' => $incident->created_at,
+            'incident-reported' => $field === 'incident-reported' ? $newValue : null,
             'call-received' => $incident->call_received_at,
             'dispatch-created' => $dispatch?->created_at,
             'driver-accepted' => $dispatch?->accepted_at,
@@ -358,6 +363,7 @@ class IncidentController extends Controller
             'incident',
             'drivers',
             'vehicles',
+            'recommendation',
             'nearestDriver',
             'nearestDistance',
             'nearestAmbulance',
@@ -398,6 +404,7 @@ class IncidentController extends Controller
             $dispatch = Dispatch::query()->where('incident_id', $incident->id)
                 ->where('driver_id', $driverId)
                 ->first();
+            $oldStatus = $dispatch?->status;
 
             if ($dispatch) {
                 $dispatch->update([
@@ -431,6 +438,12 @@ class IncidentController extends Controller
                 'driver_id' => $driverId,
                 'ambulance_id' => $vehicleId,
             ]);
+
+            if ($oldStatus !== null && $oldStatus !== $dispatch->status) {
+                AuditService::logDispatch($dispatch, 'dispatch_status_changed', $oldStatus);
+            } else {
+                AuditService::logDispatch($dispatch, 'dispatch_assigned');
+            }
         });
 
         return redirect()->route('admin.incidents.index')->with('success', 'Driver dispatched successfully.');

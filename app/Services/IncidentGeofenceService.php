@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Dispatch;
 use App\Models\Driver;
 use App\Models\Incident;
+use App\Services\AuditService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -80,6 +81,8 @@ class IncidentGeofenceService
                 $driver->update([
                     'status' => Driver::STATUS_ON_SCENE,
                 ]);
+
+                AuditService::logDispatch($dispatch, 'dispatch_status_changed', Dispatch::STATUS_EN_ROUTE);
 
                 $events[] = 'at_scene';
             }

@@ -79,7 +79,7 @@
                 <option value="Low" {{ old('priority') === 'Low' ? 'selected' : '' }}>🟢 Green — Minor/Minimal</option>
                 <option value="Medium" {{ old('priority', 'Medium') === 'Medium' ? 'selected' : '' }}>🟡 Yellow — Delayed</option>
                 <option value="High" {{ old('priority') === 'High' ? 'selected' : '' }}>🔴 Red — Immediate/Critical</option>
-                <option value="Critical" {{ old('priority') === 'Critical' ? 'selected' : '' }}>⚫ Black — Disease</option>
+                <option value="Critical" {{ old('priority') === 'Critical' ? 'selected' : '' }}>⚫ Black — Critical</option>
             </select>
         </div>
 

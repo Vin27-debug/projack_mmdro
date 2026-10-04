@@ -38,10 +38,15 @@ class IncidentReportController extends Controller
             'closed_at' => now()
         ]);
 
-        $report->incident->dispatches()->latest()->first()?->update([
-            'status' => Dispatch::STATUS_COMPLETED,
-            'completed_at' => now(),
-        ]);
+        $dispatch = $report->incident->dispatches()->latest()->first();
+        if ($dispatch && $dispatch->status !== Dispatch::STATUS_COMPLETED) {
+            $oldStatus = $dispatch->status;
+            $dispatch->update([
+                'status' => Dispatch::STATUS_COMPLETED,
+                'completed_at' => now(),
+            ]);
+            AuditService::logDispatch($dispatch, 'dispatch_status_changed', $oldStatus);
+        }
 
         $driver = $report->driver;
 

@@ -2,6 +2,8 @@
 
 return [
     'muniresq' => [
+        'location_fresh_seconds' => (int) env('MUNIRESQ_LOCATION_FRESH_SECONDS', 60),
+        'location_stale_limit_minutes' => (int) env('MUNIRESQ_LOCATION_STALE_LIMIT_MINUTES', 5),
         'speed' => [
             'yellow_over_limit_percent' => (float) env('MUNIRESQ_SPEED_YELLOW_OVER_LIMIT_PERCENT', 10),
             'red_over_limit_percent' => (float) env('MUNIRESQ_SPEED_RED_OVER_LIMIT_PERCENT', 20),

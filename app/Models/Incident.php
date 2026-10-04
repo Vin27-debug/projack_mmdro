@@ -145,7 +145,7 @@ class Incident extends Model
             'low' => 'Green — Minor/Minimal',
             'medium' => 'Yellow — Delayed',
             'high' => 'Red — Immediate/Critical',
-            'critical' => 'Black — Disease',
+            'critical' => 'Black — Critical',
             default => (string) $priority,
         };
     }

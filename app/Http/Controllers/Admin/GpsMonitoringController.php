@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Dispatch;
 use App\Models\Driver;
 use App\Models\GpsLocation;
+use App\Services\GpsFreshnessService;
 
 class GpsMonitoringController extends Controller
 {
@@ -21,7 +22,7 @@ class GpsMonitoringController extends Controller
      * Therefore, even drivers without an active mission can still
      * appear on the admin monitoring map using their latest GPS location.
      */
-    public function locations()
+    public function locations(GpsFreshnessService $gpsFreshness)
     {
         $drivers = Driver::with([
             'user',
@@ -89,10 +90,6 @@ class GpsMonitoringController extends Controller
             $location = $latestLocations->get(
                 $driver->id
             );
-
-            if (!$location) {
-                continue;
-            }
 
             /*
             |--------------------------------------------------------------------------
@@ -221,18 +218,22 @@ class GpsMonitoringController extends Controller
                 |--------------------------------------------------------------------------
                 */
 
-                'latitude' =>
-                (float) $location->latitude,
+                'latitude' => $location?->latitude !== null
+                    ? (float) $location->latitude
+                    : null,
 
-                'longitude' =>
-                (float) $location->longitude,
+                'longitude' => $location?->longitude !== null
+                    ? (float) $location->longitude
+                    : null,
 
-                'recorded_at' =>
-                $location->recorded_at?->toISOString(),
+                'last_updated' =>
+                $location?->recorded_at?->format('M d, Y H:i') ?? 'Unknown',
 
-                'speed_kmh' => $location->speed_kmh,
-                'speed_status' => $location->speed_status,
-                'speed_limit_kmh' => $location->speed_limit_kmh,
+                ...$gpsFreshness->metadata($location),
+
+                'speed_kmh' => $location?->speed_kmh,
+                'speed_status' => $location?->speed_status,
+                'speed_limit_kmh' => $location?->speed_limit_kmh,
             ]);
         }
 

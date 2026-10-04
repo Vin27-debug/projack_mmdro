@@ -244,6 +244,10 @@ $readyPercent = $totalFleet > 0 ? round((($availableVehicles ?? 0) / $totalFleet
                 </div>
                 <div class="px-3 pt-2 small eoc-meta"><span class="text-success">● Available</span><span class="text-warning ms-3">● En route</span><span class="text-danger ms-3">● Incident</span></div>
                 <div id="liveCommandMap" class="eoc-map-container mt-2"></div>
+                <div class="px-3 pb-3 border-top border-white border-opacity-10">
+                    <h3 class="h6 mt-3 mb-2">Vehicle GPS</h3>
+                    <div id="liveVehicleList" class="small" aria-live="polite"></div>
+                </div>
             </div>
         </section>
         <aside class="col-xl-4" aria-labelledby="advisory-heading">
@@ -271,6 +275,29 @@ $readyPercent = $totalFleet > 0 ? round((($availableVehicles ?? 0) / $totalFleet
             </div>
         </aside>
     </div>
+
+    <section class="eoc-card mb-4" aria-labelledby="panic-alerts-heading">
+        <div class="p-3 border-bottom border-white border-opacity-10">
+            <h2 id="panic-alerts-heading" class="h5 mb-1">Active Panic Alerts</h2>
+            <p class="eoc-panel-subtitle small mb-0">Emergency alerts requiring immediate attention</p>
+        </div>
+        <div class="p-3">
+            @forelse(($activePanicAlerts ?? collect()) as $alert)
+            <article class="d-flex justify-content-between align-items-start gap-3 py-2 border-bottom border-white border-opacity-10">
+                <div>
+                    <strong>{{ $alert->driver?->user?->name ?? 'Unknown Driver' }}</strong>
+                    <div class="eoc-meta small">Panic alert triggered</div>
+                </div>
+                <div class="text-end small">
+                    <div>{{ $alert->latitude }}, {{ $alert->longitude }}</div>
+                    <div class="eoc-meta">{{ $alert->triggered_at?->diffForHumans() }}</div>
+                </div>
+            </article>
+            @empty
+            <div class="eoc-meta py-3">No active panic alerts at this time.</div>
+            @endforelse
+        </div>
+    </section>
 
     <div class="row g-3">
         <section class="col-lg-7" aria-labelledby="fleet-heading">
@@ -313,6 +340,8 @@ $readyPercent = $totalFleet > 0 ? round((($availableVehicles ?? 0) / $totalFleet
     let liveMarkerLayer = null;
     let mapRequest = null;
     let mapHasFitted = false;
+    const GPS_FRESH_SECONDS = @json((int) config('services.muniresq.location_fresh_seconds', 60));
+    const GPS_STALE_LIMIT_SECONDS = @json((int) config('services.muniresq.location_stale_limit_minutes', 5) * 60);
 
     document.addEventListener('DOMContentLoaded', initializeLiveCommandMap);
 
@@ -344,6 +373,7 @@ $readyPercent = $totalFleet > 0 ? round((($availableVehicles ?? 0) / $totalFleet
             .then(response => response.ok ? response.json() : Promise.reject(new Error('Map request failed')))
             .then(data => {
                 liveMarkerLayer.clearLayers();
+                renderVehicleList(data.ambulances || []);
                 const markers = [];
                 (data.ambulances || []).concat(data.drivers || []).forEach(item => addMarker(item, item.type === 'driver' ? 6 : 8, getStatusColor(item.status_key)) && markers.push([item.latitude, item.longitude]));
                 (data.incidents || []).forEach(item => addIncidentMarker(item) && markers.push([item.latitude, item.longitude]));
@@ -358,7 +388,60 @@ $readyPercent = $totalFleet > 0 ? round((($availableVehicles ?? 0) / $totalFleet
             });
     }
 
+    function getGpsFreshness(item) {
+        if (!item.recorded_at) return {
+            status: 'missing',
+            relative: 'No GPS data'
+        };
+
+        const recordedAt = Date.parse(item.recorded_at);
+        if (!Number.isFinite(recordedAt)) return {
+            status: 'missing',
+            relative: 'No GPS data'
+        };
+
+        const ageSeconds = Math.max(0, Math.floor((Date.now() - recordedAt) / 1000));
+        const relative = ageSeconds < 10 ? 'just now' : ageSeconds < 60 ? `${ageSeconds} sec ago` : ageSeconds < 3600 ? `${Math.floor(ageSeconds / 60)} min ago` : `${Math.floor(ageSeconds / 3600)} hr ago`;
+        const status = ageSeconds < GPS_FRESH_SECONDS ? 'fresh' : ageSeconds <= GPS_STALE_LIMIT_SECONDS ? 'delayed' : 'stale';
+
+        return {
+            status,
+            relative
+        };
+    }
+
+    function gpsFreshnessMarkup(item) {
+        const freshness = getGpsFreshness(item);
+        if (freshness.status === 'missing') return '<span class="text-muted">No GPS data</span>';
+
+        const badgeClass = freshness.status === 'fresh' ? 'bg-success-subtle text-success' : freshness.status === 'delayed' ? 'bg-warning text-dark' : 'bg-danger-subtle text-danger';
+        const badgeLabel = freshness.status.charAt(0).toUpperCase() + freshness.status.slice(1);
+        const outdated = freshness.status === 'stale' ? '<span class="text-danger ms-1">Location may be outdated</span>' : '';
+        const hasAccuracy = item.accuracy_meters !== null && item.accuracy_meters !== undefined && item.accuracy_meters !== '';
+        const accuracy = hasAccuracy ? Number(item.accuracy_meters) : NaN;
+        const accuracyLabel = Number.isFinite(accuracy) ? ` <span class="text-muted">±${accuracy.toFixed(0)} m</span>` : '';
+
+        return `<span class="badge ${badgeClass}">${badgeLabel}</span> <span>${freshness.relative}</span>${outdated}${accuracyLabel}`;
+    }
+
+    function renderVehicleList(vehicles) {
+        const list = document.getElementById('liveVehicleList');
+        if (!list) return;
+        if (!vehicles.length) {
+            list.innerHTML = '<span class="eoc-meta">No vehicles configured.</span>';
+            return;
+        }
+
+        list.innerHTML = vehicles.map(item => `
+            <div class="d-flex justify-content-between align-items-start gap-3 py-2 border-bottom border-white border-opacity-10">
+                <div><strong>${escapePopupText(item.name || 'Ambulance')}</strong><div class="eoc-meta">${escapePopupText(item.driver_name || 'Unassigned')}</div></div>
+                <div class="text-end">${gpsFreshnessMarkup(item)}</div>
+            </div>
+        `).join('');
+    }
+
     function addMarker(item, radius, color) {
+        if (item.latitude == null || item.longitude == null) return false;
         if (!Number.isFinite(Number(item.latitude)) || !Number.isFinite(Number(item.longitude))) return false;
         L.circleMarker([item.latitude, item.longitude], {
             radius,
@@ -366,7 +449,7 @@ $readyPercent = $totalFleet > 0 ? round((($availableVehicles ?? 0) / $totalFleet
             color: '#fff',
             weight: 1.5,
             fillOpacity: 0.9
-        }).bindPopup(`<strong>${escapePopupText(item.name || item.driver_name || 'Unit')}</strong><br>Status: ${escapePopupText(item.status || 'Unknown')}`).addTo(liveMarkerLayer);
+        }).bindPopup(`<strong>${escapePopupText(item.name || item.driver_name || 'Unit')}</strong><br>Status: ${escapePopupText(item.status || 'Unknown')}<br>GPS: ${gpsFreshnessMarkup(item)}`).addTo(liveMarkerLayer);
         return true;
     }
 

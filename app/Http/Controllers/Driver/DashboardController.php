@@ -8,6 +8,7 @@ use App\Models\Dispatch;
 use App\Models\Driver;
 use App\Models\Incident;
 use App\Models\Notification;
+use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -178,6 +179,7 @@ class DashboardController extends Controller
                 }
 
                 $oldVehicleId = $dispatch->vehicle_id;
+                $oldStatus = $dispatch->status;
 
                 $dispatch->update([
                     'vehicle_id' => $vehicle->id,
@@ -224,6 +226,8 @@ class DashboardController extends Controller
                 $driver->update([
                     'status' => Driver::STATUS_EN_ROUTE,
                 ]);
+
+                AuditService::logDispatch($dispatch, 'dispatch_accepted', $oldStatus);
             });
         } catch (\DomainException $exception) {
             return back()->with('error', $exception->getMessage())->withInput();
@@ -282,9 +286,12 @@ class DashboardController extends Controller
             );
         }
 
+        $oldStatus = $dispatch->status;
+
         DB::transaction(function () use (
             $dispatch,
-            $driver
+            $driver,
+            $oldStatus
         ) {
 
             /*
@@ -352,6 +359,8 @@ class DashboardController extends Controller
                     'status' => Driver::STATUS_AVAILABLE,
                 ]);
             }
+
+            AuditService::logDispatch($dispatch, 'dispatch_declined', $oldStatus);
         });
 
         return back()->with(
@@ -459,6 +468,8 @@ class DashboardController extends Controller
         }
 
         DB::transaction(function () use ($incident, $dispatch, $driver) {
+            $oldStatus = $dispatch->status;
+
             $incident->update([
                 'status' => Incident::STATUS_DISPATCHED,
             ]);
@@ -478,6 +489,8 @@ class DashboardController extends Controller
                     'status' => Ambulance::STATUS_ON_DUTY,
                 ]);
             }
+
+            AuditService::logDispatch($dispatch, 'dispatch_status_changed', $oldStatus);
         });
 
         return back()->with('success', 'Incident marked as en route.');
@@ -512,6 +525,8 @@ class DashboardController extends Controller
         }
 
         DB::transaction(function () use ($incident, $dispatch, $driver) {
+            $oldStatus = $dispatch->status;
+
             $incident->update([
                 'at_scene_at' => now(),
                 'status' => Incident::STATUS_RESPONDING,
@@ -525,6 +540,8 @@ class DashboardController extends Controller
             $driver->update([
                 'status' => Driver::STATUS_ON_SCENE,
             ]);
+
+            AuditService::logDispatch($dispatch, 'dispatch_status_changed', $oldStatus);
         });
 
         return back()->with('success', 'Arrived at Scene time recorded.');
@@ -669,6 +686,8 @@ class DashboardController extends Controller
         }
 
         DB::transaction(function () use ($incident, $dispatch, $driver) {
+            $oldStatus = $dispatch->status;
+
             $incident->update([
                 'status' => Incident::STATUS_COMPLETED,
                 'return_to_base_at' => $incident->return_to_base_at ?? now(),
@@ -689,6 +708,8 @@ class DashboardController extends Controller
                     'status' => Ambulance::STATUS_ON_DUTY,
                 ]);
             }
+
+            AuditService::logDispatch($dispatch, 'dispatch_status_changed', $oldStatus);
         });
 
         return back()->with('success', 'Mission completed. Driver is now returning to base and the vehicle remains assigned until the crew confirms it is ready for the next mission.');

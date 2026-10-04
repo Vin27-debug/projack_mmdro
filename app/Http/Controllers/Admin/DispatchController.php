@@ -7,6 +7,7 @@ use App\Models\Incident;
 use App\Models\Dispatch;
 use App\Models\Driver;
 use App\Models\Ambulance;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -248,7 +249,7 @@ class DispatchController extends Controller
             $ambulanceId
         ) {
 
-            Dispatch::create([
+            $dispatch = Dispatch::create([
                 'incident_id' => $incident->id,
                 'driver_id' => $driverId,
                 'vehicle_id' => $ambulanceId,
@@ -300,6 +301,8 @@ class DispatchController extends Controller
                     'status' => Ambulance::STATUS_ON_DUTY,
                 ]);
             }
+
+            AuditService::logDispatch($dispatch, 'dispatch_assigned');
         });
 
 

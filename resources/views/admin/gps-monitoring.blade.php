@@ -107,6 +107,8 @@
             @json(route('admin.gps.locations'));
 
         const UPDATE_INTERVAL = 5000;
+        const GPS_FRESH_SECONDS = @json((int) config('services.muniresq.location_fresh_seconds', 60));
+        const GPS_STALE_LIMIT_SECONDS = @json((int) config('services.muniresq.location_stale_limit_minutes', 5) * 60);
 
         const DEFAULT_LAT = 15.421486;
 
@@ -179,6 +181,31 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
+        }
+
+
+        function gpsFreshnessMarkup(location) {
+
+            if (!location.recorded_at) {
+                return '<span class="text-muted">No GPS data</span>';
+            }
+
+            const recordedAt = Date.parse(location.recorded_at);
+            if (!Number.isFinite(recordedAt)) {
+                return '<span class="text-muted">No GPS data</span>';
+            }
+
+            const ageSeconds = Math.max(0, Math.floor((Date.now() - recordedAt) / 1000));
+            const relative = ageSeconds < 10 ? 'just now' : ageSeconds < 60 ? `${ageSeconds} sec ago` : ageSeconds < 3600 ? `${Math.floor(ageSeconds / 60)} min ago` : `${Math.floor(ageSeconds / 3600)} hr ago`;
+            const status = ageSeconds < GPS_FRESH_SECONDS ? 'fresh' : ageSeconds <= GPS_STALE_LIMIT_SECONDS ? 'delayed' : 'stale';
+            const badgeClass = status === 'fresh' ? 'bg-success' : status === 'delayed' ? 'bg-warning text-dark' : 'bg-danger';
+            const badgeLabel = status.charAt(0).toUpperCase() + status.slice(1);
+            const outdated = status === 'stale' ? '<span class="text-danger ms-1">Location may be outdated</span>' : '';
+            const hasAccuracy = location.accuracy_meters !== null && location.accuracy_meters !== undefined && location.accuracy_meters !== '';
+            const accuracy = hasAccuracy ? Number(location.accuracy_meters) : NaN;
+            const accuracyLabel = Number.isFinite(accuracy) ? ` <span class="text-muted">±${accuracy.toFixed(0)} m</span>` : '';
+
+            return `<span class="badge ${badgeClass}">${badgeLabel}</span> <span>${relative}</span>${outdated}${accuracyLabel}`;
         }
 
 
@@ -399,6 +426,9 @@
             const driverId =
                 String(location.driver_id);
 
+            if (location.latitude == null || location.longitude == null) {
+                return;
+            }
 
             const lat =
                 Number(location.latitude);
@@ -473,16 +503,8 @@
                 }
 
                 <div>
-                    <strong>Last GPS:</strong>
-                    ${
-                        location.recorded_at
-                        ?
-                        new Date(
-                            location.recorded_at
-                        ).toLocaleString()
-                        :
-                        'Unknown'
-                    }
+                    <strong>GPS:</strong>
+                    ${gpsFreshnessMarkup(location)}
                 </div>
 
             </div>
@@ -1029,7 +1051,13 @@
 
             const currentDrivers =
                 new Set(
-                    locations.map(
+                    locations.filter(
+                        location =>
+                        location.latitude != null &&
+                        location.longitude != null &&
+                        Number.isFinite(Number(location.latitude)) &&
+                        Number.isFinite(Number(location.longitude))
+                    ).map(
                         location =>
                         String(
                             location.driver_id
@@ -1360,21 +1388,10 @@
                             <div class="small text-muted">Limit: ${location.speed_limit_kmh !== null ? Number(location.speed_limit_kmh).toFixed(1) + ' km/h' : 'Speed limit unavailable'}</div>
 
 
-                            <small class="text-muted">
-
-                                Last GPS:
-
-                                ${
-                                    location.recorded_at
-                                    ?
-                                    new Date(
-                                        location.recorded_at
-                                    ).toLocaleString()
-                                    :
-                                    'Unknown'
-                                }
-
-                            </small>
+                            <div class="small mt-2">
+                                <strong>GPS:</strong>
+                                ${gpsFreshnessMarkup(location)}
+                            </div>
 
 
                             ${

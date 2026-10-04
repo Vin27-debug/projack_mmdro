@@ -3,11 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\Ambulance;
+use App\Models\AuditLog;
 use App\Models\Dispatch;
 use App\Models\Driver;
 use App\Models\Incident;
 use App\Models\IncidentReport;
+use App\Models\GpsLocation;
 use App\Models\User;
+use App\Services\DispatchRecommendationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Spatie\Permission\Models\Role;
@@ -69,6 +72,110 @@ class DispatchStatusTest extends TestCase
             'ambulance_id' => $ambulance->id,
             'status' => 'dispatched',
         ]);
+
+        $dispatch = Dispatch::where('incident_id', $incident->id)->firstOrFail();
+        $this->assertDispatchAudit($dispatch, $user, 'dispatch_assigned');
+
+        $this->get(route('admin.audit-logs.index'))
+            ->assertOk()
+            ->assertSee('Dispatch')
+            ->assertSee('dispatch_assigned');
+
+        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin']);
+        $superAdmin = User::factory()->create(['status' => 'approved']);
+        $superAdmin->assignRole($superAdminRole);
+        $this->actingAs($superAdmin)
+            ->get(route('admin.audit-logs.index'))
+            ->assertOk()
+            ->assertSee('Dispatch')
+            ->assertSee('dispatch_assigned');
+    }
+
+    public function test_dispatch_recommendation_filters_out_stale_or_missing_gps_and_ranks_fresh_resources(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
+        $incident = Incident::create([
+            'incident_number' => 'INC-NEW-RANK',
+            'reporter_name' => 'Rank Test',
+            'contact_number' => '09120000010',
+            'incident_type' => 'Medical',
+            'location' => 'Rank Avenue',
+            'description' => 'Ranking test',
+            'status' => 'pending',
+            'latitude' => 14.5995,
+            'longitude' => 120.9842,
+        ]);
+
+        $freshDriver = Driver::create([
+            'user_id' => User::factory()->create(['status' => 'approved'])->id,
+            'badge_id' => 'AMB-210',
+            'contact_number' => '09123456781',
+            'license_number' => 'LIC-210',
+            'license_expiry' => '2030-01-01',
+            'status' => Driver::STATUS_AVAILABLE,
+        ]);
+        GpsLocation::create([
+            'driver_id' => $freshDriver->id,
+            'latitude' => 14.5998,
+            'longitude' => 120.9845,
+            'recorded_at' => now()->subMinute(),
+        ]);
+
+        $staleDriver = Driver::create([
+            'user_id' => User::factory()->create(['status' => 'approved'])->id,
+            'badge_id' => 'AMB-211',
+            'contact_number' => '09123456782',
+            'license_number' => 'LIC-211',
+            'license_expiry' => '2030-01-01',
+            'status' => Driver::STATUS_AVAILABLE,
+        ]);
+        GpsLocation::create([
+            'driver_id' => $staleDriver->id,
+            'latitude' => 14.6000,
+            'longitude' => 120.9849,
+            'recorded_at' => now()->subMinutes(15),
+        ]);
+
+        $noGpsDriver = Driver::create([
+            'user_id' => User::factory()->create(['status' => 'approved'])->id,
+            'badge_id' => 'AMB-212',
+            'contact_number' => '09123456783',
+            'license_number' => 'LIC-212',
+            'license_expiry' => '2030-01-01',
+            'status' => Driver::STATUS_AVAILABLE,
+        ]);
+
+        $recommendedVehicle = Ambulance::create([
+            'plate_number' => 'ABC-210',
+            'vehicle_name' => 'Priority One',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_AVAILABLE,
+            'latitude' => 14.6030,
+            'longitude' => 120.9850,
+        ]);
+
+        $secondVehicle = Ambulance::create([
+            'plate_number' => 'ABC-211',
+            'vehicle_name' => 'Priority Two',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_AVAILABLE,
+            'latitude' => 14.6100,
+            'longitude' => 120.9900,
+        ]);
+
+        $recommendation = app(DispatchRecommendationService::class)->recommend(
+            $incident,
+            [$freshDriver, $staleDriver, $noGpsDriver],
+            [$recommendedVehicle, $secondVehicle]
+        );
+
+        $this->assertSame($freshDriver->id, $recommendation['nearestDriver']->id);
+        $this->assertSame(1, count($recommendation['eligibleDrivers']));
+        $this->assertSame($recommendedVehicle->id, $recommendation['nearestAmbulance']->id);
+        $this->assertSame(2, count($recommendation['eligibleVehicles']));
+        $this->assertSame([$freshDriver->id], array_map(fn($driver) => $driver->id, $recommendation['rankedDrivers']));
+        $this->assertSame([$recommendedVehicle->id, $secondVehicle->id], array_map(fn($vehicle) => $vehicle->id, $recommendation['rankedVehicles']));
     }
 
     public function test_driver_dashboard_shows_accept_and_decline_actions_for_assigned_dispatches(): void
@@ -359,6 +466,7 @@ class DispatchStatusTest extends TestCase
             'id' => $incident->id,
             'status' => Incident::STATUS_PENDING,
         ]);
+        $this->assertDispatchAudit($dispatch->fresh(), $user, 'dispatch_declined', Dispatch::STATUS_ASSIGNED, Dispatch::STATUS_CANCELLED);
     }
 
     public function test_driver_can_switch_to_an_available_vehicle_when_accepting(): void
@@ -427,6 +535,7 @@ class DispatchStatusTest extends TestCase
             'id' => $oldVehicle->id,
             'status' => Ambulance::STATUS_AVAILABLE,
         ]);
+        $this->assertDispatchAudit($dispatch->fresh(), $user, 'dispatch_accepted', Dispatch::STATUS_ASSIGNED, Dispatch::STATUS_EN_ROUTE);
     }
 
     public function test_driver_cannot_accept_with_a_vehicle_that_became_busy(): void
@@ -879,5 +988,31 @@ class DispatchStatusTest extends TestCase
             'id' => $dispatch->id,
             'status' => Dispatch::STATUS_COMPLETED,
         ]);
+    }
+
+    private function assertDispatchAudit(
+        Dispatch $dispatch,
+        User $actor,
+        string $action,
+        ?string $oldStatus = null,
+        ?string $newStatus = null
+    ): void {
+        $log = AuditLog::where('module', 'Dispatch')
+            ->where('action', $action)
+            ->where('user_id', $actor->id)
+            ->latest('id')
+            ->firstOrFail();
+
+        $this->assertStringContainsString('Dispatch #' . $dispatch->id, $log->description);
+        $this->assertStringContainsString('Incident #' . $dispatch->incident_id, $log->description);
+        $this->assertStringContainsString($dispatch->vehicle->vehicle_name, $log->description);
+        $this->assertStringContainsString($dispatch->vehicle->plate_number, $log->description);
+        $this->assertStringContainsString($dispatch->driver->user->name, $log->description);
+        $this->assertStringContainsString($actor->name, $log->description);
+
+        if ($oldStatus !== null && $newStatus !== null) {
+            $this->assertStringContainsString(str_replace('_', ' ', $oldStatus), $log->description);
+            $this->assertStringContainsString(str_replace('_', ' ', $newStatus), $log->description);
+        }
     }
 }
