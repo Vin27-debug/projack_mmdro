@@ -11,7 +11,7 @@ class SuperAdminAdminManagementTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_super_admin_can_create_list_and_approve_an_admin(): void
+    public function test_super_admin_can_create_and_list_an_admin_without_approval(): void
     {
         Role::create(['name' => 'super-admin', 'guard_name' => 'web']);
         Role::create(['name' => 'admin', 'guard_name' => 'web']);
@@ -34,21 +34,31 @@ class SuperAdminAdminManagementTest extends TestCase
         $admin = User::where('email', 'test-admin@example.test')->firstOrFail();
 
         $response->assertRedirect(route('admins.index'));
-        $this->assertSame('pending', $admin->status);
+        $this->assertSame('approved', $admin->status);
         $this->assertNotNull($admin->created_at);
         $this->assertTrue($admin->hasRole('admin'));
 
         $this->actingAs($superAdmin)->get(route('admins.index'))
             ->assertOk()
             ->assertSee('Admin Management')
-            ->assertSee('Test Government Admin');
+            ->assertSee('Test Government Admin')
+            ->assertDontSee('Approve')
+            ->assertDontSee('Reject');
 
-        $this->actingAs($superAdmin)->post(route('admins.approve', $admin))
-            ->assertRedirect();
+        $this->actingAs($superAdmin)->get('/superadmin/users/pending')->assertNotFound();
+    }
 
-        $admin->refresh();
-        $this->assertSame('approved', $admin->status);
-        $this->assertSame($superAdmin->id, $admin->approved_by);
-        $this->assertNotNull($admin->approved_at);
+    public function test_suspended_admin_cannot_access_admin_routes(): void
+    {
+        Role::create(['name' => 'admin', 'guard_name' => 'web']);
+
+        $admin = User::factory()->create(['status' => 'suspended']);
+        $admin->assignRole('admin');
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertRedirect(route('login'));
+
+        $this->assertGuest();
     }
 }

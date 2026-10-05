@@ -25,8 +25,7 @@
                 'Government Email' => $admin->email,
                 'Contact Number' => $admin->contact_number ?: 'N/A',
                 'Created At' => $admin->created_at?->format('F j, Y h:i A'),
-                'Approved At' => $admin->status === 'pending' ? 'Not yet approved' : ($admin->approved_at?->format('F j, Y h:i A') ?: 'N/A'),
-                'Approved By' => $admin->approvedBy?->name ?: 'N/A',
+                'Created By' => $admin->createdBy?->name ?: 'N/A',
                 ] as $label => $value)
                 <div class="col-md-6">
                     <div class="text-muted small">{{ $label }}</div>
@@ -34,7 +33,7 @@
                 </div>
                 @endforeach
                 <div class="col-md-6">
-                    <div class="text-muted small">Status</div><span class="badge bg-{{ ['pending' => 'warning text-dark', 'approved' => 'success', 'rejected' => 'danger', 'suspended' => 'dark'][$admin->status] ?? 'secondary' }}">{{ ucfirst($admin->status) }}</span>
+                    <div class="text-muted small">Status</div><span class="badge bg-{{ $admin->status === 'suspended' ? 'dark' : 'success' }}">{{ $admin->status === 'suspended' ? 'Suspended' : 'Active' }}</span>
                 </div>
             </div>
         </div>

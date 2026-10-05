@@ -27,7 +27,6 @@ class DevelopmentAccountSeeder extends Seeder
                 'department' => 'MuniResQ Development',
                 'office' => 'Local Development',
                 'contact_number' => '09000000001',
-                'approved_at' => now(),
             ]
         );
         $superAdmin->syncRoles([$superAdminRole]);
@@ -43,8 +42,6 @@ class DevelopmentAccountSeeder extends Seeder
                 'department' => 'MuniResQ Development',
                 'office' => 'Local Development',
                 'contact_number' => '09000000002',
-                'approved_by' => $superAdmin->id,
-                'approved_at' => now(),
             ]
         );
         $admin->syncRoles([$adminRole]);
@@ -56,8 +53,6 @@ class DevelopmentAccountSeeder extends Seeder
                 'password' => Hash::make(env('MUNIRESQ_DEV_DRIVER_PASSWORD', 'MuniResQ-Dev-Driver-2026!')),
                 'status' => 'approved',
                 'badge_id' => 'DEV-DRIVER-001',
-                'approved_by' => $superAdmin->id,
-                'approved_at' => now(),
             ]
         );
         $driverUser->syncRoles([$driverRole]);

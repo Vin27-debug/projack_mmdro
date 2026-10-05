@@ -36,11 +36,11 @@ The current implementation does not establish that emergency calls are received 
 
 ## 2. User Roles and Responsibilities
 
-Role checks are implemented primarily through `auth`, `approved`, and Spatie `role` middleware groups in [`routes/web.php`](../routes/web.php). The `approved` alias maps to [`EnsureUserApproved`](../app/Http/Middleware/EnsureUserApproved.php).
+Role checks are implemented through `auth` and Spatie `role` middleware groups in [`routes/web.php`](../routes/web.php).
 
 | Role | Implemented responsibilities |
 |---|---|
-| **Super Admin** | Manages administrator accounts; approves/rejects/suspends administrators; approves or rejects pending users/drivers; manages drivers and driver–vehicle assignments; manages ambulances; accesses the super-admin dashboard, settings page, and backup functions. Super-admin users are also admitted to routes protected by `role:admin|super-admin`. |
+| **Super Admin** | Creates and manages administrator accounts, suspends administrators, creates and manages drivers and driver–vehicle assignments, manages ambulances, and accesses the super-admin dashboard, settings page, and backup functions. Super-admin users are also admitted to routes protected by `role:admin|super-admin`. |
 | **Admin / Dispatcher** | Creates and edits incidents; reviews incident and dispatch information; assigns drivers and vehicles; uses dispatch recommendations, monitoring, notification, report, maintenance, vulnerable-area, response-equipment, and audit-log screens; approves incident reports; may edit emergency timestamps. |
 | **Driver** | Uses the driver dashboard and assignment/history pages; accepts or declines assigned dispatches; submits GPS updates; records response milestones using available dashboard actions; triggers a panic alert; submits an incident report for an eligible completed incident. |
 
@@ -59,27 +59,25 @@ The application defines an [`IncidentPolicy`](../app/Policies/IncidentPolicy.php
 - Logout writes an audit entry, logs out the web guard, invalidates the session, regenerates the CSRF token, and redirects to `/`.
 - Password reset and password update routes are present.
 
-### 3.2 Registration and approval
+### 3.2 Registration and account access
 
 Several registration paths exist:
 
-- The standard Laravel `/register` path creates and logs in a user. The users migration defaults account status to `pending`; that generic path does not assign an MuniResQ operational role.
-- The driver registration path requires name, email, password confirmation, and contact number. License number and expiry remain nullable legacy database fields and are not requested by registration or driver management. Registration creates a pending user, assigns the driver role, and creates a driver profile.
-- The public admin-registration path creates a pending user and assigns the admin role.
-- A Super Admin can create administrator accounts with additional employment/contact fields; these accounts are also pending until approved.
+- The standard Laravel `/register` path creates and logs in a user; it does not assign an MuniResQ operational role.
+- The driver registration path requires name, email, password confirmation, and contact number. It creates the user and driver profile and assigns the driver role. License number and expiry remain nullable legacy database fields and are not requested by registration or driver management.
+- The public admin-registration path creates a user and assigns the admin role.
+- A Super Admin can create administrator accounts with additional employment/contact fields and can create driver accounts.
 
-Only approved accounts pass `EnsureUserApproved`. If the account is missing or its status is not exactly `approved`, the middleware redirects to `/login`; for a non-approved signed-in account, it logs the user out and flashes a pending-approval message.
-
-The user status values in the schema are `pending`, `approved`, `rejected`, and `suspended`. Super Admin approval of a pending driver creates or updates a driver profile, sets the driver available, ensures a vehicle assignment when possible, and synchronizes the user’s role to `driver`. Driver operational management uses a separate `management_status` of `active` or `suspended`; a suspended driver remains an approved account but is excluded from new assignments and dispatch recommendations. Administrator approval is handled by the administrator-management controller.
+Role-specific registration creates accounts that can sign in without Super Admin approval. Authentication checks credentials; role middleware controls access to driver, admin, and Super Admin pages. The legacy user `status`, `approved_by`, and `approved_at` columns remain in the database for compatibility but are not used to gate login or role routes. Driver operational management uses a separate `management_status` of `active` or `suspended`; suspended drivers are excluded from new assignments and dispatch recommendations.
 
 ### 3.3 Role-based access
 
-- Driver routes require authentication, approval, and the `driver` role.
-- Admin routes generally require authentication, approval, and either `admin` or `super-admin`.
+- Driver routes require authentication and the `driver` role.
+- Admin routes generally require authentication and either `admin` or `super-admin`.
 - Super-admin management routes require the `super-admin` role.
-- Profile routes require authentication but are not placed in the approved/role groups.
+- Profile routes require authentication.
 
-Role membership and account status are separate checks: an assigned role does not bypass the approved-account middleware.
+Role membership determines the role-specific access available after authentication. The retained suspension check logs suspended user accounts out of protected role areas; it does not block accounts merely because their legacy status is `pending` or `rejected`.
 
 ## 4. Incident Management Guidelines
 
@@ -168,7 +166,7 @@ There is more than one admin dispatch path. The Dispatch Center path performs ex
 
 The driver dashboard uses browser `navigator.geolocation.watchPosition`. While the page is visible, it submits GPS coordinates at a maximum frequency of approximately once every 15 seconds. The browser must support geolocation and the driver must grant permission. The POST includes the page’s CSRF token and may include GPS accuracy and speed.
 
-The GPS endpoint validates latitude and longitude ranges, optional non-negative accuracy, an optional date, and optional speed fields. A successful update creates a GPS history record. Invalid input returns a JSON error with HTTP 422; a missing driver profile returns 404. The protected web route also requires an authenticated, approved driver.
+The GPS endpoint validates latitude and longitude ranges, optional non-negative accuracy, an optional date, and optional speed fields. A successful update creates a GPS history record. Invalid input returns a JSON error with HTTP 422; a missing driver profile returns 404. The protected web route also requires an authenticated user with the driver role.
 
 ### 6.2 Freshness categories
 
@@ -288,7 +286,7 @@ Metric definitions depend on the available timestamps. Some response calculation
 
 - Session-based authentication is used for web routes.
 - Role-protected groups restrict driver, admin, and super-admin route areas.
-- The approval middleware blocks non-approved users from protected role areas.
+- Account approval is not required for login or access to role-protected routes; authentication and role checks remain enforced. Suspended user accounts remain blocked.
 - Driver dispatch actions verify that the authenticated driver owns the dispatch.
 - Driver incident report access verifies assignment, completion status, and that a report does not already exist.
 - Incident attachment downloads verify that the attachment belongs to the requested incident and that its stored file exists.
@@ -312,7 +310,7 @@ Records may contain reporter names, contact numbers, address/location, incident 
 
 1. Collect reporter and driver details only when necessary for response and administration.
 2. Do not copy personal details, precise locations, or report contents into channels not approved for operational use.
-3. Restrict access to approved accounts and the appropriate role; avoid sharing credentials or leaving signed-in workstations unattended.
+3. Restrict access to the appropriate role; avoid sharing credentials or leaving signed-in workstations unattended.
 4. Handle downloaded reports, attachments, backups, and GPS history as sensitive operational data.
 5. Follow the organization’s retention, disclosure, and incident-response rules; the repository does not establish a complete retention/deletion policy.
 
@@ -325,7 +323,7 @@ The following procedures describe the current web workflow. Items marked **Recom
 ### 14.1 Receive and create an emergency record
 
 1. **Recommended practice:** Receive and verify the emergency details through the organization’s existing call/intake channel. The application does not establish an integrated telephone intake workflow.
-2. Sign in as an approved Admin/Dispatcher.
+2. Sign in as an Admin/Dispatcher account.
 3. Open incident creation and enter the reporter, incident type, priority, available contact/address details, description, and coordinates/attachments when available.
 4. Review the address and coordinate data before saving. A general location may be geocoded externally if coordinates are missing.
 5. Save the incident. Confirm its incident number and detail page; it begins as `pending` and creates a global incident notification.
@@ -339,7 +337,7 @@ The following procedures describe the current web workflow. Items marked **Recom
 
 ### 14.3 Driver acceptance and response
 
-1. The driver signs in to an approved driver account and opens the dashboard.
+1. The driver signs in to an account with the driver role and opens the dashboard.
 2. Review the incident and assignment, then accept or decline.
 3. On acceptance, choose an eligible vehicle when prompted. The dispatch is moved to `en_route`; vehicle selection is logged and a notification is created.
 4. **Recommended practice:** Keep the driver dashboard available, permit browser location access, and confirm that GPS status is live. Use manual dashboard milestones when the corresponding action is available.
@@ -364,8 +362,8 @@ The following procedures describe the current web workflow. Items marked **Recom
 | No incident coordinates | Geofence cannot calculate distance and does not set arrival/departure; manual driver actions remain available where dispatch preconditions permit. |
 | Vehicle becomes unavailable | Acceptance rejects a vehicle that is no longer available or already used by another active dispatch and asks the driver to select another. |
 | Driver declines | Dispatch is cancelled, the incident returns to pending, and the driver/vehicle are released if no other active dispatch requires them. |
+| Suspended user account | Suspension middleware logs the user out of protected role areas and redirects to login with a suspension message. |
 | Unauthenticated access | Authentication middleware redirects web requests to login; the GPS controller also has a JSON 401 guard if reached unauthenticated. |
-| Unapproved account | Approval middleware logs out the user and redirects to login with an approval message. |
 | Unauthorized role or resource ownership | Role middleware denies access; driver ownership checks abort with 403 when the driver attempts another driver’s dispatch/report. |
 | Invalid incident data | Laravel validation returns errors and redirects back for web requests; invalid priority is rejected. |
 | Geocoding failure | The incident save continues without coordinates returned by geocoding; manually supplied coordinates are retained. |
@@ -378,8 +376,8 @@ Feature tests in `tests/Feature` verify selected application behavior. They are 
 | Test area | Examples of behavior verified |
 |---|---|
 | Authentication | Login page, valid/invalid login, logout, email verification, password reset/update |
-| Dashboard access | Role-specific dashboard access, driver registration/role, pending account behavior, GPS coordinate validation |
-| Incidents and approval | Coordinate/address persistence, optional contact/location, priority, incident editing, driver approval |
+| Dashboard access | Role-specific dashboard access, driver registration/login without approval, GPS coordinate validation |
+| Incidents and reports | Coordinate/address persistence, optional contact/location, priority, incident editing, report approval |
 | Dispatch workflow | Assignment statuses/audit, recommendations excluding stale/missing GPS, accept/decline, switching vehicles, GPS-to-vehicle synchronization, geofence arrival/departure, return/readiness, report approval |
 | GPS monitoring | Fresh/delayed/stale/missing states, map payloads, admin/super-admin GPS history access |
 | Notifications | Incident/report notifications, global/private visibility, read/unread state, read-all, timestamp audit |
@@ -409,7 +407,7 @@ The following observations describe repository limitations, not recommended oper
 
 ### Super Admins
 
-- Approve accounts only after verifying the person and role requirements through the organization’s process.
+- Assign the appropriate role when creating accounts and suspend access when an account should no longer be used.
 - Maintain accurate driver and vehicle assignments; review availability and maintenance before operation.
 - Treat backups and exported records as sensitive. Confirm database compatibility and follow organizational recovery procedures.
 - Do not assume the settings screen persists changes unless that behavior is verified in the deployed system.
@@ -435,7 +433,7 @@ The following observations describe repository limitations, not recommended oper
 The following files are primary evidence for this guide:
 
 - Routes and middleware registration: [`routes/web.php`](../routes/web.php), [`routes/auth.php`](../routes/auth.php), [`bootstrap/app.php`](../bootstrap/app.php)
-- Approval middleware: [`EnsureUserApproved.php`](../app/Http/Middleware/EnsureUserApproved.php)
+- Suspended-account middleware: [`EnsureUserNotSuspended.php`](../app/Http/Middleware/EnsureUserNotSuspended.php)
 - Core incident, dispatch, GPS, report, and notification behavior: [`Admin/IncidentController.php`](../app/Http/Controllers/Admin/IncidentController.php), [`Admin/DispatchController.php`](../app/Http/Controllers/Admin/DispatchController.php), [`Driver/DashboardController.php`](../app/Http/Controllers/Driver/DashboardController.php), [`Driver/GpsController.php`](../app/Http/Controllers/Driver/GpsController.php), [`Driver/IncidentReportController.php`](../app/Http/Controllers/Driver/IncidentReportController.php), [`Admin/IncidentReportController.php`](../app/Http/Controllers/Admin/IncidentReportController.php), [`Admin/NotificationController.php`](../app/Http/Controllers/Admin/NotificationController.php)
 - Models and location services: [`Incident.php`](../app/Models/Incident.php), [`Dispatch.php`](../app/Models/Dispatch.php), [`Driver.php`](../app/Models/Driver.php), [`Ambulance.php`](../app/Models/Ambulance.php), [`GpsLocation.php`](../app/Models/GpsLocation.php), [`Notification.php`](../app/Models/Notification.php), [`IncidentReport.php`](../app/Models/IncidentReport.php), [`GpsFreshnessService.php`](../app/Services/GpsFreshnessService.php), [`IncidentGeofenceService.php`](../app/Services/IncidentGeofenceService.php)
 - User-facing views: [`admin/dashboard.blade.php`](../resources/views/admin/dashboard.blade.php), [`admin/incidents/show.blade.php`](../resources/views/admin/incidents/show.blade.php), [`driver/dashboard.blade.php`](../resources/views/driver/dashboard.blade.php)

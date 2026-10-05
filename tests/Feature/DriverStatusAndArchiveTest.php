@@ -17,7 +17,7 @@ class DriverStatusAndArchiveTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_driver_registration_and_approval_work_without_license_details(): void
+    public function test_driver_registration_without_approval_works_without_license_details(): void
     {
         $this->post(route('driver.register.store'), [
             'name' => 'License Optional Driver',
@@ -31,12 +31,8 @@ class DriverStatusAndArchiveTest extends TestCase
         $this->assertNull($driverUser->driver->license_number);
         $this->assertNull($driverUser->driver->license_expiry);
 
-        $superAdmin = $this->createSuperAdmin();
-        $this->actingAs($superAdmin)
-            ->post(route('superadmin.users.approve', $driverUser))
-            ->assertSessionHasNoErrors();
-
         $this->assertSame('approved', $driverUser->fresh()->status);
+        $this->assertTrue($driverUser->fresh()->hasRole('driver'));
         $this->assertNull($driverUser->driver->fresh()->license_number);
         $this->assertNull($driverUser->driver->fresh()->license_expiry);
     }

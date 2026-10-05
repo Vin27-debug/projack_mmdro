@@ -145,32 +145,6 @@
         </a>
 
 
-        {{-- PENDING USERS --}}
-
-        <a
-            href="{{ route('superadmin.users.pending') }}"
-            class="sa-management-card">
-
-            <div class="sa-management-icon">
-                <i class="bi bi-person-check"></i>
-            </div>
-
-            <div class="sa-management-content">
-
-                <h3>Pending Accounts</h3>
-
-                <p>
-                    Review users waiting for account approval.
-                </p>
-
-                <span>
-                    Review accounts
-                    <i class="bi bi-arrow-right"></i>
-                </span>
-
-            </div>
-
-        </a>
 
     </div>
 

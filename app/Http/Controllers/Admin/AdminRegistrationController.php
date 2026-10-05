@@ -27,13 +27,13 @@ class AdminRegistrationController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
-            'status' => 'pending',
+            'status' => 'approved',
         ]);
 
         $user->assignRole('admin');
 
         return redirect()
             ->back()
-            ->with('success', 'Admin registration submitted for approval.');
+            ->with('success', 'Admin account created successfully. You can now log in.');
     }
 }

@@ -645,7 +645,6 @@
                 <details class="super-nav-group" open>
                     <summary><span>User Management</span></summary>
                     <nav class="nav flex-column">
-                        <a href="{{ route('superadmin.users.pending') }}" class="nav-link {{ request()->routeIs('superadmin.users.pending') ? 'active' : '' }}"><i class="bi bi-person-check"></i><span class="nav-label">Pending Users</span></a>
                         <a href="{{ route('superadmin.drivers') }}" class="nav-link {{ request()->routeIs('superadmin.drivers*') ? 'active' : '' }}"><i class="bi bi-person-badge"></i><span class="nav-label">Drivers</span></a>
                         <a href="{{ route('admins.index') }}" class="superadmin-nav-link {{ request()->routeIs('admins.*') ? 'active' : '' }}"><i class="bi bi-person-plus superadmin-nav-icon"></i><span class="nav-label">Admins</span></a>
                     </nav>

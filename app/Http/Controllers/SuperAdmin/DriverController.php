@@ -25,12 +25,11 @@ class DriverController extends Controller
             'contact_number' => 'nullable|string|max:30',
         ]);
 
-        // Create user account and leave it pending until a super-admin approves it.
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'status' => 'pending',
+            'status' => 'approved',
             'created_by' => auth()->id(),
         ]);
 
@@ -51,7 +50,7 @@ class DriverController extends Controller
 
         return redirect()
             ->route('superadmin.drivers')
-            ->with('success', 'Driver account created successfully and is pending approval.');
+            ->with('success', 'Driver account created successfully.');
     }
 
     protected function generateBadgeId(): string

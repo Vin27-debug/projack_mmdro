@@ -25,7 +25,7 @@ class AdminRegistrationController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
-            'status' => 'pending',
+            'status' => 'approved',
             'created_by' => auth()->id(),
         ]);
 
@@ -33,6 +33,6 @@ class AdminRegistrationController extends Controller
 
         return redirect()
             ->route('admins.create')
-            ->with('success', 'Administrator account created successfully and is pending approval.');
+            ->with('success', 'Administrator account created successfully.');
     }
 }

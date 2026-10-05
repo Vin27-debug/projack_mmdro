@@ -24,8 +24,6 @@ use App\Models\Notification;
     'badge_id',
     'status',
     'created_by',
-    'approved_by',
-    'approved_at'
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -38,7 +36,6 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
-            'approved_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -51,11 +48,6 @@ class User extends Authenticatable
     public function notifications()
     {
         return $this->hasMany(Notification::class);
-    }
-
-    public function approvedBy()
-    {
-        return $this->belongsTo(self::class, 'approved_by');
     }
 
     public function createdBy()

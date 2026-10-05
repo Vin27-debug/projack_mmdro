@@ -169,7 +169,7 @@ class DashboardAccessTest extends TestCase
         $response->assertStatus(422);
     }
 
-    public function test_superadmin_created_driver_account_stays_pending_until_approval(): void
+    public function test_superadmin_created_driver_account_can_sign_in_without_approval(): void
     {
         Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
 
@@ -177,8 +177,8 @@ class DashboardAccessTest extends TestCase
         $superAdmin->assignRole('super-admin');
 
         $response = $this->actingAs($superAdmin)->post(route('superadmin.drivers.store'), [
-            'name' => 'Pending Driver',
-            'email' => 'pending-driver@example.com',
+            'name' => 'New Driver',
+            'email' => 'new-driver-admin-created@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'contact_number' => '09123456793',
@@ -186,11 +186,19 @@ class DashboardAccessTest extends TestCase
 
         $response->assertRedirect(route('superadmin.drivers'));
 
-        $user = User::where('email', 'pending-driver@example.com')->firstOrFail();
-        $this->assertSame('pending', $user->status);
-        $this->assertNull($user->approved_at);
+        $user = User::where('email', 'new-driver-admin-created@example.com')->firstOrFail();
+        $this->assertSame('approved', $user->status);
         $this->assertNull($user->driver->license_number);
         $this->assertNull($user->driver->license_expiry);
+
+        $this->post('/logout');
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password123',
+        ])->assertRedirect(route('driver.dashboard'));
+
+        $this->get(route('driver.dashboard'))->assertOk();
     }
 
     public function test_driver_registration_does_not_require_license_details(): void
@@ -206,12 +214,55 @@ class DashboardAccessTest extends TestCase
         $response->assertSessionHasNoErrors();
         $user = User::where('email', 'no-license-driver@example.com')->firstOrFail();
 
-        $this->assertSame('pending', $user->status);
+        $this->assertSame('approved', $user->status);
         $this->assertNull($user->driver->license_number);
         $this->assertNull($user->driver->license_expiry);
     }
 
-    public function test_superadmin_registration_controller_keeps_new_admin_account_pending(): void
+    public function test_new_admin_can_sign_in_without_account_approval(): void
+    {
+        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+
+        $this->post(route('admin.register.store'), [
+            'name' => 'New Admin',
+            'email' => 'new-public-admin@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertSessionHasNoErrors()
+            ->assertSessionHas('success', 'Admin account created successfully. You can now log in.');
+
+        $user = User::where('email', 'new-public-admin@example.com')->firstOrFail();
+        $this->assertSame('approved', $user->status);
+        $this->assertTrue($user->hasRole('admin'));
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password123',
+        ])->assertRedirect(route('admin.dashboard'));
+
+        $this->get(route('admin.dashboard'))->assertOk();
+    }
+
+    public function test_super_admin_can_sign_in_without_account_approval(): void
+    {
+        Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+
+        $superAdmin = User::factory()->create([
+            'email' => 'superadmin-login@example.com',
+            'password' => bcrypt('password123'),
+            'status' => 'pending',
+        ]);
+        $superAdmin->assignRole('super-admin');
+
+        $this->post('/login', [
+            'email' => $superAdmin->email,
+            'password' => 'password123',
+        ])->assertRedirect(route('superadmin.dashboard'));
+
+        $this->get(route('superadmin.dashboard'))->assertOk();
+    }
+
+    public function test_superadmin_registration_controller_creates_admin_account_without_approval(): void
     {
         Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
         Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
@@ -220,8 +271,8 @@ class DashboardAccessTest extends TestCase
         $superAdmin->assignRole('super-admin');
 
         $request = new \Illuminate\Http\Request([
-            'name' => 'Pending Admin',
-            'email' => 'pending-admin@example.com',
+            'name' => 'New Admin',
+            'email' => 'new-admin@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
@@ -229,10 +280,9 @@ class DashboardAccessTest extends TestCase
         $controller = new \App\Http\Controllers\SuperAdmin\AdminRegistrationController();
         $response = $controller->store($request);
 
-        $user = User::where('email', 'pending-admin@example.com')->firstOrFail();
-        $this->assertSame('pending', $user->status);
-        $this->assertNull($user->approved_at);
+        $user = User::where('email', 'new-admin@example.com')->firstOrFail();
+        $this->assertSame('approved', $user->status);
         $this->assertTrue($user->hasRole('admin'));
-        $this->assertSame('Administrator account created successfully and is pending approval.', $response->getSession()->get('success'));
+        $this->assertSame('Administrator account created successfully.', $response->getSession()->get('success'));
     }
 }

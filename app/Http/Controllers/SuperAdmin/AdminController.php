@@ -13,7 +13,7 @@ class AdminController extends Controller
     public function index(Request $request)
     {
         $admins = User::role('admin')
-            ->with(['approvedBy', 'createdBy'])
+            ->with('createdBy')
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = trim($request->input('search'));
                 $query->where(function ($query) use ($search): void {
@@ -22,7 +22,8 @@ class AdminController extends Controller
                         ->orWhere('email', 'like', "%{$search}%");
                 });
             })
-            ->when($request->filled('status'), fn($query) => $query->where('status', $request->input('status')))
+            ->when($request->input('status') === 'active', fn($query) => $query->where('status', '!=', 'suspended'))
+            ->when($request->input('status') === 'suspended', fn($query) => $query->where('status', 'suspended'))
             ->latest()
             ->get();
 
@@ -58,7 +59,7 @@ class AdminController extends Controller
             'office' => $validated['office'],
             'contact_number' => $validated['contact_number'],
 
-            'status' => 'pending',
+            'status' => 'approved',
 
             'created_by' => auth()->id(),
         ]);
@@ -67,13 +68,13 @@ class AdminController extends Controller
 
         return redirect()
             ->route('admins.index')
-            ->with('success', 'Administrator account created and is pending approval.');
+            ->with('success', 'Administrator account created successfully.');
     }
 
     public function show(User $user)
     {
         $this->ensureAdminAccount($user);
-        $user->load(['approvedBy', 'createdBy']);
+        $user->load('createdBy');
 
         return view('superadmin.admin.show', ['admin' => $user]);
     }
@@ -102,22 +103,6 @@ class AdminController extends Controller
         $user->update($validated);
 
         return redirect()->route('admins.show', $user)->with('success', 'Administrator account updated successfully.');
-    }
-
-    public function approve(User $user)
-    {
-        $this->ensureAdminAccount($user);
-        $user->update(['status' => 'approved', 'approved_by' => auth()->id(), 'approved_at' => now()]);
-
-        return back()->with('success', 'Administrator account approved.');
-    }
-
-    public function reject(User $user)
-    {
-        $this->ensureAdminAccount($user);
-        $user->update(['status' => 'rejected', 'approved_by' => auth()->id(), 'approved_at' => now()]);
-
-        return back()->with('success', 'Administrator account rejected.');
     }
 
     public function suspend(User $user)

@@ -13,7 +13,7 @@
         </h1>
 
         <p class="page-subtitle mb-0">
-            Create an approved driver account for MuniResQ.
+            Create a driver account with immediate login access.
         </p>
     </div>
 </div>

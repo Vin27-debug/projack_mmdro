@@ -28,7 +28,7 @@ Emergency calls are not shown as arriving directly into MuniResQ. Staff enter in
 | Network | The application must be reachable over the organization's configured network or hosted URL. Network access is also needed for map tiles and certain map/geocoding services used by the interface. |
 | Driver location | A device with location services and a browser that supports the Geolocation API is needed for browser GPS tracking. Grant the browser location permission when prompted. |
 | Secure location access | Browser geolocation generally requires an allowed secure browser context; if location is unavailable, use the troubleshooting section and contact the system administrator. |
-| Session access | Sign in with an approved account and use the role assigned to that account. Some pages require an active authenticated session. |
+| Session access | Sign in with your account and use the role assigned to that account. Some pages require an authenticated session. |
 
 The application does not establish a required phone model, GPS receiver accuracy, minimum network speed, or offline operating mode.
 
@@ -39,20 +39,20 @@ The application does not establish a required phone model, GPS receiver accuracy
 1. Open the MuniResQ URL supplied by the municipality.
 2. Select **Login** and enter the email address and password registered for your account.
 3. After successful sign-in, the application redirects according to the account role.
-4. If the account is not approved, access to approved operational areas is denied and the session is redirected to the login page with an approval message.
+4. Access to operational pages is controlled by authentication and the role assigned to the account.
 
 The login screen is available at `/login`. Password-reset routes are present if the user needs to request a reset.
 
-### 3.2 Registration and approval
+### 3.2 Registration and account access
 
 The application has multiple registration paths:
 
 - **General registration** collects name, email, and password. It does not itself assign an operational MuniResQ role.
-- **Driver registration** collects contact details and creates a pending driver account. License number and expiry are not required or shown in the current registration/driver-management screens.
-- **Admin registration** creates an account that remains pending until an authorized Super Admin approves it.
-- Super Admins can also create an administrator account through **Admins**.
+- **Driver registration** collects contact details, creates a driver account, and assigns the driver role. License number and expiry are not required or shown in the current registration/driver-management screens.
+- **Admin registration** creates an account and assigns the admin role.
+- Super Admins can also create administrator and driver accounts through the management pages.
 
-After submitting an account request, wait for approval. Pending accounts cannot use the approved role-protected operational pages. Approval and role assignment are separate from simply registering.
+Role-specific accounts can sign in after registration. Access to role-protected pages depends on the account's assigned role; there is no Super Admin account-approval queue.
 
 ### 3.3 Sign out
 
@@ -60,48 +60,38 @@ Use **Logout** in the role navigation. The application ends the authenticated se
 
 ## 4. Super Admin user guide
 
-Super Admin pages are available only to authenticated, approved users with the `super-admin` role.
+Super Admin pages are available only to authenticated users with the `super-admin` role.
 
 ### 4.1 Dashboard
 
 Open **Dashboard** from the Super Admin navigation to view the system summary cards currently supplied by the dashboard controller. The dashboard is a summary view; it is not a replacement for inspecting each incident or account record.
 
-### 4.2 Review pending users
-
-1. Open **Pending Users**.
-2. Review each pending row, including the displayed name, email, badge information when available, and registration time.
-3. Use **Approve** or **Reject** only after verifying the account request through the municipality's normal process.
-4. Confirm the resulting status and role before the person attempts to use MuniResQ.
-
-The approval action in this queue provisions a driver profile and assigns the driver role. Use the separate **Admins** section for administrator-account review; do not use the driver approval queue as an administrator approval substitute.
-
-### 4.3 Manage administrator accounts
+### 4.2 Manage administrator accounts
 
 1. Open **Admins**.
 2. Search by name, employee ID, or email, and optionally filter by status.
-3. Select **Create Admin** to add an administrator account. Newly created accounts are pending.
-4. For a pending account, review its details and choose **Approve** or **Reject**.
-5. For an approved account, use **Edit** when changes are needed or **Suspend** to suspend access.
+3. Select **Create Admin** to add an administrator account. The new account can sign in with the `admin` role immediately.
+4. Use **Edit** to update account details or **Suspend** to suspend an account.
 
-Available statuses displayed by the administrator-management page include pending, approved, rejected, and suspended.
+The administrator-management page displays accounts as Active or Suspended.
 
-### 4.4 Manage drivers and vehicle assignments
+### 4.3 Manage drivers and vehicle assignments
 
 1. Open **Drivers** to review driver profiles and their displayed vehicle assignment.
 2. Use the driver's assignment action to choose a vehicle from the options presented.
 3. Confirm the assignment in the driver listing.
 
-The approval flow may create a driver profile and establish an assignment when a vehicle is available. Super Admins can also manage ambulance/vehicle records from **Ambulances / Vehicles**.
+New driver accounts are created with a driver profile and can sign in immediately. Super Admins can also manage ambulance/vehicle records from **Ambulances / Vehicles**.
 
-Use **Active** or **Suspended** in the driver row to control whether an approved driver can be selected for new work. A suspended driver's existing incidents, dispatch history, and reports remain recorded. Use **Archive** only when there is no active dispatch; archived drivers appear under **Archived Drivers** and can be restored.
+Use **Active** or **Suspended** in the driver row to control whether a driver can be selected for new work. A suspended driver's existing incidents, dispatch history, and reports remain recorded. Use **Archive** only when there is no active dispatch; archived drivers appear under **Archived Drivers** and can be restored.
 
 License number and expiry are legacy nullable fields retained in the database, but are not required or displayed in the current registration or driver-management workflow.
 
-### 4.5 Manage vehicles
+### 4.4 Manage vehicles
 
 The **Ambulances / Vehicles** section supports creating and editing vehicle records. Vehicle statuses include available, on duty, and maintenance. Use **Archive** instead of deleting a vehicle record; vehicles with active dispatches cannot be archived. Archived vehicles remain available under **Archived Vehicles** and can be restored. Confirm vehicle data and availability before dispatch.
 
-### 4.6 Backup and restore
+### 4.5 Backup and restore
 
 1. Open **Backup & Restore**.
 2. Select **Backup Now** to request a database backup.
@@ -111,17 +101,17 @@ The **Ambulances / Vehicles** section supports creating and editing vehicle reco
 
 Backup generation depends on the configured MySQL utilities and database environment. The current automated tests include a check that backup creation is rejected when the database is not MySQL; confirm successful production backup behavior in the deployed environment.
 
-### 4.7 Settings
+### 4.6 Settings
 
 The **Settings** screen displays fields for system name, municipality name, contact number, email, hotline, and maintenance mode. The current update action returns a success message but does not persist those form values. Do not treat this page as a verified configuration-management facility.
 
-### 4.8 Other available Super Admin functions
+### 4.7 Other available Super Admin functions
 
-Super Admin accounts are admitted to the admin role route group as well as Super Admin routes. This means an approved Super Admin can also access the Admin/Dispatcher pages described below, subject to the routes' admin-or-super-admin middleware. The Admin sidebar includes **Audit Logs**; no separate Super Admin-only audit-log page is shown in its own navigation.
+Super Admin accounts are admitted to the admin role route group as well as Super Admin routes. This means a Super Admin can also access the Admin/Dispatcher pages described below, subject to the routes' admin-or-super-admin middleware. The Admin sidebar includes **Audit Logs**; no separate Super Admin-only audit-log page is shown in its own navigation.
 
 ## 5. Admin/Dispatcher user guide
 
-Admin/Dispatcher pages require authentication, an approved account, and either the `admin` or `super-admin` role.
+Admin/Dispatcher pages require authentication and either the `admin` or `super-admin` role.
 
 ### 5.1 Dashboard
 
@@ -218,7 +208,7 @@ The maintenance form exposes vehicle statuses such as available, active/on duty,
 
 ## 6. Driver user guide
 
-Driver pages require an authenticated, approved account with the `driver` role and a driver profile.
+Driver pages require an authenticated account with the `driver` role and a driver profile.
 
 ### 6.1 Driver dashboard and assignment
 
@@ -312,7 +302,7 @@ Viewing the notification list does not itself mark all notifications read. No ex
 | Invalid or missing coordinates | Confirm the incident map marker is set correctly. Geofence arrival requires valid incident coordinates; without them, automatic arrival cannot be confirmed. |
 | Vehicle is unavailable when accepting | Refresh the assignment/dashboard and choose a currently available vehicle. A vehicle that became busy cannot be accepted. Contact the dispatcher if no eligible vehicle is listed. |
 | Dispatch was declined | The incident returns to pending and can be reassigned by the dispatcher. Confirm the incident appears in the admin dispatch queue. |
-| Unauthorized access or redirected to login | Confirm that the correct account is signed in, the account is approved, and the role matches the page. Ask a Super Admin to review account status and role assignment. |
+| Unauthorized access or redirected to login | Confirm that the correct account is signed in and the role matches the page. Suspended accounts cannot access protected role areas; ask a Super Admin to review the account and role assignment. |
 | Incident form rejects information | Review required reporter name, incident type, priority, and location selectors. Correct invalid field values and submit again. Validation errors are returned by the application. |
 | Report is not available | The driver report action requires a completed incident assigned to that driver and no previous report. |
 | Backup fails | Backup support depends on the configured MySQL database and utilities. Contact the system administrator; do not repeatedly attempt a production restore. |
@@ -348,9 +338,9 @@ Do not use invalid, guessed, or unrelated coordinates to force a GPS milestone.
 
 ## 11. Frequently asked questions
 
-### Does registration grant access immediately?
+### Can a user sign in immediately after registration?
 
-No. Driver and administrator accounts created through their role-specific registration paths require approval. Approved status and the appropriate role are both needed for protected role pages.
+Yes. Driver and administrator accounts can sign in after registration. The role assigned to the account determines which protected pages are available.
 
 ### Does MuniResQ receive emergency calls automatically?
 
@@ -389,7 +379,7 @@ The current settings update action displays a success message but does not persi
 The project's Feature tests currently exercise parts of the following areas:
 
 - Login, logout, registration, email verification, password reset, and password confirmation.
-- Role-based dashboard access, driver registration, approved/pending account states, and dashboard rendering.
+- Role-based dashboard access, driver/admin registration and login without account approval, and dashboard rendering.
 - Incident coordinate storage, address and house-number persistence, incident editing, and priority display consistency.
 - Dispatch assignment, driver acceptance and decline, vehicle selection/availability checks, and driver/vehicle status updates.
 - GPS coordinate validation, vehicle-location synchronization, stale/missing GPS filtering, geofence arrival/departure conditions, and repeated-update handling.

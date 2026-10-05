@@ -17,7 +17,6 @@
                 <p class="mb-3 mb-lg-4 hero-copy">{{ $driver->user->name ?? 'Driver' }} — monitor active dispatches and coordinate ambulance response with precision.</p>
                 <div class="d-flex flex-wrap gap-2">
                     <button id="panicBtn" class="btn btn-danger btn-lg driver-action-btn">Panic</button>
-                    <button id="hijackBtn" class="btn btn-warning btn-lg driver-action-btn">Hijack</button>
                     @if($reportableDispatch)
 
                     <a href="{{ route('driver.report.create', $reportableDispatch->incident) }}"
@@ -499,11 +498,6 @@
     document.getElementById('panicBtn')?.addEventListener('click', async function() {
         if (!confirm('Trigger PANIC alert?')) return;
         await triggerEmergency('{{ route("driver.panic.trigger") }}', 'PANIC');
-    });
-
-    document.getElementById('hijackBtn')?.addEventListener('click', async function() {
-        if (!confirm('Trigger HIJACK alert?')) return;
-        await triggerEmergency('{{ route("driver.hijack.trigger") }}', 'HIJACK');
     });
 
     sendLocation();

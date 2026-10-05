@@ -127,7 +127,7 @@ Route::post('/admin/register', [AdminRegistrationController::class, 'store'])
 
 Route::middleware([
     'auth',
-    'approved',
+    'not-suspended',
     'role:driver'
 ])->group(function () {
 
@@ -207,7 +207,7 @@ Route::middleware([
 
 Route::middleware([
     'auth',
-    'approved',
+    'not-suspended',
     'role:admin|super-admin'
 ])->group(function () {
 
@@ -408,7 +408,7 @@ Route::middleware([
 
 Route::middleware([
     'auth',
-    'approved',
+    'not-suspended',
     'role:admin|super-admin'
 ])->group(function () {
     Route::get('/admin/gps-locations', [GpsMonitoringController::class, 'locations'])
@@ -427,7 +427,7 @@ Route::middleware([
 
 Route::middleware([
     'auth',
-    'approved',
+    'not-suspended',
     'role:super-admin'
 ])->group(function () {
 
@@ -448,12 +448,6 @@ Route::middleware([
 
     Route::put('/admins/{user}', [AdminController::class, 'update'])
         ->name('admins.update');
-
-    Route::post('/admins/{user}/approve', [AdminController::class, 'approve'])
-        ->name('admins.approve');
-
-    Route::post('/admins/{user}/reject', [AdminController::class, 'reject'])
-        ->name('admins.reject');
 
     Route::post('/admins/{user}/suspend', [AdminController::class, 'suspend'])
         ->name('admins.suspend');
@@ -498,15 +492,6 @@ Route::middleware([
     Route::post('/superadmin/drivers/{driver}/restore', [UserApprovalController::class, 'restoreDriver'])
         ->name('superadmin.drivers.restore');
 
-    Route::get('/superadmin/users/pending', [UserApprovalController::class, 'index'])
-        ->name('superadmin.users.pending');
-
-    Route::post('/superadmin/users/{user}/approve', [UserApprovalController::class, 'approve'])
-        ->name('superadmin.users.approve');
-
-    Route::post('/superadmin/users/{user}/reject', [UserApprovalController::class, 'reject'])
-        ->name('superadmin.users.reject');
-
     Route::resource('superadmin/ambulances', AmbulanceController::class)
         ->except(['destroy'])
         ->names('superadmin.ambulances');
@@ -527,7 +512,7 @@ Route::middleware([
 
 Route::middleware([
     'auth',
-    'approved',
+    'not-suspended',
     'role:super-admin'
 ])->prefix('superadmin')->group(function () {
     Route::get('/settings', [SystemSettingsController::class, 'index'])

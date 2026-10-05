@@ -27,7 +27,7 @@
                 <label for="status" class="form-label">Status</label>
                 <select id="status" name="status" class="form-select">
                     <option value="">All</option>
-                    @foreach(['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'suspended' => 'Suspended'] as $value => $label)
+                    @foreach(['active' => 'Active', 'suspended' => 'Suspended'] as $value => $label)
                     <option value="{{ $value }}" @selected(request('status')===$value)>{{ $label }}</option>
                     @endforeach
                 </select>
@@ -58,17 +58,15 @@
                         <th>Government Email</th>
                         <th>Status</th>
                         <th>Created At</th>
-                        <th>Approved At</th>
-                        <th>Approved By</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($admins as $admin)
                     @php
-                    $statusClass = ['pending' => 'warning text-dark', 'approved' => 'success', 'rejected' => 'danger', 'suspended' => 'dark'][$admin->status] ?? 'secondary';
+                    $isSuspended = $admin->status === 'suspended';
+                    $statusClass = $isSuspended ? 'dark' : 'success';
                     $createdAt = $admin->created_at ? \Illuminate\Support\Carbon::parse($admin->created_at) : null;
-                    $approvedAt = $admin->approved_at ? \Illuminate\Support\Carbon::parse($admin->approved_at) : null;
                     @endphp
                     <tr>
                         <td class="fw-semibold">{{ $admin->name }}</td>
@@ -77,20 +75,15 @@
                         <td>{{ $admin->department ?: 'N/A' }}</td>
                         <td>{{ $admin->office ?: 'N/A' }}</td>
                         <td>{{ $admin->email }}</td>
-                        <td><span class="badge bg-{{ $statusClass }}">{{ ucfirst($admin->status ?: 'pending') }}</span></td>
+                        <td><span class="badge bg-{{ $statusClass }}">{{ $isSuspended ? 'Suspended' : 'Active' }}</span></td>
                         <td>{{ $createdAt?->format('F j, Y') ?: 'N/A' }}<br><small>{{ $createdAt?->format('h:i A') ?: '' }}</small></td>
-                        <td>{{ $admin->status === 'pending' ? 'Not yet approved' : ($approvedAt?->format('F j, Y h:i A') ?: 'N/A') }}</td>
-                        <td>{{ $admin->approvedBy?->name ?: 'N/A' }}</td>
                         <td>
                             <div class="d-flex flex-wrap gap-1">
                                 <a href="{{ route('admins.show', $admin) }}" class="btn btn-sm btn-outline-secondary">View</a>
-                                @if($admin->status === 'pending')
-                                <form method="POST" action="{{ route('admins.approve', $admin) }}">@csrf<button class="btn btn-sm btn-success">Approve</button></form>
-                                <form method="POST" action="{{ route('admins.reject', $admin) }}">@csrf<button class="btn btn-sm btn-outline-danger">Reject</button></form>
-                                @elseif($admin->status === 'approved')
+                                @unless($isSuspended)
                                 <a href="{{ route('admins.edit', $admin) }}" class="btn btn-sm btn-outline-primary">Edit</a>
                                 <form method="POST" action="{{ route('admins.suspend', $admin) }}">@csrf<button class="btn btn-sm btn-dark">Suspend</button></form>
-                                @endif
+                                @endunless
                             </div>
                         </td>
                     </tr>

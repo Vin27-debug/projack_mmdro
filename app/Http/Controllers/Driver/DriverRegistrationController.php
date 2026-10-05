@@ -28,7 +28,7 @@ class DriverRegistrationController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
-            'status' => 'pending',
+            'status' => 'approved',
         ]);
 
         $role = Role::firstOrCreate([
@@ -46,6 +46,6 @@ class DriverRegistrationController extends Controller
 
         return redirect()
             ->back()
-            ->with('success', 'Registration submitted. Waiting for approval.');
+            ->with('success', 'Driver account created successfully. You can now log in.');
     }
 }
