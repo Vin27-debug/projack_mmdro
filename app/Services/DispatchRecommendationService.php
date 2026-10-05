@@ -11,8 +11,13 @@ class DispatchRecommendationService
 {
     public function recommend(Incident $incident, $drivers = null, $vehicles = null): array
     {
-        $drivers = $drivers ?? Driver::where('status', 'available')->get();
-        $vehicles = $vehicles ?? Ambulance::where('status', 'available')->get();
+        $driverQuery = Driver::dispatchEligible()->with('user');
+        if ($drivers !== null) {
+            $driverQuery->whereKey(collect($drivers)->map(fn(Driver $driver) => $driver->getKey()));
+        }
+        $drivers = $driverQuery->get();
+
+        $vehicles = $vehicles ?? Ambulance::available()->get();
 
         if (!is_numeric($incident->latitude) || !is_numeric($incident->longitude)) {
             return [

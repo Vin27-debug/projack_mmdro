@@ -18,7 +18,7 @@ class OperationsCenterController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $incidents = Incident::query()
+        $incidents = Incident::notArchived()
             ->with([
                 'driver.user',
                 'ambulance',
@@ -34,7 +34,7 @@ class OperationsCenterController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $vehicles = Ambulance::query()
+        $vehicles = Ambulance::notArchived()
             ->latest()
             ->take(50)
             ->get();

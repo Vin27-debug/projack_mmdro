@@ -23,8 +23,6 @@ class DriverController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
             'contact_number' => 'nullable|string|max:30',
-            'license_number' => 'nullable|string|max:100',
-            'license_expiry' => 'nullable|date',
         ]);
 
         // Create user account and leave it pending until a super-admin approves it.
@@ -48,8 +46,6 @@ class DriverController extends Controller
         $user->driver()->create([
             'badge_id' => $this->generateBadgeId(),
             'contact_number' => $request->contact_number,
-            'license_number' => $request->license_number,
-            'license_expiry' => $request->license_expiry,
             'status' => 'available',
         ]);
 

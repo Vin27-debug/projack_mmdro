@@ -350,8 +350,8 @@ class IncidentController extends Controller
 
     public function dispatchForm(Incident $incident)
     {
-        $drivers = Driver::where('status', 'available')->get();
-        $vehicles = Ambulance::where('status', 'available')->get();
+        $drivers = Driver::dispatchEligible()->with('user')->get();
+        $vehicles = Ambulance::available()->get();
         $recommendation = $this->recommendationService->recommend($incident, $drivers, $vehicles);
 
         $nearestDriver = $recommendation['nearestDriver'];
@@ -382,6 +382,16 @@ class IncidentController extends Controller
         $driverId = (int) $request->driver_id;
         $vehicleId = $request->filled('vehicle_id') ? (int) $request->vehicle_id : null;
         $dispatchStatus = $request->input('status', Dispatch::STATUS_ASSIGNED);
+
+        $driver = Driver::dispatchEligible()->find($driverId);
+        if (!$driver) {
+            return back()->with('error', 'This driver is not active or currently available.');
+        }
+
+        $ambulance = $vehicleId ? Ambulance::available()->find($vehicleId) : null;
+        if ($vehicleId && !$ambulance) {
+            return back()->with('error', 'This vehicle is not active or currently available.');
+        }
 
         if (Dispatch::active()->where('incident_id', $incident->id)->exists()) {
             return back()->with('error', 'This incident already has an active dispatch.');
@@ -422,9 +432,9 @@ class IncidentController extends Controller
                 ]);
             }
 
-            $driver = Driver::find($driverId);
-            $ambulance = $vehicleId ? Ambulance::find($vehicleId) : null;
-            $driver?->update(['status' => $driverStatus]);
+            $driver = Driver::findOrFail($driverId);
+            $ambulance = $vehicleId ? Ambulance::findOrFail($vehicleId) : null;
+            $driver->update(['status' => $driverStatus]);
             if ($ambulance) {
                 $ambulance->update(['status' => Ambulance::STATUS_ON_DUTY]);
             }

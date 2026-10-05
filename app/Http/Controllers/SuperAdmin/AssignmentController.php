@@ -28,17 +28,28 @@ class AssignmentController extends Controller
         return view(
             'superadmin.assignments.create',
             [
-                'drivers' => Driver::all(),
-                'ambulances' => Ambulance::all(),
+                'drivers' => Driver::activeAccount()->get(),
+                'ambulances' => Ambulance::available()->get(),
             ]
         );
     }
 
     public function store(Request $request)
     {
+        $validated = $request->validate([
+            'driver_id' => ['required', 'integer', 'exists:drivers,id'],
+            'ambulance_id' => ['required', 'integer', 'exists:ambulances,id'],
+        ]);
+
+        $driver = Driver::activeAccount()->find($validated['driver_id']);
+        abort_unless($driver, 422, 'Only active drivers can be assigned.');
+
+        $ambulance = Ambulance::available()->find($validated['ambulance_id']);
+        abort_unless($ambulance, 422, 'Only available vehicles can be assigned.');
+
         VehicleDriverAssignment::create([
-            'driver_id' => $request->driver_id,
-            'ambulance_id' => $request->ambulance_id,
+            'driver_id' => $driver->id,
+            'ambulance_id' => $ambulance->id,
             'status' => 'active',
             'assigned_at' => now(),
         ]);

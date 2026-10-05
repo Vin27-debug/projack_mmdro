@@ -13,10 +13,6 @@
 
     <input type="text" name="contact_number" placeholder="Contact Number"><br><br>
 
-    <input type="text" name="license_number" placeholder="License Number"><br><br>
-
-    <input type="date" name="license_expiry"><br><br>
-
     <input type="password" name="password" placeholder="Password"><br><br>
 
     <input type="password" name="password_confirmation" placeholder="Confirm Password"><br><br>

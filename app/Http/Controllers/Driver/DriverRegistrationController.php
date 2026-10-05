@@ -22,8 +22,6 @@ class DriverRegistrationController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
             'contact_number' => 'required',
-            'license_number' => 'required',
-            'license_expiry' => 'required|date',
         ]);
 
         $user = User::create([
@@ -44,8 +42,6 @@ class DriverRegistrationController extends Controller
             'user_id' => $user->id,
             'badge_id' => 'PENDING',
             'contact_number' => $request->contact_number,
-            'license_number' => $request->license_number,
-            'license_expiry' => $request->license_expiry,
         ]);
 
         return redirect()

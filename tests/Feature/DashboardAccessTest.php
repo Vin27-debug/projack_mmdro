@@ -182,8 +182,6 @@ class DashboardAccessTest extends TestCase
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'contact_number' => '09123456793',
-            'license_number' => 'LIC-100',
-            'license_expiry' => '2030-01-01',
         ]);
 
         $response->assertRedirect(route('superadmin.drivers'));
@@ -191,6 +189,26 @@ class DashboardAccessTest extends TestCase
         $user = User::where('email', 'pending-driver@example.com')->firstOrFail();
         $this->assertSame('pending', $user->status);
         $this->assertNull($user->approved_at);
+        $this->assertNull($user->driver->license_number);
+        $this->assertNull($user->driver->license_expiry);
+    }
+
+    public function test_driver_registration_does_not_require_license_details(): void
+    {
+        $response = $this->post(route('driver.register.store'), [
+            'name' => 'No License Driver',
+            'email' => 'no-license-driver@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'contact_number' => '09123456794',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $user = User::where('email', 'no-license-driver@example.com')->firstOrFail();
+
+        $this->assertSame('pending', $user->status);
+        $this->assertNull($user->driver->license_number);
+        $this->assertNull($user->driver->license_expiry);
     }
 
     public function test_superadmin_registration_controller_keeps_new_admin_account_pending(): void

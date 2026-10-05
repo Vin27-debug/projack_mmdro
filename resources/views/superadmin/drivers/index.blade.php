@@ -10,20 +10,25 @@
         </div>
 
         <h1 class="page-title">
-            Approved Drivers
+            Driver Management
         </h1>
 
         <p class="page-subtitle mb-0">
-            All drivers currently approved for dispatch and monitoring.
+            Manage driver access and preserve dispatch history.
         </p>
     </div>
 
-    <div>
+    <div class="d-flex gap-2">
+        <a href="{{ route('superadmin.drivers', ['archived' => $archived ? 0 : 1]) }}" class="btn btn-outline-light">
+            {{ $archived ? 'Active Drivers' : 'Archived Drivers' }}
+        </a>
+        @unless($archived)
         <a
             href="{{ route('superadmin.drivers.create') }}"
             class="btn btn-primary">
             + Create Driver
         </a>
+        @endunless
     </div>
 
 </div>
@@ -40,9 +45,9 @@
                     <th>Badge</th>
                     <th>Name</th>
                     <th>Email</th>
-                    <th>License</th>
+                    <th>Driver Status</th>
                     <th>Assigned Vehicle</th>
-                    <th>Action</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
 
@@ -69,9 +74,16 @@
                         {{ $driver->user?->email ?? 'N/A' }}
                     </td>
 
-                    {{-- LICENSE --}}
                     <td>
-                        {{ $driver->license_number ?? 'Not set' }}
+                        @if($driver->archived_at)
+                        <span class="badge bg-dark">Archived</span>
+                        @elseif($driver->user?->status === 'approved' && $driver->management_status === 'active')
+                        <span class="badge bg-success">Active</span>
+                        @elseif($driver->user?->status === 'approved' && $driver->management_status === 'suspended')
+                        <span class="badge bg-secondary">Suspended</span>
+                        @else
+                        <span class="badge bg-warning text-dark">{{ ucfirst($driver->user?->status ?? 'Pending') }}</span>
+                        @endif
                     </td>
 
                     {{-- ASSIGNED VEHICLE --}}
@@ -97,18 +109,41 @@
 
                     {{-- ACTION --}}
                     <td>
-                        <a
-                            href="{{ route('superadmin.drivers.assign', $driver) }}"
-                            class="btn btn-sm btn-outline-primary">
-                            Assign Vehicle
-                        </a>
+                        <div class="d-flex flex-wrap gap-1">
+                            @if($archived)
+                            <form method="POST" action="{{ route('superadmin.drivers.restore', $driver) }}">
+                                @csrf
+                                <button class="btn btn-sm btn-outline-success">Restore</button>
+                            </form>
+                            @else
+                                @if($driver->user?->status === 'approved')
+                                <form method="POST" action="{{ route('superadmin.drivers.status', $driver) }}">
+                                    @csrf
+                                    <input type="hidden" name="status" value="active">
+                                    <button class="btn btn-sm {{ $driver->management_status === 'active' ? 'btn-success' : 'btn-outline-success' }}" {{ $driver->management_status === 'active' ? 'disabled' : '' }}>Active</button>
+                                </form>
+                                <form method="POST" action="{{ route('superadmin.drivers.status', $driver) }}">
+                                    @csrf
+                                    <input type="hidden" name="status" value="suspended">
+                                    <button class="btn btn-sm {{ $driver->management_status === 'suspended' ? 'btn-secondary' : 'btn-outline-secondary' }}" {{ $driver->management_status === 'suspended' ? 'disabled' : '' }}>Suspended</button>
+                                </form>
+                                @endif
+                                @if($driver->user?->status === 'approved' && $driver->management_status === 'active')
+                                <a href="{{ route('superadmin.drivers.assign', $driver) }}" class="btn btn-sm btn-outline-primary">Assign Vehicle</a>
+                                @endif
+                                <form method="POST" action="{{ route('superadmin.drivers.archive', $driver) }}" onsubmit="return confirm('Archive this driver? Historical incidents and reports will remain available.');">
+                                    @csrf
+                                    <button class="btn btn-sm btn-outline-danger">Archive</button>
+                                </form>
+                            @endif
+                        </div>
                     </td>
                 </tr>
 
                 @empty
                 <tr>
                     <td colspan="7" class="text-center text-muted py-4">
-                        No approved drivers found.
+                        {{ $archived ? 'No archived drivers found.' : 'No drivers found.' }}
                     </td>
                 </tr>
                 @endforelse

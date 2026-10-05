@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Driver extends Model
 {
+    public const MANAGEMENT_STATUS_ACTIVE = 'active';
+    public const MANAGEMENT_STATUS_SUSPENDED = 'suspended';
+
     public const STATUS_AVAILABLE = 'available';
     public const STATUS_ASSIGNED = 'assigned';
     public const STATUS_EN_ROUTE = 'en_route';
@@ -30,12 +33,50 @@ class Driver extends Model
         'license_number',
         'license_expiry',
         'status',
+        'management_status',
+        'archived_at',
+        'archived_by',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'license_expiry' => 'date',
+            'archived_at' => 'datetime',
+        ];
+    }
 
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function archivedBy()
+    {
+        return $this->belongsTo(User::class, 'archived_by');
+    }
+
+    public function scopeNotArchived(Builder $query): Builder
+    {
+        return $query->whereNull('archived_at');
+    }
+
+    public function scopeActiveAccount(Builder $query): Builder
+    {
+        return $query->notArchived()
+            ->where('management_status', self::MANAGEMENT_STATUS_ACTIVE)
+            ->whereHas('user', fn(Builder $userQuery) => $userQuery->where('status', 'approved'));
+    }
+
+    public function scopeArchived(Builder $query): Builder
+    {
+        return $query->whereNotNull('archived_at');
+    }
+
+    public function scopeDispatchEligible(Builder $query): Builder
+    {
+        return $query->activeAccount()->where('status', self::STATUS_AVAILABLE);
     }
 
     public function gpsLocations()

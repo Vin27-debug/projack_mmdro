@@ -7,9 +7,16 @@
             <h2 class="section-heading mb-1">Vehicle Maintenance</h2>
             <p class="section-excerpt mb-0">Track vehicle upkeep, maintenance history, and availability.</p>
         </div>
-        <a href="{{ route('admin.maintenance.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> New Maintenance Record
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('admin.maintenance.index', ['archived' => $archived ? 0 : 1]) }}" class="btn btn-outline-secondary">
+                {{ $archived ? 'Active Records' : 'Archived Records' }}
+            </a>
+            @unless($archived)
+            <a href="{{ route('admin.maintenance.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> New Maintenance Record
+            </a>
+            @endunless
+        </div>
     </div>
 
     @if(session('success'))
@@ -100,6 +107,12 @@
                             </td>
                             <td class="text-end">
                                 <div class="d-flex justify-content-end gap-2">
+                                    @if($archived)
+                                    <form method="POST" action="{{ route('admin.maintenance.restore', $maintenance) }}" class="d-inline">
+                                        @csrf
+                                        <button class="btn btn-outline-success btn-sm">Restore</button>
+                                    </form>
+                                    @else
                                     <a href="{{ route('admin.maintenance.edit', $maintenance) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
                                     @if($maintenance->status !== 'completed')
                                     <form method="POST" action="{{ route('admin.maintenance.complete', $maintenance) }}" class="d-inline">
@@ -107,17 +120,17 @@
                                         <button class="btn btn-success btn-sm">Complete</button>
                                     </form>
                                     @endif
-                                    <form method="POST" action="{{ route('admin.maintenance.destroy', $maintenance) }}" class="d-inline" onsubmit="return confirm('Delete this maintenance record?');">
+                                    <form method="POST" action="{{ route('admin.maintenance.archive', $maintenance) }}" class="d-inline" onsubmit="return confirm('Archive this maintenance record? The history will be retained.');">
                                         @csrf
-                                        @method('DELETE')
-                                        <button class="btn btn-outline-danger btn-sm">Delete</button>
+                                        <button class="btn btn-outline-danger btn-sm">Archive</button>
                                     </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">No maintenance records found.</td>
+                            <td colspan="7" class="text-center text-muted py-4">{{ $archived ? 'No archived maintenance records found.' : 'No maintenance records found.' }}</td>
                         </tr>
                         @endforelse
                     </tbody>

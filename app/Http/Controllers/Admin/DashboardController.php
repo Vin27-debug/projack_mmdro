@@ -38,7 +38,7 @@ class DashboardController extends Controller
             ->pluck('count', 'month');
 
         $incidentList = Incident::latest()->get();
-        $ambulanceList = Ambulance::latest()->get();
+        $ambulanceList = Ambulance::notArchived()->latest()->get();
 
         $totalIncidents = Incident::query()->count();
         $activeIncidents = Incident::query()->whereNotIn('status', ['completed', 'closed', 'cancelled'])->count();
@@ -50,16 +50,13 @@ class DashboardController extends Controller
             'Completed' => $completedIncidents,
         ];
 
-        $totalDrivers = Driver::count();
+        $totalDrivers = Driver::notArchived()->count();
 
-        $availableDrivers = Driver::where(
-            'status',
-            'available'
-        )->count();
+        $availableDrivers = Driver::dispatchEligible()->count();
 
-        $availableVehicles = Ambulance::whereIn('status', ['available', 'ready', 'standby'])->count();
+        $availableVehicles = Ambulance::notArchived()->whereIn('status', ['available', 'ready', 'standby'])->count();
 
-        $maintenanceVehicles = Ambulance::where(
+        $maintenanceVehicles = Ambulance::notArchived()->where(
             'status',
             'maintenance'
         )->count();
@@ -214,10 +211,10 @@ class DashboardController extends Controller
             'activeIncidents' => Incident::query()->whereNotIn('status', ['completed', 'closed', 'cancelled'])->count(),
             'completedIncidents' => Incident::query()->whereIn('status', ['completed', 'closed'])->count(),
             'closedIncidents' => Incident::query()->where('status', 'closed')->count(),
-            'totalDrivers' => Driver::count(),
-            'availableDrivers' => Driver::where('status', 'available')->count(),
-            'availableVehicles' => Ambulance::whereIn('status', ['available', 'ready', 'standby'])->count(),
-            'maintenanceVehicles' => Ambulance::where('status', 'maintenance')->count(),
+            'totalDrivers' => Driver::notArchived()->count(),
+            'availableDrivers' => Driver::dispatchEligible()->count(),
+            'availableVehicles' => Ambulance::notArchived()->whereIn('status', ['available', 'ready', 'standby'])->count(),
+            'maintenanceVehicles' => Ambulance::notArchived()->where('status', 'maintenance')->count(),
             'activeDispatches' => Dispatch::whereNotIn('status', ['completed', 'cancelled'])->count(),
             'completedDispatches' => Dispatch::where('status', 'completed')->count(),
             'panicCount' => PanicAlert::where('resolved', false)->count(),
@@ -394,11 +391,11 @@ class DashboardController extends Controller
      */
     public function fleetReadiness()
     {
-        $onlineDrivers = Driver::where('status', 'available')->count();
-        $activeAmbulances = Ambulance::whereIn('status', ['available', 'in_use'])->count();
-        $underMaintenance = Ambulance::where('status', 'maintenance')->count();
-        $totalAmbulances = Ambulance::count();
-        $availableAmbulances = Ambulance::where('status', 'available')->count();
+        $onlineDrivers = Driver::dispatchEligible()->count();
+        $activeAmbulances = Ambulance::notArchived()->whereIn('status', ['available', 'in_use'])->count();
+        $underMaintenance = Ambulance::notArchived()->where('status', 'maintenance')->count();
+        $totalAmbulances = Ambulance::notArchived()->count();
+        $availableAmbulances = Ambulance::available()->count();
 
         return response()->json([
             'available_ambulances' => $availableAmbulances,

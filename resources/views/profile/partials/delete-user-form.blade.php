@@ -9,6 +9,10 @@
         </p>
     </header>
 
+    @error('account', 'userDeletion')
+    <div class="text-sm text-red-600">{{ $message }}</div>
+    @enderror
+
     <x-danger-button
         x-data=""
         x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"

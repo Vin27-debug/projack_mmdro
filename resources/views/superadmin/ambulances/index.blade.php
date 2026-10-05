@@ -10,9 +10,14 @@
         </p>
     </div>
 
-    <a href="{{ route('superadmin.ambulances.create') }}" class="btn btn-danger">
-        Add Ambulance
-    </a>
+    <div class="d-flex gap-2">
+        <a href="{{ route('superadmin.ambulances.index', ['archived' => $archived ? 0 : 1]) }}" class="btn btn-outline-secondary">
+            {{ $archived ? 'Active Vehicles' : 'Archived Vehicles' }}
+        </a>
+        @unless($archived)
+        <a href="{{ route('superadmin.ambulances.create') }}" class="btn btn-danger">Add Ambulance</a>
+        @endunless
+    </div>
 </div>
 
 <div class="card border-0 shadow-sm rounded-4">
@@ -75,6 +80,12 @@
                         <td>
                             <div class="d-flex gap-2">
 
+                                @if($archived)
+                                <form method="POST" action="{{ route('superadmin.ambulances.restore', $ambulance) }}">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Restore</button>
+                                </form>
+                                @else
                                 <a
                                     href="{{ route('superadmin.ambulances.edit', $ambulance->id) }}"
                                     class="btn btn-sm btn-outline-primary">
@@ -82,18 +93,18 @@
                                 </a>
 
                                 <form
-                                    action="{{ route('superadmin.ambulances.destroy', $ambulance->id) }}"
+                                    action="{{ route('superadmin.ambulances.archive', $ambulance->id) }}"
                                     method="POST">
                                     @csrf
-                                    @method('DELETE')
 
                                     <button
                                         type="submit"
                                         class="btn btn-sm btn-outline-danger"
-                                        onclick="return confirm('Delete this ambulance?')">
-                                        Delete
+                                        onclick="return confirm('Archive this ambulance? Historical records will be retained.')">
+                                        Archive
                                     </button>
                                 </form>
+                                @endif
 
                             </div>
                         </td>
@@ -103,7 +114,7 @@
 
                     <tr>
                         <td colspan="6" class="text-center text-muted py-4">
-                            No ambulances found.
+                            {{ $archived ? 'No archived vehicles found.' : 'No vehicles found.' }}
                         </td>
                     </tr>
 

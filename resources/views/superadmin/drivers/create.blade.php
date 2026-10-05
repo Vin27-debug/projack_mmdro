@@ -113,33 +113,6 @@
                     placeholder="09XXXXXXXXX">
             </div>
 
-            {{-- LICENSE --}}
-            <div class="col-md-4">
-                <label class="form-label fw-semibold">
-                    License Number
-                </label>
-
-                <input
-                    type="text"
-                    name="license_number"
-                    value="{{ old('license_number') }}"
-                    class="form-control"
-                    placeholder="License number">
-            </div>
-
-            {{-- LICENSE EXPIRY --}}
-            <div class="col-md-4">
-                <label class="form-label fw-semibold">
-                    License Expiry
-                </label>
-
-                <input
-                    type="date"
-                    name="license_expiry"
-                    value="{{ old('license_expiry') }}"
-                    class="form-control">
-            </div>
-
         </div>
 
         <div class="d-flex justify-content-end gap-2 mt-4">

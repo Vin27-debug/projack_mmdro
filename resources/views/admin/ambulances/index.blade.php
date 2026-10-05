@@ -13,11 +13,16 @@
             </p>
         </div>
 
-        <a href="{{ route('admin.ambulances.create') }}"
-            class="btn btn-primary rounded-3 px-4">
-            <i class="bi bi-plus-lg me-1"></i>
-            Add Vehicle
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('admin.ambulances.index', ['archived' => $archived ? 0 : 1]) }}" class="btn btn-outline-secondary">
+                {{ $archived ? 'Active Vehicles' : 'Archived Vehicles' }}
+            </a>
+            @unless($archived)
+            <a href="{{ route('admin.ambulances.create') }}" class="btn btn-primary rounded-3 px-4">
+                <i class="bi bi-plus-lg me-1"></i> Add Vehicle
+            </a>
+            @endunless
+        </div>
     </div>
 
     {{-- SUCCESS --}}
@@ -191,25 +196,31 @@
                             {{-- ACTIONS --}}
                             <td class="text-end px-4">
 
+                                @if($archived)
+                                <form action="{{ route('admin.ambulances.restore', $ambulance) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Restore</button>
+                                </form>
+                                @else
                                 <a href="{{ route('admin.ambulances.edit', $ambulance) }}"
                                     class="btn btn-sm btn-outline-primary rounded-3 me-1">
                                     <i class="bi bi-pencil"></i>
                                 </a>
 
-                                <form action="{{ route('admin.ambulances.destroy', $ambulance) }}"
+                                <form action="{{ route('admin.ambulances.archive', $ambulance) }}"
                                     method="POST"
                                     class="d-inline"
-                                    onsubmit="return confirm('Are you sure you want to delete this vehicle?');">
+                                    onsubmit="return confirm('Archive this vehicle? Historical records will be retained.');">
 
                                     @csrf
-                                    @method('DELETE')
 
                                     <button type="submit"
                                         class="btn btn-sm btn-outline-danger rounded-3">
-                                        <i class="bi bi-trash"></i>
+                                        Archive
                                     </button>
 
                                 </form>
+                                @endif
 
                             </td>
 

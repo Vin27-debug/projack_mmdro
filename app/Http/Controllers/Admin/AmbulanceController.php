@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Ambulance;
+use App\Models\Dispatch;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -11,9 +12,12 @@ class AmbulanceController extends Controller
 {
     public function index()
     {
-        $ambulances = Ambulance::latest()->get();
+        $archived = request()->boolean('archived');
+        $ambulances = ($archived ? Ambulance::archived() : Ambulance::notArchived())
+            ->latest()
+            ->get();
 
-        return view('admin.ambulances.index', compact('ambulances'));
+        return view('admin.ambulances.index', compact('ambulances', 'archived'));
     }
 
     public function create()
@@ -48,12 +52,14 @@ class AmbulanceController extends Controller
 
     public function edit(Ambulance $ambulance)
     {
+        abort_if($ambulance->archived_at, 404);
+
         return view('admin.ambulances.edit', compact('ambulance'));
     }
 
     public function update(Request $request, Ambulance $ambulance)
     {
-       
+        abort_if($ambulance->archived_at, 404);
 
         $data = $request->validate([
             'plate_number' => [
@@ -86,20 +92,37 @@ class AmbulanceController extends Controller
             ->with('success', 'Vehicle updated successfully.');
     }
 
-    public function destroy(Ambulance $ambulance)
+    public function archive(Ambulance $ambulance)
     {
-        if ($ambulance->dispatches()->exists()) {
+        abort_if($ambulance->archived_at, 404);
+
+        if (Dispatch::active()->where('vehicle_id', $ambulance->id)->exists()) {
             return back()->with(
                 'error',
-                'This vehicle cannot be deleted because it has dispatch records.'
+                'A vehicle with an active dispatch cannot be archived.'
             );
         }
 
-        $ambulance->delete();
+        $ambulance->update([
+            'archived_at' => now(),
+            'archived_by' => auth()->id(),
+        ]);
 
         return back()->with(
             'success',
-            'Vehicle deleted successfully.'
+            'Vehicle archived. Historical dispatch and maintenance records remain available.'
         );
+    }
+
+    public function restore(Ambulance $ambulance)
+    {
+        abort_if(!$ambulance->archived_at, 404);
+
+        $ambulance->update([
+            'archived_at' => null,
+            'archived_by' => null,
+        ]);
+
+        return back()->with('success', 'Vehicle restored.');
     }
 }

@@ -39,11 +39,7 @@ class DispatchController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $drivers = Driver::where(
-            'status',
-            Driver::STATUS_AVAILABLE
-        )
-            ->get();
+        $drivers = Driver::dispatchEligible()->with('user')->get();
 
         /*
         |--------------------------------------------------------------------------
@@ -51,11 +47,7 @@ class DispatchController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $ambulances = Ambulance::where(
-            'status',
-            Ambulance::STATUS_AVAILABLE
-        )
-            ->get();
+        $ambulances = Ambulance::available()->get();
 
 
         return view(
@@ -143,15 +135,12 @@ class DispatchController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $driver = Driver::findOrFail($driverId);
-
-        if (
-            $driver->status !== Driver::STATUS_AVAILABLE
-        ) {
+        $driver = Driver::dispatchEligible()->find($driverId);
+        if (!$driver) {
 
             return back()->with(
                 'error',
-                'This driver is currently not available.'
+                'This driver is not active or currently available.'
             );
         }
 
@@ -163,17 +152,15 @@ class DispatchController extends Controller
         */
 
         if ($ambulanceId !== null) {
-            $ambulance = Ambulance::findOrFail(
+            $ambulance = Ambulance::available()->find(
                 $ambulanceId
             );
 
-            if (
-                $ambulance->status !== Ambulance::STATUS_AVAILABLE
-            ) {
+            if (!$ambulance) {
 
                 return back()->with(
                     'error',
-                    'This ambulance is currently not available.'
+                    'This ambulance is not active or currently available.'
                 );
             }
         }

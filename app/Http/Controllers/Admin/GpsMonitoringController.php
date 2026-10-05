@@ -24,7 +24,7 @@ class GpsMonitoringController extends Controller
      */
     public function locations(GpsFreshnessService $gpsFreshness)
     {
-        $drivers = Driver::with([
+        $drivers = Driver::notArchived()->with([
             'user',
             'activeVehicleAssignment.ambulance',
         ])->get();

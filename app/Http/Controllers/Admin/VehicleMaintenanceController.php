@@ -10,6 +10,7 @@ use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class VehicleMaintenanceController extends Controller
@@ -17,31 +18,33 @@ class VehicleMaintenanceController extends Controller
     public function index(): View
     {
         $stats = [
-            'total_vehicles' => Ambulance::count(),
-            'active_vehicles' => Ambulance::where(function ($query): void {
+            'total_vehicles' => Ambulance::notArchived()->count(),
+            'active_vehicles' => Ambulance::notArchived()->where(function ($query): void {
                 $query->where('vehicle_status', 'active')
                     ->orWhere('status', 'on_duty');
             })->count(),
-            'maintenance_vehicles' => Ambulance::where(function ($query): void {
+            'maintenance_vehicles' => Ambulance::notArchived()->where(function ($query): void {
                 $query->where('vehicle_status', 'maintenance')
                     ->orWhere('status', 'maintenance');
             })->count(),
-            'available_vehicles' => Ambulance::where(function ($query): void {
+            'available_vehicles' => Ambulance::notArchived()->where(function ($query): void {
                 $query->where('vehicle_status', 'available')
                     ->orWhere('status', 'available');
             })->count(),
         ];
 
-        $maintenances = VehicleMaintenance::with('ambulance')
+        $archived = request()->boolean('archived');
+        $maintenances = ($archived ? VehicleMaintenance::archived() : VehicleMaintenance::notArchived())
+            ->with('ambulance')
             ->latest()
             ->paginate(10);
 
-        return view('admin.maintenance.index', compact('maintenances', 'stats'));
+        return view('admin.maintenance.index', compact('maintenances', 'stats', 'archived'));
     }
 
     public function create(): View
     {
-        $ambulances = Ambulance::orderBy('vehicle_name')->get();
+        $ambulances = Ambulance::notArchived()->orderBy('vehicle_name')->get();
         $vehicleStatuses = ['available', 'active', 'maintenance', 'out_of_service'];
 
         return view('admin.maintenance.create', compact('ambulances', 'vehicleStatuses'))->with('vehicleMaintenance', null);
@@ -50,7 +53,7 @@ class VehicleMaintenanceController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'ambulance_id' => ['required', 'exists:ambulances,id'],
+            'ambulance_id' => ['required', Rule::exists('ambulances', 'id')->whereNull('archived_at')],
             'maintenance_type' => ['required', 'string', 'max:255'],
             'scheduled_date' => ['required', 'date'],
             'cost' => ['nullable', 'numeric', 'min:0'],
@@ -94,7 +97,8 @@ class VehicleMaintenanceController extends Controller
 
     public function edit(VehicleMaintenance $vehicleMaintenance): View
     {
-        $ambulances = Ambulance::orderBy('vehicle_name')->get();
+        abort_if($vehicleMaintenance->archived_at, 404);
+        $ambulances = Ambulance::notArchived()->orderBy('vehicle_name')->get();
         $vehicleStatuses = ['available', 'active', 'maintenance', 'out_of_service'];
 
         return view('admin.maintenance.edit', compact('vehicleMaintenance', 'ambulances', 'vehicleStatuses'));
@@ -102,8 +106,9 @@ class VehicleMaintenanceController extends Controller
 
     public function update(Request $request, VehicleMaintenance $vehicleMaintenance): RedirectResponse
     {
+        abort_if($vehicleMaintenance->archived_at, 404);
         $data = $request->validate([
-            'ambulance_id' => ['required', 'exists:ambulances,id'],
+            'ambulance_id' => ['required', Rule::exists('ambulances', 'id')->whereNull('archived_at')],
             'maintenance_type' => ['required', 'string', 'max:255'],
             'scheduled_date' => ['required', 'date'],
             'cost' => ['nullable', 'numeric', 'min:0'],
@@ -133,16 +138,35 @@ class VehicleMaintenanceController extends Controller
             ->with('success', 'Maintenance record updated successfully.');
     }
 
-    public function destroy(VehicleMaintenance $vehicleMaintenance): RedirectResponse
+    public function archive(VehicleMaintenance $vehicleMaintenance): RedirectResponse
     {
-        $vehicleMaintenance->delete();
+        abort_if($vehicleMaintenance->archived_at, 404);
+
+        $vehicleMaintenance->update([
+            'archived_at' => now(),
+            'archived_by' => auth()->id(),
+        ]);
 
         return Redirect::route('admin.maintenance.index')
-            ->with('success', 'Maintenance record deleted successfully.');
+            ->with('success', 'Maintenance record archived. The history is retained.');
+    }
+
+    public function restore(VehicleMaintenance $vehicleMaintenance): RedirectResponse
+    {
+        abort_if(!$vehicleMaintenance->archived_at, 404);
+
+        $vehicleMaintenance->update([
+            'archived_at' => null,
+            'archived_by' => null,
+        ]);
+
+        return Redirect::route('admin.maintenance.index', ['archived' => 1])
+            ->with('success', 'Maintenance record restored.');
     }
 
     public function complete(VehicleMaintenance $vehicleMaintenance): RedirectResponse
     {
+        abort_if($vehicleMaintenance->archived_at, 404);
         $vehicleMaintenance->update([
             'status' => 'completed',
             'completed_date' => now(),

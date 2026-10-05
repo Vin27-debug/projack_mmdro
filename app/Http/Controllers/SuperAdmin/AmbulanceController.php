@@ -4,17 +4,21 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Ambulance;
+use App\Models\Dispatch;
 use Illuminate\Http\Request;
 
 class AmbulanceController extends Controller
 {
     public function index()
     {
-        $ambulances = Ambulance::latest()->get();
+        $archived = request()->boolean('archived');
+        $ambulances = ($archived ? Ambulance::archived() : Ambulance::notArchived())
+            ->latest()
+            ->get();
 
         return view(
             'superadmin.ambulances.index',
-            compact('ambulances')
+            compact('ambulances', 'archived')
         );
     }
 
@@ -45,6 +49,8 @@ class AmbulanceController extends Controller
 
     public function edit(Ambulance $ambulance)
     {
+        abort_if($ambulance->archived_at, 404);
+
         return view(
             'superadmin.ambulances.edit',
             compact('ambulance')
@@ -53,6 +59,7 @@ class AmbulanceController extends Controller
 
     public function update(Request $request, Ambulance $ambulance)
     {
+        abort_if($ambulance->archived_at, 404);
         $validated = $request->validate([
             'plate_number' => 'required',
             'vehicle_name' => 'required',
@@ -67,11 +74,32 @@ class AmbulanceController extends Controller
             ->with('success', 'Ambulance updated successfully.');
     }
     
-    public function destroy(Ambulance $ambulance)
+    public function archive(Ambulance $ambulance)
     {
-        $ambulance->delete();
+        abort_if($ambulance->archived_at, 404);
+
+        if (Dispatch::active()->where('vehicle_id', $ambulance->id)->exists()) {
+            return back()->with('error', 'A vehicle with an active dispatch cannot be archived.');
+        }
+
+        $ambulance->update([
+            'archived_at' => now(),
+            'archived_by' => auth()->id(),
+        ]);
 
         return back()
-            ->with('success', 'Ambulance deleted successfully.');
+            ->with('success', 'Vehicle archived. Historical dispatch and maintenance records remain available.');
+    }
+
+    public function restore(Ambulance $ambulance)
+    {
+        abort_if(!$ambulance->archived_at, 404);
+
+        $ambulance->update([
+            'archived_at' => null,
+            'archived_by' => null,
+        ]);
+
+        return back()->with('success', 'Vehicle restored.');
     }
 }

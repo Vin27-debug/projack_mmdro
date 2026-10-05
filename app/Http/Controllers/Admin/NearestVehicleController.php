@@ -16,7 +16,7 @@ class NearestVehicleController extends Controller
             return back()->with('error', 'No incident found.');
         }
 
-        $vehicles = Ambulance::all();
+        $vehicles = Ambulance::available()->get();
 
         foreach ($vehicles as $vehicle) {
 

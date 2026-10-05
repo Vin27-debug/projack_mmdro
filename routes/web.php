@@ -217,8 +217,12 @@ Route::middleware([
         ->name('geocode.search');
 
     Route::resource('ambulances', adminAmbulanceController::class)
-        ->except(['show'])
+        ->except(['show', 'destroy'])
         ->names('admin.ambulances');
+    Route::post('/ambulances/{ambulance}/archive', [adminAmbulanceController::class, 'archive'])
+        ->name('admin.ambulances.archive');
+    Route::post('/ambulances/{ambulance}/restore', [adminAmbulanceController::class, 'restore'])
+        ->name('admin.ambulances.restore');
 
     Route::get('/admin/reports/pdf', [PdfReportController::class, 'downloadReport'])
         ->name('admin.reports.pdf');
@@ -368,8 +372,10 @@ Route::middleware([
         ->name('admin.maintenance.edit');
     Route::put('/admin/vehicle-maintenance/{vehicle_maintenance}', [VehicleMaintenanceController::class, 'update'])
         ->name('admin.maintenance.update');
-    Route::delete('/admin/vehicle-maintenance/{vehicle_maintenance}', [VehicleMaintenanceController::class, 'destroy'])
-        ->name('admin.maintenance.destroy');
+    Route::post('/admin/vehicle-maintenance/{vehicle_maintenance}/archive', [VehicleMaintenanceController::class, 'archive'])
+        ->name('admin.maintenance.archive');
+    Route::post('/admin/vehicle-maintenance/{vehicle_maintenance}/restore', [VehicleMaintenanceController::class, 'restore'])
+        ->name('admin.maintenance.restore');
     Route::post('/admin/vehicle-maintenance/{vehicle_maintenance}/complete', [VehicleMaintenanceController::class, 'complete'])
         ->name('admin.maintenance.complete');
 
@@ -485,6 +491,12 @@ Route::middleware([
 
     Route::get('/superadmin/drivers', [UserApprovalController::class, 'drivers'])
         ->name('superadmin.drivers');
+    Route::post('/superadmin/drivers/{driver}/status', [UserApprovalController::class, 'updateDriverStatus'])
+        ->name('superadmin.drivers.status');
+    Route::post('/superadmin/drivers/{driver}/archive', [UserApprovalController::class, 'archiveDriver'])
+        ->name('superadmin.drivers.archive');
+    Route::post('/superadmin/drivers/{driver}/restore', [UserApprovalController::class, 'restoreDriver'])
+        ->name('superadmin.drivers.restore');
 
     Route::get('/superadmin/users/pending', [UserApprovalController::class, 'index'])
         ->name('superadmin.users.pending');
@@ -496,7 +508,12 @@ Route::middleware([
         ->name('superadmin.users.reject');
 
     Route::resource('superadmin/ambulances', AmbulanceController::class)
+        ->except(['destroy'])
         ->names('superadmin.ambulances');
+    Route::post('/superadmin/ambulances/{ambulance}/archive', [AmbulanceController::class, 'archive'])
+        ->name('superadmin.ambulances.archive');
+    Route::post('/superadmin/ambulances/{ambulance}/restore', [AmbulanceController::class, 'restore'])
+        ->name('superadmin.ambulances.restore');
 
     Route::get('/superadmin/assignments', [AssignmentController::class, 'index'])
         ->name('assignments.index');

@@ -14,13 +14,10 @@ class AutoDispatchController extends Controller
 {
     public function dispatch(Incident $incident)
     {
-        $driver = Driver::where('status', 'available')
+        $driver = Driver::dispatchEligible()
             ->first();
 
-        $vehicle = Ambulance::where(
-            'status',
-            'available'
-        )->first();
+        $vehicle = Ambulance::available()->first();
 
         if (!$driver || !$vehicle) {
             return back()->with(

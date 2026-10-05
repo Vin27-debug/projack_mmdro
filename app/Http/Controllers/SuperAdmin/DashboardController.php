@@ -17,8 +17,8 @@ class DashboardController extends Controller
             'pending_incidents' => Incident::where('status', 'pending')->count(),
             'dispatched_incidents' => Incident::where('status', 'dispatched')->count(),
             'completed_incidents' => Incident::where('status', 'completed')->count(),
-            'total_drivers' => Driver::count(),
-            'available_ambulances' => Ambulance::where('status', 'available')->count(),
+            'total_drivers' => Driver::notArchived()->count(),
+            'available_ambulances' => Ambulance::available()->count(),
         ];
 
         $recentIncidents = Incident::latest()->take(5)->get();

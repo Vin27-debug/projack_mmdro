@@ -48,6 +48,13 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        if ($user->driver()->exists()) {
+            return Redirect::route('profile.edit')
+                ->withErrors([
+                    'account' => 'Driver accounts with operational records cannot be deleted. Ask a Super Admin to suspend or archive the driver account.',
+                ], 'userDeletion');
+        }
+
         Auth::logout();
 
         $user->delete();

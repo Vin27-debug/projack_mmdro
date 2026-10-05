@@ -23,8 +23,17 @@ class Ambulance extends Model
         'vehicle_type',
         'status',
         'latitude',
-        'longitude'
+        'longitude',
+        'archived_at',
+        'archived_by',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'archived_at' => 'datetime',
+        ];
+    }
 
     public function maintenances()
     {
@@ -48,6 +57,21 @@ class Ambulance extends Model
 
     public function scopeAvailable(Builder $query)
     {
-        return $query->where('status', self::STATUS_AVAILABLE);
+        return $query->notArchived()->where('status', self::STATUS_AVAILABLE);
+    }
+
+    public function archivedBy()
+    {
+        return $this->belongsTo(User::class, 'archived_by');
+    }
+
+    public function scopeNotArchived(Builder $query): Builder
+    {
+        return $query->whereNull('archived_at');
+    }
+
+    public function scopeArchived(Builder $query): Builder
+    {
+        return $query->whereNotNull('archived_at');
     }
 }

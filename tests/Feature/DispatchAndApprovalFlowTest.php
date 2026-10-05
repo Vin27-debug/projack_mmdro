@@ -138,8 +138,6 @@ class DispatchAndApprovalFlowTest extends TestCase
             'user_id' => $driverUser->id,
             'badge_id' => 'PENDING',
             'contact_number' => '09170001111',
-            'license_number' => 'LIC-001',
-            'license_expiry' => now()->addYear()->toDateString(),
             'status' => 'available',
         ]);
 
@@ -156,6 +154,8 @@ class DispatchAndApprovalFlowTest extends TestCase
         $this->assertNotNull($driverUser->approved_at);
         $this->assertTrue($driverUser->fresh()->hasRole('driver'));
         $this->assertEquals('AMB-001', $driver->fresh()->badge_id);
+        $this->assertNull($driver->fresh()->license_number);
+        $this->assertNull($driver->fresh()->license_expiry);
         $this->assertTrue($response->isRedirect());
     }
 }
