@@ -308,6 +308,8 @@ Route::middleware([
         ->name('admin.incidents.create');
     Route::post('/admin/incidents', [AdminIncidentController::class, 'store'])
         ->name('admin.incidents.store');
+    Route::get('/admin/incidents/history', [IncidentHistoryController::class, 'index'])
+        ->name('admin.incidents.history');
     Route::get('/admin/incidents/{incident}', [AdminIncidentController::class, 'show'])
         ->name('admin.incidents.show');
     Route::get('/admin/incidents/{incident}/edit', [AdminIncidentController::class, 'edit'])
@@ -389,9 +391,6 @@ Route::middleware([
 
     Route::post('/admin/incidents/{incident}/auto-dispatch', [AutoDispatchController::class, 'dispatch'])
         ->name('admin.incidents.auto-dispatch');
-
-    Route::get('/admin/incidents/history', [IncidentHistoryController::class, 'index'])
-        ->name('admin.incidents.history');
 
     Route::get('/dispatch-center', [DispatchController::class, 'index'])
         ->name('dispatch.center');

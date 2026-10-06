@@ -13,6 +13,33 @@ class DispatchAndApprovalFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_can_open_incident_list_history_and_detail_pages(): void
+    {
+        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $admin = User::factory()->create(['status' => 'pending']);
+        $admin->assignRole('admin');
+
+        $incident = Incident::create([
+            'incident_number' => 'INC-PAGES-001',
+            'reporter_name' => 'Incident Page Test',
+            'incident_type' => 'Medical Emergency',
+            'location' => 'Test Street',
+            'description' => 'Incident page route test',
+            'status' => Incident::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.incidents.index'))
+            ->assertOk()
+            ->assertSee($incident->incident_number);
+
+        $this->get('/admin/incidents/history')->assertOk();
+
+        $this->get(route('admin.incidents.show', $incident))
+            ->assertOk()
+            ->assertSee($incident->incident_number);
+    }
+
     public function test_incident_coordinates_are_stored_from_request(): void
     {
         Role::create(['name' => 'admin', 'guard_name' => 'web']);
