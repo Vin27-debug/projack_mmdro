@@ -20,6 +20,28 @@ class DispatchStatusTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_can_open_incident_dispatch_form(): void
+    {
+        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $admin = User::factory()->create(['status' => 'pending']);
+        $admin->assignRole($adminRole);
+
+        $incident = Incident::create([
+            'incident_number' => 'INC-DISPATCH-FORM',
+            'reporter_name' => 'Dispatch Form Test',
+            'incident_type' => 'Medical',
+            'location' => 'Test Street',
+            'description' => 'Dispatch form route test',
+            'status' => Incident::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.incidents.dispatch.form', $incident))
+            ->assertOk()
+            ->assertSee('Dispatch Incident')
+            ->assertSee(route('admin.incidents.dispatch', $incident));
+    }
+
     public function test_admin_can_assign_a_dispatch_with_a_supported_status(): void
     {
         $this->withoutMiddleware(PreventRequestForgery::class);
