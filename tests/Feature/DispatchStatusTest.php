@@ -1059,6 +1059,11 @@ class DispatchStatusTest extends TestCase
         $this->assertNotNull($notification);
         $this->assertStringContainsString('INC-0111', $notification->message);
         $this->assertStringContainsString('Selected Rescue', $notification->message);
+        $this->assertDatabaseHas('vehicle_driver_assignments', [
+            'driver_id' => $driver->id,
+            'ambulance_id' => $vehicle->id,
+            'status' => 'active',
+        ]);
     }
 
     public function test_gps_inside_incident_radius_automatically_marks_at_scene(): void

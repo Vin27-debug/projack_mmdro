@@ -80,6 +80,104 @@ class DriverStatusAndArchiveTest extends TestCase
             ->assertSee('Second Registered Driver');
     }
 
+    public function test_registered_driver_status_gps_vehicle_selection_and_dispatch_flow(): void
+    {
+        $this->withoutMiddleware(\App\Http\Middleware\PreventRequestForgery::class);
+
+        $this->post(route('driver.register.store'), [
+            'name' => 'Dispatch Flow Driver',
+            'email' => 'dispatch-flow-driver@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'contact_number' => '09123456789',
+        ])->assertSessionHasNoErrors();
+
+        $user = User::where('email', 'dispatch-flow-driver@example.com')->firstOrFail();
+        $driver = Driver::where('user_id', $user->id)->firstOrFail();
+
+        $this->assertSame('approved', $user->status);
+        $this->assertTrue($user->hasRole('driver'));
+        $this->assertNotSame('PENDING', $driver->badge_id);
+        $this->assertSame(Driver::MANAGEMENT_STATUS_ACTIVE, $driver->management_status);
+
+        $superAdmin = $this->createSuperAdmin();
+        $this->actingAs($superAdmin)
+            ->get(route('superadmin.drivers'))
+            ->assertOk()
+            ->assertSee('Dispatch Flow Driver');
+
+        $this->post(route('superadmin.drivers.status', $driver), ['status' => 'suspended'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(Driver::MANAGEMENT_STATUS_SUSPENDED, $driver->fresh()->management_status);
+        $this->post(route('superadmin.drivers.status', $driver), ['status' => 'active'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(Driver::MANAGEMENT_STATUS_ACTIVE, $driver->fresh()->management_status);
+
+        $vehicle = $this->createVehicle('UNIT-DISPATCH-FLOW');
+        $incident = $this->createIncident('INC-DISPATCH-FLOW');
+
+        $this->post(route('logout'))->assertRedirect('/');
+        $this->post('/login', [
+            'email' => 'dispatch-flow-driver@example.com',
+            'password' => 'password123',
+        ])->assertRedirect(route('driver.dashboard'));
+        $this->get(route('driver.dashboard'))->assertOk();
+
+        $this->post(route('driver.gps.update'), [
+            'latitude' => 14.5995,
+            'longitude' => 120.9842,
+            'accuracy' => 10,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('gps_locations', [
+            'driver_id' => $driver->id,
+            'latitude' => 14.5995,
+            'longitude' => 120.9842,
+        ]);
+
+        $recommendations = app(DispatchRecommendationService::class)->recommend($incident);
+        $this->assertSame($driver->id, $recommendations['eligibleDrivers'][0]->id);
+        $this->assertSame($vehicle->id, $recommendations['eligibleVehicles'][0]->id);
+
+        $admin = $this->createAdmin();
+        $this->actingAs($admin)
+            ->get(route('admin.incidents.dispatch.form', $incident))
+            ->assertOk()
+            ->assertSee('Dispatch Flow Driver')
+            ->assertSee('UNIT-DISPATCH-FLOW')
+            ->assertSee('Dispatch Incident')
+            ->assertDontSee('disabled');
+
+        $this->post(route('admin.incidents.dispatch', $incident), [
+            'driver_id' => $driver->id,
+        ])->assertRedirect(route('admin.incidents.index'));
+
+        $dispatch = Dispatch::where('incident_id', $incident->id)->firstOrFail();
+        $this->assertSame(Dispatch::STATUS_ASSIGNED, $dispatch->status);
+        $this->assertNull($dispatch->vehicle_id);
+
+        $this->actingAs($user)
+            ->post(route('driver.dispatch.accept', $dispatch), ['vehicle_id' => $vehicle->id])
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('dispatches', [
+            'id' => $dispatch->id,
+            'driver_id' => $driver->id,
+            'vehicle_id' => $vehicle->id,
+            'status' => Dispatch::STATUS_EN_ROUTE,
+        ]);
+        $this->assertDatabaseHas('vehicle_driver_assignments', [
+            'driver_id' => $driver->id,
+            'ambulance_id' => $vehicle->id,
+            'status' => 'active',
+        ]);
+        $this->assertSame(Ambulance::STATUS_ON_DUTY, $vehicle->fresh()->status);
+        $this->assertDatabaseHas('notifications', [
+            'type' => 'dispatch',
+            'is_read' => false,
+        ]);
+    }
+
     public function test_active_driver_is_eligible_and_suspended_driver_cannot_be_assigned(): void
     {
         $admin = $this->createAdmin();

@@ -8,6 +8,7 @@ use App\Models\Dispatch;
 use App\Models\Driver;
 use App\Models\Incident;
 use App\Models\Notification;
+use App\Models\VehicleDriverAssignment;
 use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -200,6 +201,8 @@ class DashboardController extends Controller
                     'accepted_at' => now(),
                     'en_route_at' => now(),
                 ]);
+
+                VehicleDriverAssignment::assignDriverToAmbulance($driver, $vehicle);
 
                 Notification::create([
                     'title' => 'Vehicle Selected for Dispatch',
