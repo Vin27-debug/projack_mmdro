@@ -66,7 +66,7 @@ class Driver extends Model
     {
         return $query->notArchived()
             ->where('management_status', self::MANAGEMENT_STATUS_ACTIVE)
-            ->whereHas('user', fn(Builder $userQuery) => $userQuery->where('status', '!=', 'suspended'));
+            ->whereHas('user', fn(Builder $userQuery) => $userQuery->where('status', 'approved'));
     }
 
     public function scopeArchived(Builder $query): Builder

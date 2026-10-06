@@ -29,3 +29,4 @@ Thumbs.db
 laravel.backup
 laravel.backup
 laravel.before-restore.backup
+.neon

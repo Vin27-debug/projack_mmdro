@@ -18,6 +18,10 @@ class UserApprovalController extends Controller
         $archived = request()->boolean('archived');
         $drivers = Driver::query()
             ->when($archived, fn($query) => $query->archived(), fn($query) => $query->notArchived())
+            ->when(
+                !$archived,
+                fn($query) => $query->whereHas('user', fn($userQuery) => $userQuery->where('status', 'approved'))
+            )
             ->with([
             'user',
             'activeVehicleAssignment.ambulance'

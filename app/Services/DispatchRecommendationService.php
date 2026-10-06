@@ -7,6 +7,7 @@ use App\Models\Driver;
 use App\Models\Dispatch;
 use App\Models\GpsLocation;
 use App\Models\Incident;
+use App\Models\VehicleDriverAssignment;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -42,6 +43,11 @@ class DispatchRecommendationService
 
     public function eligibleVehicles(): Collection
     {
+        $eligibleDriverIds = array_fill_keys(
+            array_map('intval', $this->eligibleDrivers()->modelKeys()),
+            true
+        );
+
         return Ambulance::available()
             ->whereDoesntHave('dispatches', fn($query) => $query->whereNotIn('status', [
                 Dispatch::STATUS_COMPLETED,
@@ -49,7 +55,12 @@ class DispatchRecommendationService
                 Dispatch::STATUS_CANCELLED,
             ]))
             ->orderBy('vehicle_name')
-            ->get();
+            ->with(['driverAssignments' => fn($query) => $query->where('status', 'active')])
+            ->get()
+            ->reject(fn(Ambulance $vehicle) => $vehicle->driverAssignments->contains(
+                fn(VehicleDriverAssignment $assignment) => !isset($eligibleDriverIds[(int) $assignment->driver_id])
+            ))
+            ->values();
     }
 
     public function recommend(Incident $incident, $drivers = null, $vehicles = null): array
