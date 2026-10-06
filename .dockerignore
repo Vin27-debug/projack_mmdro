@@ -2,6 +2,9 @@
 .env.*
 .git
 .gitignore
+/laravel
+/database/*.sqlite
+/database/*.sqlite-*
 node_modules
 vendor
 public/build

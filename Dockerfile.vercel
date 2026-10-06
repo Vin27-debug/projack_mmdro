@@ -24,7 +24,7 @@ RUN apt-get update \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
-    libsqlite3-dev \
+    libpq-dev \
     unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \
@@ -32,8 +32,8 @@ RUN apt-get update \
         gd \
         mbstring \
         pdo \
-        pdo_sqlite \
         pdo_mysql \
+        pdo_pgsql \
         xml \
         xmlreader \
         xmlwriter \
@@ -56,24 +56,20 @@ COPY . .
 COPY --from=assets /app/public/build ./public/build
 
 RUN mkdir -p \
-    database \
     storage/framework/cache \
     storage/framework/sessions \
     storage/framework/views \
     bootstrap/cache \
-    && touch database/database.sqlite \
     && chmod -R ug+rwX storage bootstrap/cache
 
 ENV APP_ENV=production \
     APP_DEBUG=false \
-    DB_CONNECTION=sqlite \
-    DB_DATABASE=/var/www/html/database/database.sqlite \
-    SESSION_DRIVER=file \
-    CACHE_STORE=file \
+    SESSION_DRIVER=database \
+    CACHE_STORE=database \
     PORT=80
 
 RUN php artisan package:discover --ansi
 
 EXPOSE 80
 
-CMD ["sh", "-c", "set -e; test -n \"${APP_KEY:-}\" || { echo 'APP_KEY is required for production.' >&2; exit 1; }; php artisan migrate --force; php artisan db:seed --force; php artisan config:clear; php artisan route:clear; php artisan view:clear; exec php artisan serve --host=0.0.0.0 --port=\"${PORT:-80}\""]
+CMD ["sh", "-c", "set -eu; test -n \"${APP_KEY:-}\" || { echo 'APP_KEY is required for production.' >&2; exit 1; }; case \"${DB_CONNECTION:-}\" in mysql|mariadb|pgsql) ;; *) echo 'Production requires a persistent MySQL, MariaDB, or PostgreSQL database; configure DB_CONNECTION and external database settings.' >&2; exit 1;; esac; if [ -z \"${DB_URL:-}\" ]; then test -n \"${DB_HOST:-}\" && test -n \"${DB_DATABASE:-}\" && test -n \"${DB_USERNAME:-}\" || { echo 'Configure DB_HOST, DB_DATABASE, and DB_USERNAME for the external production database.' >&2; exit 1; }; fi; php artisan config:clear; php artisan migrate --force; php artisan db:seed --class=RoleSeeder --force; php artisan route:clear; php artisan view:clear; exec php artisan serve --host=0.0.0.0 --port=\"${PORT:-80}\""]
