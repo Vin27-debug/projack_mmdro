@@ -50,6 +50,12 @@
 <form method="POST" action="{{ route('admin.incidents.dispatch', $incident) }}">
     @csrf
 
+    @if($drivers->isEmpty())
+    <div class="alert alert-warning" role="alert">
+        No eligible driver with fresh GPS is currently available. The dispatch action is disabled until a driver reports a fresh location.
+    </div>
+    @endif
+
     <div class="mb-3">
         <label class="form-label fw-semibold">Driver</label>
         <select name="driver_id" class="form-control" @if($drivers->isEmpty()) disabled @endif>

@@ -9,6 +9,7 @@ use App\Services\IncidentGeofenceService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class GpsController extends Controller
@@ -132,6 +133,14 @@ class GpsController extends Controller
             'speed_limit_kmh' => $speedLimitKmh,
 
             'speed_limit_label' => $speedLimitKmh === null ? 'Speed limit unavailable' : $speedLimitKmh . ' km/h',
+        ]);
+
+        Log::info('Driver GPS location persisted', [
+            'user_id' => $user->id,
+            'driver_id' => $driver->id,
+            'latitude' => $gpsLocation->latitude,
+            'longitude' => $gpsLocation->longitude,
+            'updated_at' => $gpsLocation->updated_at?->toISOString(),
         ]);
 
         $activeDispatch = Dispatch::with('vehicle')

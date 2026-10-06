@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\VehicleDriverAssignment;
 use App\Services\DispatchRecommendationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -38,6 +39,36 @@ class DispatchResourceEligibilityTest extends TestCase
         $eligible = app(DispatchRecommendationService::class)->eligibleDrivers();
 
         $this->assertTrue($eligible->contains('id', $driver->id));
+    }
+
+    public function test_authenticated_gps_update_persists_coordinates_timestamp_and_log_context(): void
+    {
+        Log::spy();
+        $driver = $this->createDriver('GPS-ENDPOINT', gps: false);
+
+        $response = $this->actingAs($driver->user)->postJson(route('driver.gps.update'), [
+            'latitude' => 14.5995,
+            'longitude' => 120.9842,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('driver_id', $driver->id);
+
+        $location = $driver->gpsLocations()->latest('recorded_at')->firstOrFail();
+        $this->assertSame(14.5995, $location->latitude);
+        $this->assertSame(120.9842, $location->longitude);
+        $this->assertNotNull($location->recorded_at);
+        $this->assertNotNull($location->updated_at);
+
+        Log::shouldHaveReceived('info')->once()->with(
+            'Driver GPS location persisted',
+            \Mockery::on(fn(array $context): bool => $context['user_id'] === $driver->user_id
+                && $context['driver_id'] === $driver->id
+                && $context['latitude'] === 14.5995
+                && $context['longitude'] === 120.9842
+                && is_string($context['updated_at']))
+        );
     }
 
     public function test_stale_and_missing_gps_drivers_are_excluded_from_dispatch(): void
@@ -103,6 +134,22 @@ class DispatchResourceEligibilityTest extends TestCase
             ->assertDontSee('No eligible vehicles are available for dispatch.');
     }
 
+    public function test_dispatch_button_is_disabled_with_clear_message_when_no_driver_has_fresh_gps(): void
+    {
+        $admin = $this->createUserWithRole('admin');
+        $this->createDriver('DISPATCH-NO-GPS', gps: false);
+        $incident = $this->createIncident('INC-DISPATCH-NO-GPS');
+
+        $page = $this->actingAs($admin)
+            ->get(route('admin.incidents.dispatch.form', $incident))
+            ->assertOk()
+            ->assertSee('No eligible driver with fresh GPS is currently available.');
+
+        $this->assertMatchesRegularExpression(
+            '/<button class="btn btn-primary"\\s+disabled\\s*>/',
+            $page->getContent()
+        );
+    }
     private function createUserWithRole(string $role): User
     {
         Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
