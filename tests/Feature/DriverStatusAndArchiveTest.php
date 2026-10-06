@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Ambulance;
 use App\Models\Dispatch;
 use App\Models\Driver;
+use App\Models\GpsLocation;
 use App\Models\Incident;
 use App\Models\VehicleMaintenance;
 use App\Models\User;
@@ -35,6 +36,48 @@ class DriverStatusAndArchiveTest extends TestCase
         $this->assertTrue($driverUser->fresh()->hasRole('driver'));
         $this->assertNull($driverUser->driver->fresh()->license_number);
         $this->assertNull($driverUser->driver->fresh()->license_expiry);
+    }
+
+    public function test_multiple_self_registered_drivers_are_saved_and_visible_to_super_admin(): void
+    {
+        foreach ([
+            ['name' => 'First Registered Driver', 'email' => 'first-driver@example.com'],
+            ['name' => 'Second Registered Driver', 'email' => 'second-driver@example.com'],
+        ] as $index => $driverData) {
+            $this->post(route('driver.register.store'), [
+                ...$driverData,
+                'password' => 'password123',
+                'password_confirmation' => 'password123',
+                'contact_number' => '0912345600' . $index,
+            ])->assertSessionHasNoErrors();
+        }
+
+        $drivers = Driver::with('user.roles')->whereHas('user', function ($query): void {
+            $query->whereIn('email', ['first-driver@example.com', 'second-driver@example.com']);
+        })->orderBy('id')->get();
+
+        $this->assertCount(2, $drivers);
+        $this->assertNotSame($drivers[0]->badge_id, $drivers[1]->badge_id);
+
+        foreach ($drivers as $driver) {
+            $this->assertNotSame('PENDING', $driver->badge_id);
+            $this->assertSame('approved', $driver->user->status);
+            $this->assertTrue($driver->user->hasRole('driver'));
+            $this->assertSame(Driver::MANAGEMENT_STATUS_ACTIVE, $driver->management_status);
+        }
+
+        $this->post('/login', [
+            'email' => 'first-driver@example.com',
+            'password' => 'password123',
+        ])->assertRedirect(route('driver.dashboard'));
+        $this->get(route('driver.dashboard'))->assertOk();
+
+        $superAdmin = $this->createSuperAdmin();
+        $this->actingAs($superAdmin)
+            ->get(route('superadmin.drivers'))
+            ->assertOk()
+            ->assertSee('First Registered Driver')
+            ->assertSee('Second Registered Driver');
     }
 
     public function test_active_driver_is_eligible_and_suspended_driver_cannot_be_assigned(): void
@@ -239,13 +282,21 @@ class DriverStatusAndArchiveTest extends TestCase
             'status' => 'approved',
         ]);
 
-        return Driver::create([
+        $driver = Driver::create([
             'user_id' => $user->id,
             'badge_id' => $badge,
             'contact_number' => '09123456789',
             'status' => Driver::STATUS_AVAILABLE,
             'management_status' => $managementStatus,
         ]);
+        GpsLocation::create([
+            'driver_id' => $driver->id,
+            'latitude' => 14.5995,
+            'longitude' => 120.9842,
+            'recorded_at' => now(),
+        ]);
+
+        return $driver;
     }
 
     private function createVehicle(string $plate): Ambulance

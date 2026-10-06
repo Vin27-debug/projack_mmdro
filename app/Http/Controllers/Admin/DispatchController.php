@@ -8,11 +8,14 @@ use App\Models\Dispatch;
 use App\Models\Driver;
 use App\Models\Ambulance;
 use App\Services\AuditService;
+use App\Services\DispatchRecommendationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DispatchController extends Controller
 {
+    public function __construct(private DispatchRecommendationService $eligibilityService) {}
+
     /**
      * Dispatch Center
      */
@@ -39,7 +42,7 @@ class DispatchController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $drivers = Driver::dispatchEligible()->with('user')->get();
+        $drivers = $this->eligibilityService->eligibleDrivers();
 
         /*
         |--------------------------------------------------------------------------
@@ -47,7 +50,7 @@ class DispatchController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $ambulances = Ambulance::available()->get();
+        $ambulances = $this->eligibilityService->eligibleVehicles();
 
 
         return view(
@@ -135,13 +138,10 @@ class DispatchController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $driver = Driver::dispatchEligible()->find($driverId);
+        $driver = $this->eligibilityService->eligibleDrivers()->firstWhere('id', $driverId);
         if (!$driver) {
 
-            return back()->with(
-                'error',
-                'This driver is not active or currently available.'
-            );
+            return back()->with('error', 'This driver is not active, has no recent GPS location, or is already assigned.');
         }
 
 
@@ -152,9 +152,7 @@ class DispatchController extends Controller
         */
 
         if ($ambulanceId !== null) {
-            $ambulance = Ambulance::available()->find(
-                $ambulanceId
-            );
+            $ambulance = $this->eligibilityService->eligibleVehicles()->firstWhere('id', $ambulanceId);
 
             if (!$ambulance) {
 

@@ -8,16 +8,18 @@ use App\Models\Driver;
 use App\Models\Ambulance;
 use App\Models\Dispatch;
 use App\Services\AuditService;
+use App\Services\DispatchRecommendationService;
 use Illuminate\Support\Facades\DB;
 
 class AutoDispatchController extends Controller
 {
+    public function __construct(private DispatchRecommendationService $eligibilityService) {}
+
     public function dispatch(Incident $incident)
     {
-        $driver = Driver::dispatchEligible()
-            ->first();
+        $driver = $this->eligibilityService->eligibleDrivers()->first();
 
-        $vehicle = Ambulance::available()->first();
+        $vehicle = $this->eligibilityService->eligibleVehicles()->first();
 
         if (!$driver || !$vehicle) {
             return back()->with(

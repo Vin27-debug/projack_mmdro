@@ -4,85 +4,105 @@ namespace App\Services;
 
 use App\Models\Ambulance;
 use App\Models\Driver;
+use App\Models\Dispatch;
+use App\Models\GpsLocation;
 use App\Models\Incident;
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 
 class DispatchRecommendationService
 {
+    public function eligibleDrivers(): Collection
+    {
+        $now = CarbonImmutable::now();
+        $staleLimitSeconds = max(0, (int) config('services.muniresq.location_stale_limit_minutes', 5) * 60);
+
+        return Driver::dispatchEligible()
+            ->whereDoesntHave('dispatches', fn($query) => $query->whereNotIn('status', [
+                Dispatch::STATUS_COMPLETED,
+                Dispatch::STATUS_CLOSED,
+                Dispatch::STATUS_CANCELLED,
+            ]))
+            ->with('user')
+            ->get()
+            ->filter(function (Driver $driver) use ($now, $staleLimitSeconds): bool {
+                $gps = $this->latestValidGps($driver);
+
+                if (!$gps || !$gps->recorded_at) {
+                    return false;
+                }
+
+                $recordedAt = CarbonImmutable::instance($gps->recorded_at);
+
+                return !$recordedAt->isFuture()
+                    && $recordedAt->greaterThanOrEqualTo($now->subSeconds($staleLimitSeconds));
+            })
+            ->values();
+    }
+
+    public function eligibleVehicles(): Collection
+    {
+        return Ambulance::available()
+            ->whereDoesntHave('dispatches', fn($query) => $query->whereNotIn('status', [
+                Dispatch::STATUS_COMPLETED,
+                Dispatch::STATUS_CLOSED,
+                Dispatch::STATUS_CANCELLED,
+            ]))
+            ->orderBy('vehicle_name')
+            ->get();
+    }
+
     public function recommend(Incident $incident, $drivers = null, $vehicles = null): array
     {
-        $driverQuery = Driver::dispatchEligible()->with('user');
+        $eligibleDrivers = $this->eligibleDrivers();
         if ($drivers !== null) {
-            $driverQuery->whereKey(collect($drivers)->map(fn(Driver $driver) => $driver->getKey()));
-        }
-        $drivers = $driverQuery->get();
-
-        $vehicles = $vehicles ?? Ambulance::available()->get();
-
-        if (!is_numeric($incident->latitude) || !is_numeric($incident->longitude)) {
-            return [
-                'nearestDriver' => null,
-                'nearestDriverDistance' => null,
-                'nearestAmbulance' => null,
-                'nearestAmbulanceDistance' => null,
-                'eligibleDrivers' => [],
-                'rankedDrivers' => [],
-                'eligibleVehicles' => [],
-                'rankedVehicles' => [],
-            ];
+            $driverIds = collect($drivers)->map(fn(Driver $driver) => $driver->getKey());
+            $eligibleDrivers = $eligibleDrivers->whereIn('id', $driverIds)->values();
         }
 
-        $staleLimitMinutes = (int) config('services.muniresq.location_stale_limit_minutes', 5);
-        $eligibleDrivers = [];
+        $eligibleVehicles = $vehicles === null
+            ? $this->eligibleVehicles()
+            : $this->eligibleVehicles()->whereIn('id', collect($vehicles)->pluck('id'))->values();
 
-        foreach ($drivers as $driver) {
-            $gps = $driver->gpsLocations()->latest('recorded_at')->first();
+        $hasIncidentCoordinates = $this->validCoordinates($incident->latitude, $incident->longitude);
+        $now = CarbonImmutable::now();
 
-            if (!$gps || !is_numeric($gps->latitude) || !is_numeric($gps->longitude)) {
+        foreach ($eligibleDrivers as $driver) {
+            $gps = $this->latestValidGps($driver);
+            if (!$gps || !$gps->recorded_at) {
                 continue;
             }
 
-            $recordedAt = $gps->recorded_at instanceof Carbon ? $gps->recorded_at : Carbon::parse($gps->recorded_at);
-            if ($recordedAt->diffInMinutes(now()) > $staleLimitMinutes) {
-                continue;
+            $recordedAt = CarbonImmutable::instance($gps->recorded_at);
+            $driver->gps_age_minutes = (int) floor(max(0, $now->diffInSeconds($recordedAt)) / 60);
+
+            if ($hasIncidentCoordinates) {
+                $driver->distance = round($this->calculateDistance(
+                    $incident->latitude,
+                    $incident->longitude,
+                    $gps->latitude,
+                    $gps->longitude
+                ), 2);
             }
-
-            $distance = $this->calculateDistance(
-                $incident->latitude,
-                $incident->longitude,
-                $gps->latitude,
-                $gps->longitude
-            );
-
-            $driver->distance = round($distance, 2);
-            $driver->gps_age_minutes = (int) $recordedAt->diffInMinutes(now());
-            $eligibleDrivers[] = $driver;
         }
 
-        usort($eligibleDrivers, fn($left, $right) => ($left->distance ?? PHP_FLOAT_MAX) <=> ($right->distance ?? PHP_FLOAT_MAX));
-
-        $eligibleVehicles = [];
-        foreach ($vehicles as $vehicle) {
-            if (blank($vehicle->latitude) || blank($vehicle->longitude)) {
-                continue;
+        foreach ($eligibleVehicles as $vehicle) {
+            if ($hasIncidentCoordinates && $this->validCoordinates($vehicle->latitude, $vehicle->longitude)) {
+                $vehicle->distance = round($this->calculateDistance(
+                    $incident->latitude,
+                    $incident->longitude,
+                    $vehicle->latitude,
+                    $vehicle->longitude
+                ), 2);
             }
-
-            $distance = $this->calculateDistance(
-                $incident->latitude,
-                $incident->longitude,
-                $vehicle->latitude,
-                $vehicle->longitude
-            );
-
-            $vehicle->distance = round($distance, 2);
-            $eligibleVehicles[] = $vehicle;
         }
 
-        usort($eligibleVehicles, fn($left, $right) => ($left->distance ?? PHP_FLOAT_MAX) <=> ($right->distance ?? PHP_FLOAT_MAX));
+        $rankedDrivers = $eligibleDrivers->sortBy(fn(Driver $driver) => $driver->distance ?? PHP_FLOAT_MAX)->values();
+        $rankedVehicles = $eligibleVehicles->sortBy(fn(Ambulance $vehicle) => $vehicle->distance ?? PHP_FLOAT_MAX)->values();
 
-        $nearestDriver = $eligibleDrivers[0] ?? null;
-        $nearestDriverDistance = $nearestDriver?->distance ?? null;
-        $nearestAmbulance = $eligibleVehicles[0] ?? null;
+        $nearestDriver = $rankedDrivers->first(fn(Driver $driver) => isset($driver->distance));
+        $nearestAmbulance = $rankedVehicles->first(fn(Ambulance $vehicle) => isset($vehicle->distance));
+        $nearestDriverDistance = $nearestDriver?->distance;
         $nearestAmbulanceDistance = $nearestAmbulance?->distance ?? null;
 
         return [
@@ -90,11 +110,32 @@ class DispatchRecommendationService
             'nearestDriverDistance' => $nearestDriverDistance,
             'nearestAmbulance' => $nearestAmbulance,
             'nearestAmbulanceDistance' => $nearestAmbulanceDistance,
-            'eligibleDrivers' => $eligibleDrivers,
-            'rankedDrivers' => $eligibleDrivers,
-            'eligibleVehicles' => $eligibleVehicles,
-            'rankedVehicles' => $eligibleVehicles,
+            'eligibleDrivers' => $eligibleDrivers->all(),
+            'rankedDrivers' => $rankedDrivers->all(),
+            'eligibleVehicles' => $eligibleVehicles->all(),
+            'rankedVehicles' => $rankedVehicles->all(),
         ];
+    }
+
+    private function latestValidGps(Driver $driver): ?GpsLocation
+    {
+        $gps = $driver->gpsLocations()->latest('recorded_at')->first();
+
+        return $gps && $this->validCoordinates($gps->latitude, $gps->longitude)
+            ? $gps
+            : null;
+    }
+
+    private function validCoordinates(mixed $latitude, mixed $longitude): bool
+    {
+        return is_numeric($latitude)
+            && is_numeric($longitude)
+            && is_finite((float) $latitude)
+            && is_finite((float) $longitude)
+            && (float) $latitude >= -90
+            && (float) $latitude <= 90
+            && (float) $longitude >= -180
+            && (float) $longitude <= 180;
     }
 
     private function calculateDistance($lat1, $lon1, $lat2, $lon2): float

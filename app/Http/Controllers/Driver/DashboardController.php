@@ -73,6 +73,19 @@ class DashboardController extends Controller
             ->orderBy('vehicle_name')
             ->get();
 
+        $reservedVehicle = $currentDispatch?->vehicle;
+        if (
+            $reservedVehicle
+            && $reservedVehicle->status === Ambulance::STATUS_ON_DUTY
+            && !$reservedVehicle->archived_at
+            && !Dispatch::active()
+                ->where('vehicle_id', $reservedVehicle->id)
+                ->where('id', '!=', $currentDispatch->id)
+                ->exists()
+        ) {
+            $availableVehicles->push($reservedVehicle);
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Driver's incidents

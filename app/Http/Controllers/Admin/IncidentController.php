@@ -350,9 +350,9 @@ class IncidentController extends Controller
 
     public function dispatchForm(Incident $incident)
     {
-        $drivers = Driver::dispatchEligible()->with('user')->get();
-        $vehicles = Ambulance::available()->get();
-        $recommendation = $this->recommendationService->recommend($incident, $drivers, $vehicles);
+        $recommendation = $this->recommendationService->recommend($incident);
+        $drivers = collect($recommendation['eligibleDrivers']);
+        $vehicles = collect($recommendation['eligibleVehicles']);
 
         $nearestDriver = $recommendation['nearestDriver'];
         $nearestDistance = $recommendation['nearestDriverDistance'];
@@ -383,12 +383,15 @@ class IncidentController extends Controller
         $vehicleId = $request->filled('vehicle_id') ? (int) $request->vehicle_id : null;
         $dispatchStatus = $request->input('status', Dispatch::STATUS_ASSIGNED);
 
-        $driver = Driver::dispatchEligible()->find($driverId);
+        $eligibility = $this->recommendationService->recommend($incident);
+        $driver = collect($eligibility['eligibleDrivers'])->firstWhere('id', $driverId);
         if (!$driver) {
-            return back()->with('error', 'This driver is not active or currently available.');
+            return back()->with('error', 'This driver is not active, has no recent GPS location, or is already assigned.');
         }
 
-        $ambulance = $vehicleId ? Ambulance::available()->find($vehicleId) : null;
+        $ambulance = $vehicleId
+            ? collect($eligibility['eligibleVehicles'])->firstWhere('id', $vehicleId)
+            : null;
         if ($vehicleId && !$ambulance) {
             return back()->with('error', 'This vehicle is not active or currently available.');
         }
@@ -439,7 +442,7 @@ class IncidentController extends Controller
                 $ambulance->update(['status' => Ambulance::STATUS_ON_DUTY]);
             }
 
-            if ($driver && $ambulance) {
+            if ($ambulance) {
                 VehicleDriverAssignment::assignDriverToAmbulance($driver, $ambulance);
             }
 

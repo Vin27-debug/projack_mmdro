@@ -42,6 +42,322 @@ class DispatchStatusTest extends TestCase
             ->assertSee(route('admin.incidents.dispatch', $incident));
     }
 
+    public function test_fresh_driver_and_available_vehicle_can_be_dispatched_from_incident_page(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
+        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $driverRole = Role::firstOrCreate(['name' => 'driver', 'guard_name' => 'web']);
+        $admin = User::factory()->create(['status' => 'approved']);
+        $admin->assignRole($adminRole);
+        $driverUser = User::factory()->create(['status' => 'approved']);
+        $driverUser->assignRole($driverRole);
+
+        $driver = Driver::create([
+            'user_id' => $driverUser->id,
+            'badge_id' => 'DISPATCH-FRESH',
+            'contact_number' => '09123456789',
+            'status' => Driver::STATUS_AVAILABLE,
+            'management_status' => Driver::MANAGEMENT_STATUS_ACTIVE,
+        ]);
+        GpsLocation::create([
+            'driver_id' => $driver->id,
+            'latitude' => 14.5995,
+            'longitude' => 120.9842,
+            'recorded_at' => now()->subMinute(),
+        ]);
+
+        $vehicle = Ambulance::create([
+            'plate_number' => 'DISPATCH-AVAILABLE',
+            'vehicle_name' => 'Available Rescue Vehicle',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_AVAILABLE,
+        ]);
+        $incident = Incident::create([
+            'incident_number' => 'INC-DISPATCH-ELIGIBLE',
+            'reporter_name' => 'Dispatch Eligibility Test',
+            'incident_type' => 'Medical Emergency',
+            'location' => 'Test Street',
+            'description' => 'Eligible resources should dispatch',
+            'status' => Incident::STATUS_PENDING,
+            'latitude' => 14.6000,
+            'longitude' => 120.9845,
+        ]);
+
+        $page = $this->actingAs($admin)
+            ->get(route('admin.incidents.dispatch.form', $incident))
+            ->assertOk()
+            ->assertSee('DISPATCH-FRESH')
+            ->assertSee('Available Rescue Vehicle')
+            ->assertSee('Distance unavailable');
+
+        $this->assertMatchesRegularExpression(
+            '/<button class="btn btn-primary"\\s*>\\s*Dispatch Incident\\s*<\\/button>/',
+            $page->getContent()
+        );
+
+        $this->post(route('admin.incidents.dispatch', $incident), [
+            'driver_id' => $driver->id,
+            'vehicle_id' => $vehicle->id,
+        ])->assertRedirect(route('admin.incidents.index'));
+
+        $this->assertDatabaseHas('dispatches', [
+            'incident_id' => $incident->id,
+            'driver_id' => $driver->id,
+            'vehicle_id' => $vehicle->id,
+            'status' => Dispatch::STATUS_ASSIGNED,
+        ]);
+    }
+
+    public function test_stale_and_missing_gps_drivers_are_not_dispatch_eligible(): void
+    {
+        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $driverRole = Role::firstOrCreate(['name' => 'driver', 'guard_name' => 'web']);
+        $admin = User::factory()->create(['status' => 'approved']);
+        $admin->assignRole($adminRole);
+
+        foreach (['STALE', 'NO-GPS'] as $badge) {
+            $driverUser = User::factory()->create(['status' => 'approved']);
+            $driverUser->assignRole($driverRole);
+            $driver = Driver::create([
+                'user_id' => $driverUser->id,
+                'badge_id' => 'DISPATCH-' . $badge,
+                'contact_number' => '09123456789',
+                'status' => Driver::STATUS_AVAILABLE,
+            ]);
+            if ($badge === 'STALE') {
+                GpsLocation::create([
+                    'driver_id' => $driver->id,
+                    'latitude' => 14.5995,
+                    'longitude' => 120.9842,
+                    'recorded_at' => now()->subMinutes(6),
+                ]);
+            }
+        }
+
+        $vehicle = Ambulance::create([
+            'plate_number' => 'DISPATCH-GPS-TEST',
+            'vehicle_name' => 'GPS Test Vehicle',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_AVAILABLE,
+        ]);
+        $incident = Incident::create([
+            'incident_number' => 'INC-DISPATCH-GPS',
+            'reporter_name' => 'GPS Eligibility Test',
+            'incident_type' => 'Medical Emergency',
+            'location' => 'Test Street',
+            'status' => Incident::STATUS_PENDING,
+            'latitude' => 14.6000,
+            'longitude' => 120.9845,
+        ]);
+
+        $page = $this->actingAs($admin)
+            ->get(route('admin.incidents.dispatch.form', $incident))
+            ->assertOk()
+            ->assertSee('No eligible drivers are currently within a fresh GPS window.')
+            ->assertDontSee('DISPATCH-STALE')
+            ->assertDontSee('DISPATCH-NO-GPS');
+
+        $this->assertStringContainsString('disabled', $page->getContent());
+    }
+
+    public function test_unavailable_or_already_dispatched_vehicle_is_not_eligible(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
+        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $driverRole = Role::firstOrCreate(['name' => 'driver', 'guard_name' => 'web']);
+        $admin = User::factory()->create(['status' => 'approved']);
+        $admin->assignRole($adminRole);
+        $driverUser = User::factory()->create(['status' => 'approved']);
+        $driverUser->assignRole($driverRole);
+        $driver = Driver::create([
+            'user_id' => $driverUser->id,
+            'badge_id' => 'DISPATCH-VEHICLE-TEST',
+            'contact_number' => '09123456789',
+            'status' => Driver::STATUS_AVAILABLE,
+        ]);
+        GpsLocation::create([
+            'driver_id' => $driver->id,
+            'latitude' => 14.5995,
+            'longitude' => 120.9842,
+            'recorded_at' => now(),
+        ]);
+
+        $occupiedVehicle = Ambulance::create([
+            'plate_number' => 'DISPATCH-OCCUPIED',
+            'vehicle_name' => 'Already Dispatched Vehicle',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_AVAILABLE,
+        ]);
+        $occupiedDriver = Driver::create([
+            'user_id' => User::factory()->create(['status' => 'approved'])->id,
+            'badge_id' => 'OTHER-ACTIVE-DRIVER',
+            'contact_number' => '09123456788',
+        ]);
+        $occupiedIncident = Incident::create([
+            'incident_number' => 'INC-OTHER-ACTIVE',
+            'reporter_name' => 'Other Dispatch',
+            'incident_type' => 'Medical Emergency',
+            'location' => 'Other Street',
+            'status' => Incident::STATUS_DISPATCHED,
+        ]);
+        Dispatch::create([
+            'incident_id' => $occupiedIncident->id,
+            'driver_id' => $occupiedDriver->id,
+            'vehicle_id' => $occupiedVehicle->id,
+            'status' => Dispatch::STATUS_ASSIGNED,
+            'assigned_at' => now(),
+        ]);
+
+        $maintenanceVehicle = Ambulance::create([
+            'plate_number' => 'DISPATCH-MAINTENANCE',
+            'vehicle_name' => 'Maintenance Vehicle',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_MAINTENANCE,
+        ]);
+        $incident = Incident::create([
+            'incident_number' => 'INC-VEHICLE-ELIGIBILITY',
+            'reporter_name' => 'Vehicle Eligibility Test',
+            'incident_type' => 'Medical Emergency',
+            'location' => 'Test Street',
+            'status' => Incident::STATUS_PENDING,
+            'latitude' => 14.6000,
+            'longitude' => 120.9845,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.incidents.dispatch.form', $incident))
+            ->assertOk()
+            ->assertSee('No eligible vehicles are available for dispatch.')
+            ->assertDontSee('Already Dispatched Vehicle')
+            ->assertDontSee('Maintenance Vehicle')
+            ->assertSee('No available vehicles; driver can choose one later');
+
+        $page = $this->get(route('admin.incidents.dispatch.form', $incident));
+        $this->assertMatchesRegularExpression(
+            '/<button class="btn btn-primary"\\s*>\\s*Dispatch Incident\\s*<\\/button>/',
+            $page->getContent()
+        );
+
+        $this->from(route('admin.incidents.dispatch.form', $incident))
+            ->post(route('admin.incidents.dispatch', $incident), [
+                'driver_id' => $driver->id,
+                'vehicle_id' => $occupiedVehicle->id,
+            ])
+            ->assertSessionHas('error', 'This vehicle is not active or currently available.');
+    }
+
+    public function test_dispatch_without_incident_coordinates_is_safe_and_keeps_eligible_resources(): void
+    {
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
+        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $driverRole = Role::firstOrCreate(['name' => 'driver', 'guard_name' => 'web']);
+        $admin = User::factory()->create(['status' => 'approved']);
+        $admin->assignRole($adminRole);
+        $driverUser = User::factory()->create(['status' => 'approved']);
+        $driverUser->assignRole($driverRole);
+        $driver = Driver::create([
+            'user_id' => $driverUser->id,
+            'badge_id' => 'DISPATCH-NO-INCIDENT-GPS',
+            'contact_number' => '09123456789',
+            'status' => Driver::STATUS_AVAILABLE,
+        ]);
+        GpsLocation::create([
+            'driver_id' => $driver->id,
+            'latitude' => 14.5995,
+            'longitude' => 120.9842,
+            'recorded_at' => now(),
+        ]);
+        $vehicle = Ambulance::create([
+            'plate_number' => 'DISPATCH-NO-INCIDENT-COORDS',
+            'vehicle_name' => 'No Incident Coordinates Vehicle',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_AVAILABLE,
+        ]);
+        $incident = Incident::create([
+            'incident_number' => 'INC-NO-COORDINATES',
+            'reporter_name' => 'No Coordinates Test',
+            'incident_type' => 'Medical Emergency',
+            'location' => 'Ungeocoded Location',
+            'status' => Incident::STATUS_PENDING,
+        ]);
+
+        $page = $this->actingAs($admin)
+            ->get(route('admin.incidents.dispatch.form', $incident))
+            ->assertOk()
+            ->assertSee('Incident coordinates are unavailable')
+            ->assertSee('DISPATCH-NO-INCIDENT-GPS')
+            ->assertSee('No Incident Coordinates Vehicle');
+        $this->assertMatchesRegularExpression(
+            '/<button class="btn btn-primary"\\s*>\\s*Dispatch Incident\\s*<\\/button>/',
+            $page->getContent()
+        );
+
+        $this->post(route('admin.incidents.dispatch', $incident), [
+            'driver_id' => $driver->id,
+            'vehicle_id' => $vehicle->id,
+        ])->assertRedirect(route('admin.incidents.index'));
+    }
+
+    public function test_dispatch_routes_remain_restricted_to_admin_roles(): void
+    {
+        $user = User::factory()->create(['status' => 'approved']);
+        $incident = Incident::create([
+            'incident_number' => 'INC-UNAUTHORIZED-DISPATCH',
+            'reporter_name' => 'Unauthorized Test',
+            'incident_type' => 'Medical Emergency',
+            'location' => 'Test Street',
+            'status' => Incident::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('admin.incidents.dispatch.form', $incident))
+            ->assertForbidden();
+    }
+
+    public function test_driver_can_select_vehicle_reserved_by_their_assigned_dispatch(): void
+    {
+        $driverRole = Role::firstOrCreate(['name' => 'driver', 'guard_name' => 'web']);
+        $driverUser = User::factory()->create(['status' => 'approved']);
+        $driverUser->assignRole($driverRole);
+        $driver = Driver::create([
+            'user_id' => $driverUser->id,
+            'badge_id' => 'DRIVER-RESERVED-VEHICLE',
+            'contact_number' => '09123456789',
+            'status' => Driver::STATUS_AVAILABLE,
+        ]);
+        $vehicle = Ambulance::create([
+            'plate_number' => 'RESERVED-VEHICLE',
+            'vehicle_name' => 'Reserved for Assigned Driver',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_ON_DUTY,
+        ]);
+        $incident = Incident::create([
+            'incident_number' => 'INC-RESERVED-VEHICLE',
+            'reporter_name' => 'Reserved Vehicle Test',
+            'incident_type' => 'Medical Emergency',
+            'location' => 'Test Street',
+            'status' => Incident::STATUS_DISPATCHED,
+            'driver_id' => $driver->id,
+            'ambulance_id' => $vehicle->id,
+        ]);
+        Dispatch::create([
+            'incident_id' => $incident->id,
+            'driver_id' => $driver->id,
+            'vehicle_id' => $vehicle->id,
+            'status' => Dispatch::STATUS_ASSIGNED,
+            'assigned_at' => now(),
+        ]);
+
+        $this->actingAs($driverUser)
+            ->get(route('driver.dashboard'))
+            ->assertOk()
+            ->assertSee('Reserved for Assigned Driver')
+            ->assertDontSee('No available vehicle at this time.');
+    }
+
     public function test_admin_can_assign_a_dispatch_with_a_supported_status(): void
     {
         $this->withoutMiddleware(PreventRequestForgery::class);
@@ -56,6 +372,12 @@ class DispatchStatusTest extends TestCase
             'contact_number' => '09123456789',
             'license_number' => 'LIC-100',
             'license_expiry' => '2030-01-01',
+        ]);
+        GpsLocation::create([
+            'driver_id' => $driver->id,
+            'latitude' => 14.5995,
+            'longitude' => 120.9842,
+            'recorded_at' => now(),
         ]);
 
         $ambulance = Ambulance::create([
@@ -650,6 +972,12 @@ class DispatchStatusTest extends TestCase
             'license_number' => 'LIC-110',
             'license_expiry' => '2030-01-01',
             'status' => Driver::STATUS_AVAILABLE,
+        ]);
+        GpsLocation::create([
+            'driver_id' => $driver->id,
+            'latitude' => 14.5995,
+            'longitude' => 120.9842,
+            'recorded_at' => now(),
         ]);
 
         $incident = Incident::create([

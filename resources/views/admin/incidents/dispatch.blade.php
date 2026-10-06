@@ -9,6 +9,12 @@
     {{ $incident->incident_number }}
 </p>
 
+@if(!is_numeric($incident->latitude) || !is_numeric($incident->longitude))
+<div class="alert alert-warning">
+    Incident coordinates are unavailable. Eligible drivers and available vehicles are listed without distance ranking.
+</div>
+@endif
+
 @if($nearestDriver || $nearestAmbulance)
 <div class="card border-success shadow-sm mb-4">
     <div class="card-header bg-success text-white">
@@ -64,8 +70,9 @@
         <label class="form-label fw-semibold">Ambulance / Vehicle</label>
         <select name="vehicle_id" class="form-control" @if($vehicles->isEmpty()) disabled @endif>
             @if($vehicles->isEmpty())
-            <option value="">No available vehicles</option>
+            <option value="" disabled>No available vehicles; driver can choose one later</option>
             @else
+            <option value="">Driver will choose an available vehicle</option>
             @foreach($vehicles as $vehicle)
             @php $isRecommendedVehicle = isset($nearestAmbulance) && $nearestAmbulance?->id == $vehicle->id; @endphp
             <option value="{{ $vehicle->id }}" {{ $isRecommendedVehicle ? 'selected' : '' }}>
@@ -95,7 +102,7 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $rankedDriver->badge_id }} {{ $rankedDriver->user ? ' - ' . $rankedDriver->user->name : '' }}</td>
                             <td>{{ isset($rankedDriver->gps_age_minutes) ? 'Fresh (' . $rankedDriver->gps_age_minutes . ' min ago)' : 'Fresh' }}</td>
-                            <td>{{ $rankedDriver->distance ?? '—' }} km</td>
+                            <td>{{ isset($rankedDriver->distance) ? $rankedDriver->distance . ' km' : 'Distance unavailable' }}</td>
                         </tr>
                         @empty
                         <tr>
@@ -126,7 +133,7 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $rankedVehicle->plate_number }} · {{ $rankedVehicle->vehicle_name }}</td>
                             <td>{{ ucfirst($rankedVehicle->status) }}</td>
-                            <td>{{ $rankedVehicle->distance ?? '—' }} km</td>
+                            <td>{{ isset($rankedVehicle->distance) ? $rankedVehicle->distance . ' km' : 'Distance unavailable' }}</td>
                         </tr>
                         @empty
                         <tr>
@@ -139,7 +146,7 @@
         </div>
     </div>
 
-    <button class="btn btn-primary" @if($drivers->isEmpty() || $vehicles->isEmpty()) disabled @endif>
+    <button class="btn btn-primary" @if($drivers->isEmpty()) disabled @endif>
         Dispatch Incident
     </button>
 </form>

@@ -57,7 +57,13 @@ class Ambulance extends Model
 
     public function scopeAvailable(Builder $query)
     {
-        return $query->notArchived()->where('status', self::STATUS_AVAILABLE);
+        return $query->notArchived()
+            ->where('status', self::STATUS_AVAILABLE)
+            ->whereDoesntHave('dispatches', fn(Builder $dispatches) => $dispatches->whereNotIn('status', [
+                Dispatch::STATUS_COMPLETED,
+                Dispatch::STATUS_CLOSED,
+                Dispatch::STATUS_CANCELLED,
+            ]));
     }
 
     public function archivedBy()

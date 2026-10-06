@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 
 class DriverRegistrationController extends Controller
@@ -24,25 +25,32 @@ class DriverRegistrationController extends Controller
             'contact_number' => 'required',
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-            'status' => 'approved',
-        ]);
-
         $role = Role::firstOrCreate([
             'name' => 'driver',
             'guard_name' => 'web',
         ]);
 
-        $user->assignRole($role);
+        DB::transaction(function () use ($request, $role): void {
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => bcrypt($request->password),
+                'status' => 'approved',
+            ]);
 
-        Driver::create([
-            'user_id' => $user->id,
-            'badge_id' => 'PENDING',
-            'contact_number' => $request->contact_number,
-        ]);
+            $user->assignRole($role);
+
+            $badgeId = 'AMB-REG-' . $user->id;
+            $suffix = 1;
+            while (Driver::where('badge_id', $badgeId)->exists()) {
+                $badgeId = 'AMB-REG-' . $user->id . '-' . $suffix++;
+            }
+
+            $user->driver()->create([
+                'badge_id' => $badgeId,
+                'contact_number' => $request->contact_number,
+            ]);
+        });
 
         return redirect()
             ->back()
