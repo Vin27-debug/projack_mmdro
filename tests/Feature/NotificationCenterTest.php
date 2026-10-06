@@ -35,12 +35,8 @@ class NotificationCenterTest extends TestCase
             'longitude' => '121.1234567',
         ]);
 
-        $response->assertRedirect(
-            route(
-                'admin.incidents.show',
-                $incident = Incident::latest()->firstOrFail()
-            )
-        );
+        $response->assertRedirect(route('admin.incidents.index'));
+        $incident = Incident::latest()->firstOrFail();
 
         $notification = Notification::where('type', 'incident')->latest()->first();
 

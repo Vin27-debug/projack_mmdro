@@ -68,12 +68,16 @@ class DashboardAccessTest extends TestCase
             'license_expiry' => '2030-01-01',
         ]);
 
-        $response->assertSessionHas('success');
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHas('status', 'Driver account created successfully. You can now log in.');
 
         $user = User::where('email', 'new-driver@example.com')->firstOrFail();
 
         $this->assertTrue($user->fresh()->hasRole('driver'));
         $this->assertNotNull($user->driver);
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('Driver account created successfully. You can now log in.');
     }
 
     public function test_driver_dashboard_shows_assigned_incidents(): void

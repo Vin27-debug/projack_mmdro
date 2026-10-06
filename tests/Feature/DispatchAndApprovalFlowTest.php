@@ -62,7 +62,8 @@ class DispatchAndApprovalFlowTest extends TestCase
             'longitude' => '121.1234567',
         ]);
 
-        $response->assertRedirect(route('admin.incidents.show', $incident = Incident::latest()->firstOrFail()));
+        $response->assertRedirect(route('admin.incidents.index'));
+        $incident = Incident::latest()->firstOrFail();
 
         $this->assertSame('14.1234567', (string) $incident->latitude);
         $this->assertSame('121.1234567', (string) $incident->longitude);
@@ -91,7 +92,7 @@ class DispatchAndApprovalFlowTest extends TestCase
 
         $incident = Incident::latest()->firstOrFail();
 
-        $response->assertRedirect(route('admin.incidents.show', $incident));
+        $response->assertRedirect(route('admin.incidents.index'));
         $this->assertSame('123', $incident->house_number);
         $this->assertSame('Critical', $incident->priority);
         $this->assertNull($incident->contact_number);
@@ -101,6 +102,39 @@ class DispatchAndApprovalFlowTest extends TestCase
             ->assertOk()
             ->assertSee('123, Main Street, Barangay One, Test City, Test Province')
             ->assertSee('Black — Critical');
+    }
+
+    public function test_admin_incident_creation_redirects_to_existing_list_and_can_continue_to_dispatch(): void
+    {
+        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $admin = User::factory()->create(['status' => 'approved']);
+        $admin->assignRole('admin');
+
+        $response = $this->actingAs($admin)->post(route('admin.incidents.store'), [
+            'reporter_name' => 'Redirect Test Reporter',
+            'contact_number' => '09170002222',
+            'incident_type' => 'Medical Emergency',
+            'location' => 'Test Dispatch Street',
+            'description' => 'Verify incident create redirect and dispatch workflow',
+            'priority' => 'High',
+        ]);
+
+        $incident = Incident::where('reporter_name', 'Redirect Test Reporter')->firstOrFail();
+        $response->assertRedirect(route('admin.incidents.index'));
+        $this->assertDatabaseHas('incidents', [
+            'id' => $incident->id,
+            'reporter_name' => 'Redirect Test Reporter',
+            'status' => Incident::STATUS_PENDING,
+        ]);
+
+        $this->get(route('admin.incidents.index'))
+            ->assertOk()
+            ->assertSee($incident->incident_number)
+            ->assertSee(route('admin.incidents.dispatch.form', $incident));
+
+        $this->get(route('admin.incidents.dispatch.form', $incident))
+            ->assertOk()
+            ->assertSee('Dispatch Incident');
     }
 
     public function test_incident_edit_and_update_preserve_house_number_and_priority(): void

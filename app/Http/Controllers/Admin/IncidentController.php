@@ -81,7 +81,7 @@ class IncidentController extends Controller
             return $incident;
         });
 
-        return redirect()->route('admin.incidents.show', $incident)->with('success', 'Incident created successfully.');
+        return redirect()->route('admin.incidents.index')->with('success', 'Incident created successfully.');
     }
 
     public function show(Incident $incident)

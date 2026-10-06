@@ -53,7 +53,7 @@ class DriverRegistrationController extends Controller
         });
 
         return redirect()
-            ->back()
-            ->with('success', 'Driver account created successfully. You can now log in.');
+            ->route('login')
+            ->with('status', 'Driver account created successfully. You can now log in.');
     }
 }

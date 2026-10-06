@@ -26,7 +26,9 @@ class DriverStatusAndArchiveTest extends TestCase
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'contact_number' => '09123456000',
-        ])->assertSessionHasNoErrors();
+        ])->assertRedirect(route('login'))
+            ->assertSessionHas('status', 'Driver account created successfully. You can now log in.')
+            ->assertSessionHasNoErrors();
 
         $driverUser = User::where('email', 'license-optional@example.com')->firstOrFail();
         $this->assertNull($driverUser->driver->license_number);
@@ -49,7 +51,9 @@ class DriverStatusAndArchiveTest extends TestCase
                 'password' => 'password123',
                 'password_confirmation' => 'password123',
                 'contact_number' => '0912345600' . $index,
-            ])->assertSessionHasNoErrors();
+            ])->assertRedirect(route('login'))
+                ->assertSessionHas('status', 'Driver account created successfully. You can now log in.')
+                ->assertSessionHasNoErrors();
         }
 
         $drivers = Driver::with('user.roles')->whereHas('user', function ($query): void {
@@ -90,7 +94,9 @@ class DriverStatusAndArchiveTest extends TestCase
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'contact_number' => '09123456789',
-        ])->assertSessionHasNoErrors();
+        ])->assertRedirect(route('login'))
+            ->assertSessionHas('status', 'Driver account created successfully. You can now log in.')
+            ->assertSessionHasNoErrors();
 
         $user = User::where('email', 'dispatch-flow-driver@example.com')->firstOrFail();
         $driver = Driver::where('user_id', $user->id)->firstOrFail();
