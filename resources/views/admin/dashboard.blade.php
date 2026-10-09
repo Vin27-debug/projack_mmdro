@@ -341,7 +341,8 @@ $readyPercent = $totalFleet > 0 ? round((($availableVehicles ?? 0) / $totalFleet
     let mapRequest = null;
     let mapHasFitted = false;
     const GPS_FRESH_SECONDS = @json((int) config('services.muniresq.location_fresh_seconds', 60));
-    const GPS_STALE_LIMIT_SECONDS = @json((int) config('services.muniresq.location_stale_limit_minutes', 5) * 60);
+    const GPS_STALE_LIMIT_SECONDS = 180;
+    let serverClockOffsetMs = 0;
 
     document.addEventListener('DOMContentLoaded', initializeLiveCommandMap);
 
@@ -372,6 +373,10 @@ $readyPercent = $totalFleet > 0 ? round((($availableVehicles ?? 0) / $totalFleet
             })
             .then(response => response.ok ? response.json() : Promise.reject(new Error('Map request failed')))
             .then(data => {
+                const serverTime = Date.parse(data.generated_at || '');
+                if (Number.isFinite(serverTime)) {
+                    serverClockOffsetMs = serverTime - Date.now();
+                }
                 liveMarkerLayer.clearLayers();
                 renderVehicleList(data.ambulances || []);
                 const markers = [];
@@ -390,19 +395,27 @@ $readyPercent = $totalFleet > 0 ? round((($availableVehicles ?? 0) / $totalFleet
 
     function getGpsFreshness(item) {
         if (!item.recorded_at) return {
-            status: 'missing',
-            relative: 'No GPS data'
+            status: item.gps_status === 'invalid' ? 'invalid' : 'missing',
+            relative: item.gps_status === 'invalid' ? 'GPS timestamp unavailable' : 'No GPS data recorded'
         };
 
         const recordedAt = Date.parse(item.recorded_at);
         if (!Number.isFinite(recordedAt)) return {
-            status: 'missing',
-            relative: 'No GPS data'
+            status: 'invalid',
+            relative: 'GPS timestamp unavailable'
         };
 
-        const ageSeconds = Math.max(0, Math.floor((Date.now() - recordedAt) / 1000));
-        const relative = ageSeconds < 10 ? 'just now' : ageSeconds < 60 ? `${ageSeconds} sec ago` : ageSeconds < 3600 ? `${Math.floor(ageSeconds / 60)} min ago` : `${Math.floor(ageSeconds / 3600)} hr ago`;
-        const status = ageSeconds < GPS_FRESH_SECONDS ? 'fresh' : ageSeconds <= GPS_STALE_LIMIT_SECONDS ? 'delayed' : 'stale';
+        const currentTime = Date.now() + serverClockOffsetMs;
+        if (recordedAt > currentTime) return {
+            status: 'invalid',
+            relative: 'GPS timestamp unavailable'
+        };
+
+        const ageSeconds = Math.floor((currentTime - recordedAt) / 1000);
+        const minutes = Math.floor(ageSeconds / 60);
+        const hours = Math.floor(ageSeconds / 3600);
+        const relative = ageSeconds < 10 ? 'Last updated just now' : ageSeconds < 60 ? `Last updated ${ageSeconds} seconds ago` : ageSeconds < 3600 ? `Last updated ${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago` : `Last updated ${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
+        const status = ageSeconds > GPS_STALE_LIMIT_SECONDS ? 'stale' : ageSeconds < GPS_FRESH_SECONDS ? 'fresh' : 'delayed';
 
         return {
             status,
@@ -412,16 +425,18 @@ $readyPercent = $totalFleet > 0 ? round((($availableVehicles ?? 0) / $totalFleet
 
     function gpsFreshnessMarkup(item) {
         const freshness = getGpsFreshness(item);
-        if (freshness.status === 'missing') return '<span class="text-muted">No GPS data</span>';
+        if (freshness.status === 'missing') return '<span class="text-muted">No GPS data recorded</span>';
+        if (freshness.status === 'invalid') return '<span class="badge bg-warning text-dark">GPS timestamp unavailable</span>';
 
-        const badgeClass = freshness.status === 'fresh' ? 'bg-success-subtle text-success' : freshness.status === 'delayed' ? 'bg-warning text-dark' : 'bg-danger-subtle text-danger';
-        const badgeLabel = freshness.status.charAt(0).toUpperCase() + freshness.status.slice(1);
-        const outdated = freshness.status === 'stale' ? '<span class="text-danger ms-1">Location may be outdated</span>' : '';
+        const badgeClass = freshness.status === 'fresh' ? 'bg-success-subtle text-success' : 'bg-warning text-dark';
+        const badgeLabel = freshness.status === 'fresh' ? 'GPS ACTIVE' : freshness.status === 'delayed' ? 'DELAYED' : '';
+        const outdated = freshness.status === 'stale' ? '<span class="badge bg-warning text-dark d-inline-block text-start text-wrap mt-1" role="status"><i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>GPS LOCATION STALE — Tracking may be outdated.</span>' : '';
         const hasAccuracy = item.accuracy_meters !== null && item.accuracy_meters !== undefined && item.accuracy_meters !== '';
         const accuracy = hasAccuracy ? Number(item.accuracy_meters) : NaN;
         const accuracyLabel = Number.isFinite(accuracy) ? ` <span class="text-muted">±${accuracy.toFixed(0)} m</span>` : '';
 
-        return `<span class="badge ${badgeClass}">${badgeLabel}</span> <span>${freshness.relative}</span>${outdated}${accuracyLabel}`;
+        const badge = badgeLabel ? `<span class="badge ${badgeClass}">${badgeLabel}</span> ` : '';
+        return `${badge}<span>${freshness.relative}</span>${outdated}${accuracyLabel}`;
     }
 
     function renderVehicleList(vehicles) {

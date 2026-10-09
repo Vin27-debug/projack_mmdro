@@ -20,7 +20,6 @@ class GpsLocationFreshnessTest extends TestCase
     {
         config([
             'services.muniresq.location_fresh_seconds' => 60,
-            'services.muniresq.location_stale_limit_minutes' => 5,
         ]);
 
         Carbon::setTestNow(Carbon::parse('2026-10-02 12:00:00'));
@@ -33,8 +32,10 @@ class GpsLocationFreshnessTest extends TestCase
         $ages = [
             'Fresh Unit' => 30,
             'Delayed Unit' => 120,
-            'Stale Unit' => 301,
+            'Boundary Unit' => 180,
+            'Stale Unit' => 181,
             'Missing Unit' => null,
+            'Future Unit' => -60,
         ];
 
         foreach ($ages as $vehicleName => $ageSeconds) {
@@ -80,24 +81,54 @@ class GpsLocationFreshnessTest extends TestCase
         $this->assertSame('2026-10-02T11:59:30.000000Z', $vehicles['Fresh Unit']['recorded_at']);
         $this->assertSame('fresh', $vehicles['Fresh Unit']['gps_status']);
         $this->assertSame('delayed', $vehicles['Delayed Unit']['gps_status']);
+        $this->assertSame('delayed', $vehicles['Boundary Unit']['gps_status']);
         $this->assertSame('stale', $vehicles['Stale Unit']['gps_status']);
         $this->assertNull($vehicles['Missing Unit']['recorded_at']);
         $this->assertSame('missing', $vehicles['Missing Unit']['gps_status']);
         $this->assertNull($vehicles['Missing Unit']['latitude']);
+        $this->assertSame('invalid', $vehicles['Future Unit']['gps_status']);
+        $this->assertSame(15.4866, $vehicles['Stale Unit']['latitude']);
 
         $monitoringVehicles = collect($this->getJson(route('admin.gps.locations'))->json())
             ->keyBy('vehicle_name');
         $this->assertSame('delayed', $monitoringVehicles['Delayed Unit']['gps_status']);
+        $this->assertSame('delayed', $monitoringVehicles['Boundary Unit']['gps_status']);
         $this->assertSame('stale', $monitoringVehicles['Stale Unit']['gps_status']);
         $this->assertSame('missing', $monitoringVehicles['Missing Unit']['gps_status']);
+        $this->assertSame('invalid', $monitoringVehicles['Future Unit']['gps_status']);
 
         $this->get(route('admin.gps.monitoring'))
             ->assertOk()
             ->assertSee('GPS Monitoring')
-            ->assertSee('GPS_STALE_LIMIT_SECONDS', false);
+            ->assertSee('GPS_STALE_LIMIT_SECONDS = 180', false)
+            ->assertSee('GPS LOCATION STALE — Tracking may be outdated.', false);
 
         $this->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('liveVehicleList', false);
+            ->assertSee('liveVehicleList', false)
+            ->assertSee('GPS LOCATION STALE — Tracking may be outdated.', false);
+    }
+
+    public function test_invalid_timestamp_is_reported_as_unavailable_instead_of_active(): void
+    {
+        $location = new GpsLocation();
+        $location->setRawAttributes([
+            'recorded_at' => 'not a valid timestamp',
+            'accuracy' => null,
+            'accuracy_meters' => null,
+        ], true);
+
+        $metadata = app(\App\Services\GpsFreshnessService::class)->metadata($location);
+
+        $this->assertSame('invalid', $metadata['gps_status']);
+        $this->assertNull($metadata['recorded_at']);
+        $this->assertNull($metadata['gps_age_seconds']);
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
     }
 }

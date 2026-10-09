@@ -126,6 +126,8 @@ class GpsMonitoringController extends Controller
                 ? $dispatch->status
                 : 'no_mission';
 
+            $gpsMetadata = $gpsFreshness->metadata($location);
+
             /*
             |--------------------------------------------------------------------------
             | Push GPS information
@@ -226,10 +228,7 @@ class GpsMonitoringController extends Controller
                     ? (float) $location->longitude
                     : null,
 
-                'last_updated' =>
-                $location?->recorded_at?->format('M d, Y H:i') ?? 'Unknown',
-
-                ...$gpsFreshness->metadata($location),
+                ...$gpsMetadata,
 
                 'speed_kmh' => $location?->speed_kmh,
                 'speed_status' => $location?->speed_status,
@@ -237,9 +236,9 @@ class GpsMonitoringController extends Controller
             ]);
         }
 
-        return response()->json(
-            $locations->values()
-        );
+        return response()
+            ->json($locations->values())
+            ->header('X-Server-Time', now()->toISOString());
     }
 
     /**

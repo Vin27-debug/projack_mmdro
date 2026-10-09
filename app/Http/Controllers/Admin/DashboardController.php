@@ -249,6 +249,7 @@ class DashboardController extends Controller
                 strtolower((string) ($ambulance->status ?? 'available')),
                 $driver?->status
             );
+            $gpsMetadata = $gpsFreshness->metadata($location);
 
             return [
                 'id' => $ambulance->id,
@@ -259,12 +260,11 @@ class DashboardController extends Controller
                 'status' => $ambulance->status ?? 'available',
                 'status_key' => $mapStatus,
                 'driver_name' => $driver?->user?->name ?? 'Unassigned',
-                'last_updated' => $location?->recorded_at?->format('M d, Y H:i') ?? 'Unknown',
                 'speed_kmh' => $location?->speed_kmh,
                 'speed_status' => $location?->speed_status,
                 'speed_limit_kmh' => $location?->speed_limit_kmh,
                 'type' => 'ambulance',
-                ...$gpsFreshness->metadata($location),
+                ...$gpsMetadata,
             ];
         });
 
@@ -302,6 +302,7 @@ class DashboardController extends Controller
 
             $driverStatus = strtolower((string) ($driver->status ?? 'available'));
             $mapStatus = $this->resolveMapStatus($driverStatus, $driverStatus);
+            $gpsMetadata = $gpsFreshness->metadata($location);
 
             return [
                 'id' => $driver->id,
@@ -311,12 +312,11 @@ class DashboardController extends Controller
                 'longitude' => (float) $location->longitude,
                 'status' => $driver->status ?? 'available',
                 'status_key' => $mapStatus,
-                'last_updated' => $location->recorded_at?->format('M d, Y H:i') ?? 'Unknown',
                 'speed_kmh' => $location->speed_kmh,
                 'speed_status' => $location->speed_status,
                 'speed_limit_kmh' => $location->speed_limit_kmh,
                 'type' => 'driver',
-                ...$gpsFreshness->metadata($location),
+                ...$gpsMetadata,
             ];
         })->filter();
 
@@ -324,7 +324,7 @@ class DashboardController extends Controller
             'ambulances' => $ambulances->values(),
             'incidents' => $incidents->values(),
             'drivers' => $drivers->values(),
-            'generated_at' => now()->format('Y-m-d H:i:s'),
+            'generated_at' => now()->toISOString(),
         ]);
     }
 

@@ -206,4 +206,127 @@ class ReportsModuleTest extends TestCase
                 && $entry->availability_rate >= 0;
         });
     }
+
+    public function test_admin_incident_reports_support_search_status_filters_and_pagination(): void
+    {
+        $admin = $this->createAdmin();
+        $driverUser = User::factory()->create(['status' => 'approved']);
+        $driver = $this->createDriver($driverUser, 'DRV-RPT-001');
+
+        for ($index = 1; $index <= 17; $index++) {
+            $incident = $this->createIncident($driver, 'INC-RPT-' . $index);
+            IncidentReport::create([
+                'incident_id' => $incident->id,
+                'driver_id' => $driver->id,
+                'summary' => $index === 17 ? 'Target report summary' : 'Routine report ' . $index,
+                'actions_taken' => 'Actions for report ' . $index,
+                'status' => 'pending',
+                'submitted_at' => now()->subMinutes($index),
+            ]);
+        }
+
+        $searchResponse = $this->actingAs($admin)->get(route('admin.reports.index', [
+            'search' => 'Target report',
+            'status' => 'pending',
+        ]));
+
+        $searchResponse->assertOk()
+            ->assertSee('Target report summary')
+            ->assertSee('INC-RPT-17')
+            ->assertViewHas('reports', fn($reports) => $reports->total() === 1);
+
+        $firstPage = $this->get(route('admin.reports.index', ['status' => 'pending']));
+        $firstPage->assertOk()
+            ->assertSee('Showing 1–15 of 17 reports')
+            ->assertViewHas('reports', fn($reports) => $reports->count() === 15);
+
+        $secondPage = $this->get(route('admin.reports.index', ['status' => 'pending', 'page' => 2]));
+        $secondPage->assertOk()
+            ->assertViewHas('reports', fn($reports) => $reports->count() === 2 && $reports->currentPage() === 2);
+    }
+
+    public function test_admin_can_approve_a_pending_incident_report_without_changing_incident_report_workflow(): void
+    {
+        $admin = $this->createAdmin();
+        $driverUser = User::factory()->create(['status' => 'approved']);
+        $driver = $this->createDriver($driverUser, 'DRV-RPT-APPROVE');
+        $ambulance = Ambulance::create([
+            'plate_number' => 'RPT-001',
+            'vehicle_name' => 'Report Test Ambulance',
+            'vehicle_type' => 'ambulance',
+            'status' => 'on_duty',
+        ]);
+        $incident = $this->createIncident($driver, 'INC-RPT-APPROVE', $ambulance->id);
+        $incident->update(['status' => Incident::STATUS_COMPLETED]);
+
+        $report = IncidentReport::create([
+            'incident_id' => $incident->id,
+            'driver_id' => $driver->id,
+            'summary' => 'Report ready for review',
+            'actions_taken' => 'Patient transported',
+            'submitted_at' => now(),
+        ]);
+
+        $this->assertSame('pending', $report->fresh()->status);
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.reports.index'))
+            ->post(route('admin.reports.approve', $report));
+
+        $response->assertRedirect(route('admin.reports.index'))
+            ->assertSessionHas('success', 'Report approved.');
+
+        $this->assertDatabaseHas('incident_reports', [
+            'id' => $report->id,
+            'status' => 'approved',
+        ]);
+        $this->assertDatabaseHas('incidents', [
+            'id' => $incident->id,
+            'status' => Incident::STATUS_CLOSED,
+        ]);
+        $this->assertDatabaseHas('ambulances', [
+            'id' => $ambulance->id,
+            'status' => 'available',
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $driverUser->id,
+            'type' => 'report',
+        ]);
+    }
+
+    private function createAdmin(): User
+    {
+        $role = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $admin = User::factory()->create(['status' => 'approved']);
+        $admin->assignRole($role);
+
+        return $admin;
+    }
+
+    private function createDriver(User $user, string $badgeId): Driver
+    {
+        return Driver::create([
+            'user_id' => $user->id,
+            'badge_id' => $badgeId,
+            'contact_number' => '09123456789',
+            'license_number' => 'LIC-' . $badgeId,
+            'license_expiry' => '2030-01-01',
+            'status' => 'assigned',
+        ]);
+    }
+
+    private function createIncident(Driver $driver, string $incidentNumber, ?int $ambulanceId = null): Incident
+    {
+        return Incident::create([
+            'incident_number' => $incidentNumber,
+            'reporter_name' => 'Report Test',
+            'contact_number' => '09120000000',
+            'incident_type' => 'Medical',
+            'location' => 'Test location',
+            'description' => 'Incident for report feature tests',
+            'status' => Incident::STATUS_COMPLETED,
+            'driver_id' => $driver->id,
+            'ambulance_id' => $ambulanceId,
+        ]);
+    }
 }

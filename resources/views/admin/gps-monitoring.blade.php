@@ -108,7 +108,7 @@
 
         const UPDATE_INTERVAL = 5000;
         const GPS_FRESH_SECONDS = @json((int) config('services.muniresq.location_fresh_seconds', 60));
-        const GPS_STALE_LIMIT_SECONDS = @json((int) config('services.muniresq.location_stale_limit_minutes', 5) * 60);
+        const GPS_STALE_LIMIT_SECONDS = 180;
 
         const DEFAULT_LAT = 15.421486;
 
@@ -149,6 +149,7 @@
         let firstLoad = true;
 
         let updateTimer = null;
+        let serverClockOffsetMs = 0;
 
 
         /* ============================================================
@@ -187,25 +188,35 @@
         function gpsFreshnessMarkup(location) {
 
             if (!location.recorded_at) {
-                return '<span class="text-muted">No GPS data</span>';
+                return location.gps_status === 'invalid'
+                    ? '<span class="badge bg-warning text-dark">GPS timestamp unavailable</span>'
+                    : '<span class="text-muted">No GPS data recorded</span>';
             }
 
             const recordedAt = Date.parse(location.recorded_at);
             if (!Number.isFinite(recordedAt)) {
-                return '<span class="text-muted">No GPS data</span>';
+                return '<span class="badge bg-warning text-dark">GPS timestamp unavailable</span>';
             }
 
-            const ageSeconds = Math.max(0, Math.floor((Date.now() - recordedAt) / 1000));
-            const relative = ageSeconds < 10 ? 'just now' : ageSeconds < 60 ? `${ageSeconds} sec ago` : ageSeconds < 3600 ? `${Math.floor(ageSeconds / 60)} min ago` : `${Math.floor(ageSeconds / 3600)} hr ago`;
+            const currentTime = Date.now() + serverClockOffsetMs;
+            if (recordedAt > currentTime) {
+                return '<span class="badge bg-warning text-dark">GPS timestamp unavailable</span>';
+            }
+
+            const ageSeconds = Math.floor((currentTime - recordedAt) / 1000);
+            const minutes = Math.floor(ageSeconds / 60);
+            const hours = Math.floor(ageSeconds / 3600);
+            const relative = ageSeconds < 10 ? 'Last updated just now' : ageSeconds < 60 ? `Last updated ${ageSeconds} seconds ago` : ageSeconds < 3600 ? `Last updated ${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago` : `Last updated ${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
             const status = ageSeconds < GPS_FRESH_SECONDS ? 'fresh' : ageSeconds <= GPS_STALE_LIMIT_SECONDS ? 'delayed' : 'stale';
-            const badgeClass = status === 'fresh' ? 'bg-success' : status === 'delayed' ? 'bg-warning text-dark' : 'bg-danger';
-            const badgeLabel = status.charAt(0).toUpperCase() + status.slice(1);
-            const outdated = status === 'stale' ? '<span class="text-danger ms-1">Location may be outdated</span>' : '';
+            const badgeClass = status === 'fresh' ? 'bg-success' : status === 'delayed' ? 'bg-warning text-dark' : 'bg-warning text-dark';
+            const badgeLabel = status === 'fresh' ? 'GPS ACTIVE' : status === 'delayed' ? 'DELAYED' : '';
+            const outdated = status === 'stale' ? '<span class="badge bg-warning text-dark d-inline-block text-start text-wrap mt-1" role="status"><i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>GPS LOCATION STALE — Tracking may be outdated.</span>' : '';
             const hasAccuracy = location.accuracy_meters !== null && location.accuracy_meters !== undefined && location.accuracy_meters !== '';
             const accuracy = hasAccuracy ? Number(location.accuracy_meters) : NaN;
             const accuracyLabel = Number.isFinite(accuracy) ? ` <span class="text-muted">±${accuracy.toFixed(0)} m</span>` : '';
 
-            return `<span class="badge ${badgeClass}">${badgeLabel}</span> <span>${relative}</span>${outdated}${accuracyLabel}`;
+            const badge = badgeLabel ? `<span class="badge ${badgeClass}">${badgeLabel}</span> ` : '';
+            return `${badge}<span>${relative}</span>${outdated}${accuracyLabel}`;
         }
 
 
@@ -1469,6 +1480,11 @@
 
                 const locations =
                     await response.json();
+
+                const serverTime = Date.parse(response.headers.get('X-Server-Time') || '');
+                if (Number.isFinite(serverTime)) {
+                    serverClockOffsetMs = serverTime - Date.now();
+                }
 
 
                 if (!Array.isArray(locations)) {

@@ -7,24 +7,39 @@ use App\Models\Dispatch;
 use App\Models\IncidentReport;
 use App\Models\Notification;
 use App\Services\AuditService;
+use Illuminate\Http\Request;
 
 class IncidentReportController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', 'string', 'max:30'],
+        ]);
 
+        $search = trim($filters['search'] ?? '');
+        $status = $filters['status'] ?? '';
 
-        $reports = IncidentReport::with([
-            'incident',
-            'driver.user'
-        ])
-            ->latest()
-            ->get();
+        $reports = IncidentReport::query()
+            ->with(['incident', 'driver.user'])
+            ->when($status !== '', fn($query) => $query->where('status', $status))
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($query) use ($search): void {
+                    $query->where('summary', 'like', '%' . $search . '%')
+                        ->orWhere('actions_taken', 'like', '%' . $search . '%')
+                        ->orWhere('casualties', 'like', '%' . $search . '%')
+                        ->orWhere('remarks', 'like', '%' . $search . '%')
+                        ->orWhereHas('incident', fn($incident) => $incident->where('incident_number', 'like', '%' . $search . '%'))
+                        ->orWhereHas('driver.user', fn($user) => $user->where('name', 'like', '%' . $search . '%'));
+                });
+            })
+            ->latest('submitted_at')
+            ->latest('id')
+            ->paginate(15)
+            ->withQueryString();
 
-        return view(
-            'admin.reports.index',
-            compact('reports')
-        );
+        return view('admin.reports.index', compact('reports', 'search', 'status'));
     }
 
     public function approve(IncidentReport $report)
