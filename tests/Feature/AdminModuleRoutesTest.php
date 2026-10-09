@@ -26,7 +26,30 @@ class AdminModuleRoutesTest extends TestCase
         $this->get('/admin/audit-logs')->assertOk();
         $this->get('/admin/incident-reports')->assertOk();
         $this->get('/admin/vehicle-maintenance')->assertOk();
-        $this->get('/admin/reports-center')->assertOk();
+        $reportsCenter = $this->get('/admin/reports-center')
+            ->assertOk()
+            ->assertSee('Reports Center')
+            ->assertSee('View Overview')
+            ->assertSee('View Response Time')
+            ->assertSee('View Incidents')
+            ->assertSee('View Fleet')
+            ->assertSee(route('admin.reports.center.export.pdf'), false)
+            ->assertSee(route('admin.reports.center.export.excel'), false);
+
+        $reportsCenter->assertSee(route('admin.reports.index'), false)
+            ->assertSee(route('admin.reports.driver-performance'), false)
+            ->assertSee(route('admin.reports.response-time'), false)
+            ->assertSee(route('admin.reports.vehicle-utilization'), false)
+            ->assertSee(route('admin.reports.pdf.view'), false);
+
+        $this->get('/admin/reports/driver-performance')->assertOk();
+        $this->get('/admin/reports/response-time')->assertOk();
+        $this->get('/admin/vehicle-utilization')->assertOk();
         $this->get('/admin/reports/pdf/view')->assertOk();
+        $this->get(route('admin.reports.pdf'))->assertOk();
+        $this->get(route('admin.reports.center.export.pdf'))->assertOk();
+        $this->get(route('admin.reports.center.export.excel'))->assertOk();
+        $this->get(route('admin.reports.driver-performance.pdf'))->assertOk();
+        $this->get(route('admin.reports.driver-performance.excel'))->assertOk();
     }
 }
