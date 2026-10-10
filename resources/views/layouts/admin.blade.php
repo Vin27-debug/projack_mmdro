@@ -232,8 +232,12 @@
             gap: 2px;
         }
 
+        .admin-reports-nav:not([open]) > .nav {
+            display: none;
+        }
+
         @media (min-width: 992px) {
-            .admin-sidebar:not(:hover):not(:focus-within) .admin-nav-group:not([open])>.nav {
+            .admin-sidebar:not(:hover):not(:focus-within) .admin-nav-group:not(.admin-reports-nav):not([open])>.nav {
                 display: flex;
             }
         }
@@ -791,7 +795,7 @@ return Route::has($name) ? route($name) : '#';
                     </nav>
                 </details>
 
-                <details class="admin-nav-group" {{ request()->routeIs('admin.reports.*') ? 'open' : '' }}>
+                <details class="admin-nav-group admin-reports-nav" {{ request()->routeIs('admin.reports.*') ? 'open' : '' }}>
                     <summary><span>Reports</span></summary>
 
                     <nav class="nav flex-column">
