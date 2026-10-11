@@ -16,12 +16,79 @@
     --mr-form-border: rgba(148, 163, 184, 0.38);
     --mr-form-placeholder: #9bb1cc;
     --mr-form-focus: rgba(59, 130, 246, 0.65);
+    --mr-muted: #b7c7dd;
+    --mr-body-size: 1rem;
+    --mr-body-leading: 1.55;
 }
 
 html,
 body {
     background: var(--mr-bg);
     color: var(--mr-text);
+}
+
+body {
+    min-height: 100vh;
+    font-size: var(--mr-body-size);
+    line-height: var(--mr-body-leading);
+    text-rendering: optimizeLegibility;
+}
+
+:where(button, input, select, textarea, a, summary):focus-visible {
+    outline: 3px solid #f0c96b;
+    outline-offset: 3px;
+}
+
+:where(.table, table) {
+    font-size: 0.9375rem;
+}
+
+:where(.table thead th, table thead th) {
+    line-height: 1.4;
+}
+
+:where(.badge, .form-text, .text-muted, .text-secondary, .text-white-50) {
+    --bs-text-opacity: 1;
+}
+
+.text-muted,
+.text-secondary,
+.text-black-50,
+.form-text {
+    color: var(--mr-muted) !important;
+}
+
+.small,
+small {
+    font-size: 0.875rem;
+}
+
+img,
+svg,
+canvas,
+video,
+iframe {
+    max-width: 100%;
+}
+
+.container,
+.container-fluid,
+.row > *,
+.card,
+.modal-content,
+.offcanvas {
+    min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
 input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
@@ -569,7 +636,7 @@ body {
 }
 
 .table thead th {
-    font-size: 0.82rem;
+    font-size: 0.875rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }

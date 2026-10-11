@@ -22,7 +22,7 @@
             --mr-surface: #0b2043;
             --mr-border: rgba(255, 255, 255, 0.1);
             --mr-text: #eef4ff;
-            --mr-muted: rgba(255, 255, 255, 0.62);
+            --mr-muted: #b7c7dd;
             --mr-accent: #014cfd;
             --mr-accent-dark: #003399;
             --mr-danger: #dc3545;
@@ -201,8 +201,8 @@
             height: 24px;
             padding: 0 0.6rem;
             overflow: hidden;
-            color: rgba(255, 255, 255, 0.42);
-            font-size: 0.68rem;
+            color: rgba(255, 255, 255, 0.64);
+            font-size: 0.75rem;
             font-weight: 600;
             letter-spacing: 0.07em;
             line-height: 1;
@@ -247,8 +247,8 @@
             padding: 0.55rem 0.6rem;
             overflow: hidden;
             border-radius: 3px;
-            color: rgba(255, 255, 255, 0.72);
-            font-size: 0.84rem;
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 0.9rem;
             font-weight: 400;
             line-height: 1.2;
             text-decoration: none;
@@ -303,7 +303,7 @@
             min-width: 1.4rem;
             padding: 0.22rem 0.35rem;
             border-radius: 2px;
-            font-size: 0.68rem;
+            font-size: 0.75rem;
         }
 
         .admin-sidebar-footer {
@@ -330,13 +330,13 @@
 
         .admin-user-name {
             color: #fff;
-            font-size: 0.78rem;
+            font-size: 0.84rem;
             font-weight: 500;
         }
 
         .admin-user-role {
             color: var(--mr-muted);
-            font-size: 0.68rem;
+            font-size: 0.75rem;
         }
 
         .admin-control,
@@ -350,8 +350,8 @@
             border: 0;
             border-radius: 3px;
             background: transparent;
-            color: rgba(255, 255, 255, 0.72);
-            font-size: 0.82rem;
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 0.9rem;
             text-align: left;
         }
 
