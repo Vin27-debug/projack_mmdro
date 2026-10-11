@@ -16,6 +16,62 @@ class ReportsModuleTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_report_pages_and_exports_reject_unauthorized_users(): void
+    {
+        $this->get(route('admin.reports.center'))->assertRedirect(route('login'));
+
+        $driverRole = Role::firstOrCreate(['name' => 'driver', 'guard_name' => 'web']);
+        $driver = User::factory()->create(['status' => 'approved']);
+        $driver->assignRole($driverRole);
+
+        foreach ([
+            'admin.reports.center',
+            'admin.reports.index',
+            'admin.reports.driver-performance',
+            'admin.reports.response-time',
+            'admin.reports.vehicle-utilization',
+            'admin.reports.pdf.view',
+            'admin.reports.pdf',
+            'admin.reports.center.export.pdf',
+            'admin.reports.center.export.excel',
+            'admin.reports.driver-performance.pdf',
+            'admin.reports.driver-performance.excel',
+        ] as $routeName) {
+            $this->actingAs($driver)
+                ->get(route($routeName))
+                ->assertForbidden();
+        }
+    }
+
+    public function test_reports_center_applies_date_status_and_incident_type_filters(): void
+    {
+        $admin = $this->createAdmin();
+        $driverUser = User::factory()->create(['status' => 'approved']);
+        $driver = $this->createDriver($driverUser, 'DRV-RPT-CENTER-FILTER');
+
+        $matchingIncident = $this->createIncident($driver, 'INC-CENTER-MATCH');
+        $matchingIncident->update(['status' => 'pending', 'incident_type' => 'Medical']);
+
+        $otherIncident = $this->createIncident($driver, 'INC-CENTER-OTHER');
+        $otherIncident->update(['status' => 'completed', 'incident_type' => 'Fire']);
+
+        $filters = [
+            'start_date' => today()->toDateString(),
+            'end_date' => today()->toDateString(),
+            'status' => 'pending',
+            'incident_type' => 'Medical',
+        ];
+
+        $response = $this->actingAs($admin)->get(route('admin.reports.center', $filters));
+
+        $response->assertOk()
+            ->assertViewHas('filters', $filters)
+            ->assertViewHas('incidents', fn($incidents) => $incidents->modelKeys() === [$matchingIncident->id]);
+
+        $this->get(route('admin.reports.center.export.pdf', $filters))->assertOk();
+        $this->get(route('admin.reports.center.export.excel', $filters))->assertOk();
+    }
+
     public function test_driver_performance_report_includes_dispatch_metrics(): void
     {
         $role = Role::firstOrCreate(['name' => 'admin']);

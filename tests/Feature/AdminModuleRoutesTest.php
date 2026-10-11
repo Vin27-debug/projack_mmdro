@@ -24,103 +24,94 @@ class AdminModuleRoutesTest extends TestCase
 
         $dashboard = $this->get('/admin/dashboard')
             ->assertOk()
-            ->assertSee('<summary aria-label="Reports" title="Reports">', false)
-            ->assertSee('<span>Reports</span>', false)
-            ->assertSee('bi bi-bar-chart-line', false)
-            ->assertSee('class="admin-nav-group admin-reports-nav"', false)
-            ->assertDontSee('class="admin-nav-group admin-reports-nav" open', false)
-            ->assertSee('Reports Center')
-            ->assertSee('Incident Reports')
-            ->assertSee('Driver Performance')
-            ->assertSee('Response Time Analytics')
-            ->assertSee('Vehicle Utilization')
-            ->assertSee('PDF Reports')
-            ->assertSee(route('admin.reports.center'), false)
-            ->assertSee(route('admin.reports.index'), false)
-            ->assertSee(route('admin.reports.driver-performance'), false)
-            ->assertSee(route('admin.reports.response-time'), false)
-            ->assertSee(route('admin.reports.vehicle-utilization'), false)
-            ->assertSee(route('admin.reports.pdf.view'), false);
+            ->assertSee('Reports Center');
 
-        $dashboardHtml = $dashboard->getContent();
-        preg_match_all(
-            '/<details\b(?=[^>]*\badmin-reports-nav\b)[^>]*>(.*?)<\/details>/si',
-            $dashboardHtml,
-            $reportsGroups
-        );
+        preg_match('/<aside\b[^>]*id="adminSidebar"[^>]*>.*?<\/aside>/si', $dashboard->getContent(), $sidebarMatch);
+        $this->assertNotEmpty($sidebarMatch, 'The rendered dashboard should include the Admin sidebar.');
+        $sidebar = $sidebarMatch[0];
+        $this->assertSame(1, substr_count($sidebar, 'Reports Center'));
+        $this->assertStringContainsString('href="' . route('admin.reports.center') . '"', $sidebar);
 
-        $this->assertCount(1, $reportsGroups[0], 'The rendered sidebar should contain one Reports group.');
+        foreach (['Incident Reports', 'Driver Performance', 'Response Time Analytics', 'Vehicle Utilization', 'PDF Reports'] as $separateReportLink) {
+            $this->assertStringNotContainsString($separateReportLink, $sidebar);
+        }
 
         foreach ([
-            'admin.reports.center',
             'admin.reports.index',
             'admin.reports.driver-performance',
             'admin.reports.response-time',
             'admin.reports.vehicle-utilization',
             'admin.reports.pdf.view',
-        ] as $routeName) {
-            $this->assertStringContainsString(
-                'href="' . route($routeName) . '"',
-                $reportsGroups[1][0],
-                "The Reports group should contain the {$routeName} link."
-            );
+        ] as $separateReportRoute) {
+            $this->assertStringNotContainsString('href="' . route($separateReportRoute) . '"', $sidebar);
         }
 
         $this->get('/admin/operations-center')->assertOk();
         $this->get('/admin/audit-logs')->assertOk();
-        $this->get('/admin/incident-reports')
+        $incidentReports = $this->get('/admin/incident-reports')
             ->assertOk()
-            ->assertSee('class="admin-nav-group admin-reports-nav" open', false)
-            ->assertSee('href="' . route('admin.reports.index') . '"', false)
-            ->assertSee('class="nav-link active"', false);
+            ->assertSee('href="' . route('admin.reports.center') . '"', false)
+            ->assertSee('Incident Reports');
+        $this->assertReportsCenterSidebarActive($incidentReports, false);
         $this->get('/admin/vehicle-maintenance')->assertOk();
         $reportsCenter = $this->get('/admin/reports-center')
             ->assertOk()
-            ->assertSee('class="admin-nav-group admin-reports-nav" open', false)
             ->assertSee('href="' . route('admin.reports.center') . '"', false)
-            ->assertSee('class="nav-link active"', false)
             ->assertSee('Reports Center')
-            ->assertSee('View Overview')
-            ->assertSee('View Response Time')
-            ->assertSee('View Incidents')
-            ->assertSee('View Fleet')
+            ->assertSee('data-report-tab="overview"', false)
+            ->assertSee('Incident Reports')
+            ->assertSee('Driver Performance')
+            ->assertSee('Response Time Analytics')
+            ->assertSee('Vehicle Utilization')
+            ->assertSee('PDF Reports')
+            ->assertSee('data-report-tab="incidents"', false)
+            ->assertSee('data-report-tab="driver-performance"', false)
+            ->assertSee('data-report-tab="response-time"', false)
+            ->assertSee('data-report-tab="fleet"', false)
+            ->assertSee('data-report-tab="pdf"', false)
+            ->assertSee('data-report-section="driver-performance"', false)
+            ->assertSee('data-report-section="pdf"', false)
+            ->assertSee('href="' . route('admin.reports.pdf.view') . '"', false)
+            ->assertSee('href="' . route('admin.reports.driver-performance.pdf') . '"', false)
+            ->assertSee('href="' . route('admin.reports.driver-performance.excel') . '"', false)
             ->assertSee(route('admin.reports.center.export.pdf'), false)
             ->assertSee(route('admin.reports.center.export.excel'), false);
 
-        $reportsCenter->assertSee('href="' . route('admin.reports.center') . '"', false)
-            ->assertSee('class="nav-link active"', false)
-            ->assertSee(route('admin.reports.index'), false)
-            ->assertSee(route('admin.reports.driver-performance'), false)
-            ->assertSee(route('admin.reports.response-time'), false)
-            ->assertSee(route('admin.reports.vehicle-utilization'), false)
-            ->assertSee(route('admin.reports.pdf.view'), false);
+        $this->assertReportsCenterSidebarActive($reportsCenter, true);
 
-        $this->get('/admin/reports/driver-performance')
+        foreach (['overview', 'incidents', 'driver-performance', 'response-time', 'fleet', 'pdf'] as $section) {
+            $sectionResponse = $this->get(route('admin.reports.center', ['section' => $section]))
+                ->assertOk()
+                ->assertSee('class="report-section active" data-report-section="' . $section . '"', false);
+            $this->assertReportsCenterSidebarActive($sectionResponse, true);
+        }
+
+        $driverPerformance = $this->get('/admin/reports/driver-performance')->assertOk();
+        $this->assertReportsCenterSidebarActive($driverPerformance, false);
+        $responseTime = $this->get('/admin/reports/response-time')->assertOk();
+        $this->assertReportsCenterSidebarActive($responseTime, false);
+        $vehicleUtilization = $this->get('/admin/vehicle-utilization')->assertOk();
+        $this->assertReportsCenterSidebarActive($vehicleUtilization, false);
+        $pdfPreview = $this->get('/admin/reports/pdf/view')
             ->assertOk()
-            ->assertSee('class="admin-nav-group admin-reports-nav" open', false)
-            ->assertSee('href="' . route('admin.reports.driver-performance') . '"', false)
-            ->assertSee('class="nav-link active"', false);
-        $this->get('/admin/reports/response-time')
-            ->assertOk()
-            ->assertSee('class="admin-nav-group admin-reports-nav" open', false)
-            ->assertSee('href="' . route('admin.reports.response-time') . '"', false)
-            ->assertSee('class="nav-link active"', false);
-        $this->get('/admin/vehicle-utilization')
-            ->assertOk()
-            ->assertSee('class="admin-nav-group admin-reports-nav" open', false)
-            ->assertSee('href="' . route('admin.reports.vehicle-utilization') . '"', false)
-            ->assertSee('class="nav-link active"', false);
-        $this->get('/admin/reports/pdf/view')
-            ->assertOk()
-            ->assertSee('class="admin-nav-group admin-reports-nav" open', false)
-            ->assertSee('href="' . route('admin.reports.pdf.view') . '"', false)
-            ->assertSee('class="nav-link active"', false)
             ->assertSee('Incident report PDF preview', false)
             ->assertSee('href="' . route('admin.reports.pdf') . '"', false);
+        $this->assertReportsCenterSidebarActive($pdfPreview, false);
         $this->get(route('admin.reports.pdf'))->assertOk();
         $this->get(route('admin.reports.center.export.pdf'))->assertOk();
         $this->get(route('admin.reports.center.export.excel'))->assertOk();
         $this->get(route('admin.reports.driver-performance.pdf'))->assertOk();
         $this->get(route('admin.reports.driver-performance.excel'))->assertOk();
+    }
+
+    private function assertReportsCenterSidebarActive($response, bool $active): void
+    {
+        $href = preg_quote('href="' . route('admin.reports.center') . '"', '/');
+        preg_match('/<a\b(?=[^>]*' . $href . ')[^>]*>/si', $response->getContent(), $linkMatch);
+
+        $this->assertNotEmpty($linkMatch, 'The Reports Center sidebar link should be rendered.');
+        $hasActiveClass = preg_match('/\bclass="[^"]*\bactive\b[^"]*"/i', $linkMatch[0]) === 1;
+
+        $this->assertSame($active, $hasActiveClass);
     }
 }

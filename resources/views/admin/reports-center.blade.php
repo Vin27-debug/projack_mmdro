@@ -199,17 +199,18 @@ $fleetAvailable = $fleetVehicles->where('ambulance.status', 'available')->count(
 $fleetAssigned = $fleetVehicles->where('ambulance.status', 'on_duty')->count();
 $fleetMaintenance = $fleetVehicles->where('ambulance.status', 'maintenance')->count();
 $activeTab = request('section', 'overview');
-$validTabs = ['overview', 'response-time', 'incidents', 'fleet'];
+$validTabs = ['overview', 'incidents', 'driver-performance', 'response-time', 'fleet', 'pdf'];
 $activeTab = in_array($activeTab, $validTabs, true) ? $activeTab : 'overview';
 @endphp
 
 <div class="reports-page">
     <header class="reports-header pb-3 mb-4">
         <h1 class="reports-title mb-1">Reports Center</h1>
-        <p class="reports-lead mb-0">View incident, response-time, and fleet information in one place.</p>
+        <p class="reports-lead mb-0">Review incident, driver, response-time, vehicle, and PDF reports in one place.</p>
     </header>
 
     <form method="GET" action="{{ route('admin.reports.center') }}" class="reports-surface reports-filter mb-4">
+        <input type="hidden" name="section" value="{{ $activeTab }}">
         <div class="row g-3 align-items-end">
             <div class="col-sm-6 col-lg-2">
                 <label for="start_date" class="form-label">Date From</label>
@@ -247,10 +248,16 @@ $activeTab = in_array($activeTab, $validTabs, true) ? $activeTab : 'overview';
     </form>
 
     <nav class="report-tabs mb-4" aria-label="Report sections">
-        <button type="button" class="report-tab {{ $activeTab === 'overview' ? 'active' : '' }}" data-report-tab="overview">View Overview</button>
-        <button type="button" class="report-tab {{ $activeTab === 'response-time' ? 'active' : '' }}" data-report-tab="response-time">View Response Time</button>
-        <button type="button" class="report-tab {{ $activeTab === 'incidents' ? 'active' : '' }}" data-report-tab="incidents">View Incidents</button>
-        <button type="button" class="report-tab {{ $activeTab === 'fleet' ? 'active' : '' }}" data-report-tab="fleet">View Fleet</button>
+        @foreach([
+            'overview' => 'Overview',
+            'incidents' => 'Incident Reports',
+            'driver-performance' => 'Driver Performance',
+            'response-time' => 'Response Time Analytics',
+            'fleet' => 'Vehicle Utilization',
+            'pdf' => 'PDF Reports',
+        ] as $tab => $label)
+        <button type="button" class="report-tab {{ $activeTab === $tab ? 'active' : '' }}" data-report-tab="{{ $tab }}" aria-pressed="{{ $activeTab === $tab ? 'true' : 'false' }}">{{ $label }}</button>
+        @endforeach
     </nav>
 
     <section class="report-section {{ $activeTab === 'overview' ? 'active' : '' }}" data-report-section="overview" aria-labelledby="overview-title">
@@ -295,7 +302,7 @@ $activeTab = in_array($activeTab, $validTabs, true) ? $activeTab : 'overview';
 
     <section class="report-section {{ $activeTab === 'response-time' ? 'active' : '' }}" data-report-section="response-time" aria-labelledby="response-title">
         <div class="mb-3">
-            <h2 id="response-title" class="report-section-title mb-1">Response Time</h2>
+            <h2 id="response-title" class="report-section-title mb-1">Response Time Analytics</h2>
             <p class="report-section-help mb-0">Time recorded between receiving a call, responding, and arriving at the scene.</p>
         </div>
         <div class="row g-3 mb-4">
@@ -379,9 +386,54 @@ $activeTab = in_array($activeTab, $validTabs, true) ? $activeTab : 'overview';
         <div class="reports-surface p-3">@include('admin.reports-center-incidents-table', ['incidents' => $incidents, 'compact' => false])</div>
     </section>
 
+    <section class="report-section {{ $activeTab === 'driver-performance' ? 'active' : '' }}" data-report-section="driver-performance" aria-labelledby="driver-performance-title">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-3">
+            <div>
+                <h2 id="driver-performance-title" class="report-section-title mb-1">Driver Performance</h2>
+                <p class="report-section-help mb-0">Dispatch performance using the selected report filters.</p>
+            </div>
+            <div class="reports-actions">
+                <a href="{{ route('admin.reports.driver-performance.pdf') }}" class="btn btn-outline-light">Export PDF</a>
+                <a href="{{ route('admin.reports.driver-performance.excel') }}" class="btn btn-outline-light">Export Excel</a>
+            </div>
+        </div>
+        <div class="reports-surface p-3">
+            <div class="table-responsive">
+                <table class="table report-table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Driver</th>
+                            <th>Dispatches</th>
+                            <th>Completed Dispatches</th>
+                            <th>Average Response Time</th>
+                            <th>Fastest Response</th>
+                            <th>Slowest Response</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($driverPerformance as $performance)
+                        <tr>
+                            <td>{{ $performance->driver?->user?->name ?? 'Unknown Driver' }}</td>
+                            <td>{{ $performance->dispatch_count }}</td>
+                            <td>{{ $performance->completed_dispatches }}</td>
+                            <td>{{ $performance->average_response_time }} min</td>
+                            <td>{{ $performance->fastest_response }} min</td>
+                            <td>{{ $performance->slowest_response }} min</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="6" class="empty-row">No driver performance records found.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
     <section class="report-section {{ $activeTab === 'fleet' ? 'active' : '' }}" data-report-section="fleet" aria-labelledby="fleet-title">
         <div class="mb-3">
-            <h2 id="fleet-title" class="report-section-title mb-1">Fleet Reports</h2>
+            <h2 id="fleet-title" class="report-section-title mb-1">Vehicle Utilization</h2>
             <p class="report-section-help mb-0">Current vehicle availability and utilization.</p>
         </div>
         <div class="row g-3 mb-4">
@@ -442,6 +494,21 @@ $activeTab = in_array($activeTab, $validTabs, true) ? $activeTab : 'overview';
             </div>
         </div>
     </section>
+
+    <section class="report-section {{ $activeTab === 'pdf' ? 'active' : '' }}" data-report-section="pdf" aria-labelledby="pdf-title">
+        <div class="mb-3">
+            <h2 id="pdf-title" class="report-section-title mb-1">PDF Reports</h2>
+            <p class="report-section-help mb-0">Preview or export reports using the existing report generators.</p>
+        </div>
+        <div class="reports-surface p-3">
+            <div class="reports-actions">
+                <a href="{{ route('admin.reports.pdf.view') }}" class="btn btn-outline-light">Preview Incident PDF</a>
+                <a href="{{ route('admin.reports.pdf') }}" class="btn btn-outline-light">Download Incident PDF</a>
+                <a href="{{ route('admin.reports.center.export.pdf', $filters) }}" class="btn btn-outline-light">Export Filtered Reports PDF</a>
+                <a href="{{ route('admin.reports.center.export.excel', $filters) }}" class="btn btn-outline-light">Export Filtered Reports Excel</a>
+            </div>
+        </div>
+    </section>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -449,7 +516,9 @@ $activeTab = in_array($activeTab, $validTabs, true) ? $activeTab : 'overview';
     document.addEventListener('DOMContentLoaded', function() {
         const tabs = document.querySelectorAll('[data-report-tab]');
         const sections = document.querySelectorAll('[data-report-section]');
+        const sectionInput = document.querySelector('input[name="section"]');
         const showSection = (name) => {
+            if (sectionInput) sectionInput.value = name;
             tabs.forEach(tab => {
                 const selected = tab.dataset.reportTab === name;
                 tab.classList.toggle('active', selected);

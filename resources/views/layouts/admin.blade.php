@@ -215,24 +215,6 @@
             display: none;
         }
 
-        .admin-reports-nav summary > i {
-            display: none;
-        }
-
-        @media (min-width: 992px) {
-            .admin-sidebar:not(:hover):not(:focus-within) .admin-reports-nav summary {
-                justify-content: center;
-                padding: 0;
-                color: rgba(255, 255, 255, 0.72);
-                cursor: pointer;
-            }
-
-            .admin-sidebar:not(:hover):not(:focus-within) .admin-reports-nav summary > i {
-                display: block;
-                font-size: 1.05rem;
-            }
-        }
-
         .admin-nav-group summary::after {
             content: '\F282';
             margin-left: auto;
@@ -250,12 +232,8 @@
             gap: 2px;
         }
 
-        .admin-reports-nav:not([open]) > .nav {
-            display: none;
-        }
-
         @media (min-width: 992px) {
-            .admin-sidebar:not(:hover):not(:focus-within) .admin-nav-group:not(.admin-reports-nav):not([open])>.nav {
+            .admin-sidebar:not(:hover):not(:focus-within) .admin-nav-group:not([open])>.nav {
                 display: flex;
             }
         }
@@ -813,50 +791,11 @@ return Route::has($name) ? route($name) : '#';
                     </nav>
                 </details>
 
-                <details class="admin-nav-group admin-reports-nav" {{ request()->routeIs('admin.reports.*') ? 'open' : '' }}>
-                    <summary aria-label="Reports" title="Reports">
-                        <i class="bi bi-bar-chart-line" aria-hidden="true"></i>
-                        <span>Reports</span>
-                    </summary>
-
-                    <nav class="nav flex-column">
-                        <a href="{{ $adminRoute('admin.reports.center') }}"
-                            class="nav-link {{ request()->routeIs('admin.reports.center*') ? 'active' : '' }}">
-                            <i class="bi bi-graph-up"></i>
-                            <span class="nav-label">Reports Center</span>
-                        </a>
-
-                        <a href="{{ $adminRoute('admin.reports.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.reports.index') || request()->routeIs('admin.reports.approve') ? 'active' : '' }}">
-                            <i class="bi bi-file-earmark-text"></i>
-                            <span class="nav-label">Incident Reports</span>
-                        </a>
-
-                        <a href="{{ $adminRoute('admin.reports.driver-performance') }}"
-                            class="nav-link {{ request()->routeIs('admin.reports.driver-performance*') ? 'active' : '' }}">
-                            <i class="bi bi-speedometer"></i>
-                            <span class="nav-label">Driver Performance</span>
-                        </a>
-
-                        <a href="{{ $adminRoute('admin.reports.response-time') }}"
-                            class="nav-link {{ request()->routeIs('admin.reports.response-time*') ? 'active' : '' }}">
-                            <i class="bi bi-clock-history"></i>
-                            <span class="nav-label">Response Time Analytics</span>
-                        </a>
-
-                        <a href="{{ $adminRoute('admin.reports.vehicle-utilization') }}"
-                            class="nav-link {{ request()->routeIs('admin.reports.vehicle-utilization*') ? 'active' : '' }}">
-                            <i class="bi bi-truck"></i>
-                            <span class="nav-label">Vehicle Utilization</span>
-                        </a>
-
-                        <a href="{{ $adminRoute('admin.reports.pdf.view') }}"
-                            class="nav-link {{ request()->routeIs('admin.reports.pdf*') ? 'active' : '' }}">
-                            <i class="bi bi-file-earmark-pdf"></i>
-                            <span class="nav-label">PDF Reports</span>
-                        </a>
-                    </nav>
-                </details>
+                <a href="{{ $adminRoute('admin.reports.center') }}"
+                    class="nav-link {{ request()->routeIs('admin.reports.center*') ? 'active' : '' }}">
+                    <i class="bi bi-graph-up"></i>
+                    <span class="nav-label">Reports Center</span>
+                </a>
 
                 <details class="admin-nav-group" open>
                     <summary><span>Information</span></summary>
