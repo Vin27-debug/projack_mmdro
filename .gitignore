@@ -30,3 +30,29 @@ laravel.backup
 laravel.backup
 laravel.before-restore.backup
 .neon
+
+# Local SQLite databases and safety copies
+/laravel
+/laravel.safety-copy
+/database/*.sqlite
+/database/*.sqlite-*
+/laravel.safety-copy-2
+
+# Laravel runtime cache and sessions
+storage/framework/cache/*
+!storage/framework/cache/.gitignore
+storage/framework/sessions/*
+!storage/framework/sessions/.gitignore
+
+/laravel
+/laravel.safety-copy
+/laravel.safety-copy-2
+/database/*.sqlite
+/database/*.sqlite-*
+storage/framework/cache/*
+!storage/framework/cache/.gitignore
+storage/framework/sessions/*
+!storage/framework/sessions/.gitignore
+
+# Generated database inspection copy
+docs/database/*.sqlite

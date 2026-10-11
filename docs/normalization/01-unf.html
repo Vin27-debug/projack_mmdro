@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MuniResQ Normalization — UNF</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; color: #111; background: #fff; font: 14px/1.5 Arial, sans-serif; }
+    h1 { margin: 0 0 6px; text-align: center; font-size: 22px; }
+    .subtitle { margin: 0 0 20px; text-align: center; }
+    .relation { max-width: 900px; margin: 0 auto; border: 1px solid #111; }
+    .relation h2 { margin: 0; padding: 8px; border-bottom: 1px solid #111; text-align: center; font-size: 17px; }
+    .fields { margin: 0; padding: 10px 12px; list-style: none; }
+    .fields li { min-height: 1.5em; overflow-wrap: anywhere; }
+    @media (max-width: 600px) { body { padding: 12px; } .fields { padding: 10px; } }
+  </style>
+</head>
+<body>
+  <h1>MuniResQ — Unnormalized Form (UNF)</h1>
+  <p class="subtitle">One combined long-text record with independently repeating groups</p>
+  <main class="relation">
+    <h2>MuniResQ</h2>
+    <ul class="fields">
+      <li>user_id</li>
+      <li>name</li>
+      <li>email</li>
+      <li>email_verified_at</li>
+      <li>password</li>
+      <li>remember_token</li>
+      <li>badge_id</li>
+      <li>user_status</li>
+      <li>created_by</li>
+      <li>employee_id</li>
+      <li>position</li>
+      <li>department</li>
+      <li>user_contact_number</li>
+      <li>office</li>
+      <li>user_created_at</li>
+      <li>user_updated_at</li>
+      <li>driver_id</li>
+      <li>driver_user_id</li>
+      <li>driver_badge_id</li>
+      <li>driver_contact_number</li>
+      <li>license_number</li>
+      <li>license_expiry</li>
+      <li>driver_status</li>
+      <li>management_status</li>
+      <li>driver_archived_at</li>
+      <li>driver_archived_by</li>
+      <li>driver_created_at</li>
+      <li>driver_updated_at</li>
+      <li>ambulance_id</li>
+      <li>plate_number</li>
+      <li>vehicle_name</li>
+      <li>vehicle_type</li>
+      <li>ambulance_status</li>
+      <li>ambulance_latitude</li>
+      <li>ambulance_longitude</li>
+      <li>ambulance_archived_at</li>
+      <li>ambulance_archived_by</li>
+      <li>ambulance_created_at</li>
+      <li>ambulance_updated_at</li>
+      <li>assignment_id</li>
+      <li>assignment_driver_id</li>
+      <li>assignment_ambulance_id</li>
+      <li>assignment_status</li>
+      <li>assigned_at</li>
+      <li>assignment_created_at</li>
+      <li>assignment_updated_at</li>
+      <li>incident_id</li>
+      <li>incident_number</li>
+      <li>reporter_name</li>
+      <li>reporter_contact_number</li>
+      <li>incident_type</li>
+      <li>location</li>
+      <li>description</li>
+      <li>incident_status</li>
+      <li>priority</li>
+      <li>incident_ambulance_id</li>
+      <li>incident_driver_id</li>
+      <li>house_number</li>
+      <li>street</li>
+      <li>barangay</li>
+      <li>city</li>
+      <li>province</li>
+      <li>incident_latitude</li>
+      <li>incident_longitude</li>
+      <li>call_received_at</li>
+      <li>response_at</li>
+      <li>at_scene_at</li>
+      <li>at_patient_at</li>
+      <li>depart_scene_at</li>
+      <li>at_hospital_at</li>
+      <li>completed_at</li>
+      <li>closed_at</li>
+      <li>incident_archived_at</li>
+      <li>incident_archived_by</li>
+      <li>incident_created_at</li>
+      <li>incident_updated_at</li>
+      <li>incident_report_id</li>
+      <li>incident_report_incident_id</li>
+      <li>incident_report_driver_id</li>
+      <li>summary</li>
+      <li>actions_taken</li>
+      <li>casualties</li>
+      <li>remarks</li>
+      <li>submitted_at</li>
+      <li>incident_report_status</li>
+      <li>incident_report_created_at</li>
+      <li>incident_report_updated_at</li>
+      <li>dispatch_id</li>
+      <li>dispatch_incident_id</li>
+      <li>dispatch_driver_id</li>
+      <li>dispatch_vehicle_id</li>
+      <li>assigned_by_user_id</li>
+      <li>dispatch_status</li>
+      <li>dispatch_assigned_at</li>
+      <li>accepted_at</li>
+      <li>en_route_at</li>
+      <li>declined_at</li>
+      <li>arrived_at</li>
+      <li>dispatch_completed_at</li>
+      <li>dispatch_created_at</li>
+      <li>dispatch_updated_at</li>
+      <li>attachment_id</li>
+      <li>attachment_incident_id</li>
+      <li>uploaded_by_user_id</li>
+      <li>disk</li>
+      <li>path</li>
+      <li>original_name</li>
+      <li>mime_type</li>
+      <li>size</li>
+      <li>attachment_created_at</li>
+      <li>attachment_updated_at</li>
+      <li>gps_log_id</li>
+      <li>gps_driver_id</li>
+      <li>gps_latitude</li>
+      <li>gps_longitude</li>
+      <li>recorded_at</li>
+      <li>speed_kmh</li>
+      <li>speed_status</li>
+      <li>speed_limit_kmh</li>
+      <li>gps_created_at</li>
+      <li>gps_updated_at</li>
+      <li>maintenance_id</li>
+      <li>maintenance_ambulance_id</li>
+      <li>maintenance_type</li>
+      <li>maintenance_description</li>
+      <li>scheduled_date</li>
+      <li>maintenance_completed_date</li>
+      <li>maintenance_status</li>
+      <li>maintenance_archived_at</li>
+      <li>maintenance_archived_by</li>
+      <li>maintenance_created_at</li>
+      <li>maintenance_updated_at</li>
+      <li>panic_alert_id</li>
+      <li>panic_driver_id</li>
+      <li>panic_latitude</li>
+      <li>panic_longitude</li>
+      <li>triggered_at</li>
+      <li>resolved</li>
+      <li>panic_created_at</li>
+      <li>panic_updated_at</li>
+      <li>ambulance_location_id</li>
+      <li>ambulance_location_ambulance_id</li>
+      <li>ambulance_location_latitude</li>
+      <li>ambulance_location_longitude</li>
+      <li>ambulance_location_created_at</li>
+      <li>ambulance_location_updated_at</li>
+      <li>notification_id</li>
+      <li>notification_user_id</li>
+      <li>title</li>
+      <li>message</li>
+      <li>notification_type</li>
+      <li>related_id</li>
+      <li>related_type</li>
+      <li>is_read</li>
+      <li>notification_created_at</li>
+      <li>read_at</li>
+      <li>notification_updated_at</li>
+      <li>audit_id</li>
+      <li>audit_user_id</li>
+      <li>action</li>
+      <li>module</li>
+      <li>audit_description</li>
+      <li>ip_address</li>
+      <li>audit_created_at</li>
+      <li>audit_updated_at</li>
+    </ul>
+  </main>
+</body>
+</html>

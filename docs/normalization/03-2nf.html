@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MuniResQ Normalization — 2NF</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; color: #111; background: #fff; font: 12px/1.35 Arial, sans-serif; }
+    h1 { margin: 0 0 5px; text-align: center; font-size: 22px; }
+    .subtitle { margin: 0 0 18px; text-align: center; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(230px, 1fr)); align-items: start; gap: 14px; max-width: 1500px; margin: auto; }
+    .relation { border: 1px solid #111; background: #fff; break-inside: avoid; }
+    h2 { margin: 0; padding: 7px 5px; border-bottom: 1px solid #111; text-align: center; font-size: 14px; }
+    ul { margin: 0; padding: 7px 9px 7px 26px; }
+    li { margin: 1px 0; overflow-wrap: anywhere; }
+    .note { max-width: 1500px; margin: 16px auto 0; }
+    @media (max-width: 850px) { .grid { grid-template-columns: repeat(2, minmax(230px, 1fr)); } }
+    @media (max-width: 560px) { body { padding: 12px; } .grid { grid-template-columns: 1fr; } }
+    @media print { body { padding: 12mm; } .grid { grid-template-columns: repeat(3, 1fr); } }
+  </style>
+</head>
+<body>
+  <h1>MuniResQ — Second Normal Form (2NF)</h1>
+  <p class="subtitle">1NF relations checked for partial dependencies</p>
+  <main class="grid">
+    <section class="relation"><h2>USERS</h2><ul>
+      <li>user_id (PK)</li><li>name</li><li>email</li><li>email_verified_at</li><li>password</li><li>remember_token</li>
+      <li>badge_id</li><li>status</li><li>created_by (FK → USERS.user_id)</li>
+      <li>employee_id</li><li>position</li><li>department</li><li>contact_number</li><li>office</li><li>created_at</li><li>updated_at</li>
+    </ul></section>
+    <section class="relation"><h2>DRIVERS</h2><ul>
+      <li>driver_id (PK)</li><li>user_id (FK → USERS.user_id)</li><li>badge_id</li><li>contact_number</li><li>license_number</li>
+      <li>license_expiry</li><li>status</li><li>management_status</li><li>archived_at</li><li>archived_by (FK → USERS.user_id)</li><li>created_at</li><li>updated_at</li>
+    </ul></section>
+    <section class="relation"><h2>AMBULANCES</h2><ul>
+      <li>ambulance_id (PK)</li><li>plate_number</li><li>vehicle_name</li><li>vehicle_type</li><li>status</li><li>latitude</li><li>longitude</li>
+      <li>archived_at</li><li>archived_by (FK → USERS.user_id)</li><li>created_at</li><li>updated_at</li>
+    </ul></section>
+    <section class="relation"><h2>VEHICLE_DRIVER_ASSIGNMENTS</h2><ul>
+      <li>assignment_id (PK)</li><li>driver_id (FK → DRIVERS.driver_id)</li><li>ambulance_id (FK → AMBULANCES.ambulance_id)</li>
+      <li>status</li><li>assigned_at</li><li>created_at</li><li>updated_at</li>
+    </ul></section>
+    <section class="relation"><h2>INCIDENTS</h2><ul>
+      <li>incident_id (PK)</li><li>incident_number</li><li>reporter_name</li><li>contact_number</li><li>incident_type</li><li>location</li>
+      <li>description</li><li>status</li><li>priority</li><li>ambulance_id (FK → AMBULANCES.ambulance_id)</li><li>driver_id (FK → DRIVERS.driver_id)</li>
+      <li>house_number</li><li>street</li><li>barangay</li><li>city</li><li>province</li><li>latitude</li><li>longitude</li>
+      <li>call_received_at</li><li>response_at</li><li>at_scene_at</li><li>at_patient_at</li><li>depart_scene_at</li><li>at_hospital_at</li>
+      <li>completed_at</li><li>closed_at</li><li>archived_at</li><li>archived_by (FK → USERS.user_id)</li><li>created_at</li><li>updated_at</li>
+    </ul></section>
+    <section class="relation"><h2>INCIDENT_REPORTS</h2><ul>
+      <li>incident_report_id (PK)</li><li>incident_id (FK → INCIDENTS.incident_id)</li><li>driver_id (FK → DRIVERS.driver_id)</li>
+      <li>summary</li><li>actions_taken</li><li>casualties</li><li>remarks</li><li>submitted_at</li><li>status</li><li>created_at</li><li>updated_at</li>
+    </ul></section>
+    <section class="relation"><h2>DISPATCHES</h2><ul>
+      <li>dispatch_id (PK)</li><li>incident_id (FK → INCIDENTS.incident_id)</li><li>driver_id (FK → DRIVERS.driver_id)</li>
+      <li>vehicle_id (FK → AMBULANCES.ambulance_id)</li><li>assigned_by (FK → USERS.user_id)</li><li>status</li><li>assigned_at</li>
+      <li>accepted_at</li><li>en_route_at</li><li>declined_at</li><li>arrived_at</li><li>completed_at</li><li>created_at</li><li>updated_at</li>
+    </ul></section>
+    <section class="relation"><h2>INCIDENT_ATTACHMENTS</h2><ul>
+      <li>attachment_id (PK)</li><li>incident_id (FK → INCIDENTS.incident_id)</li><li>uploaded_by (FK → USERS.user_id)</li>
+      <li>disk</li><li>path</li><li>original_name</li><li>mime_type</li><li>size</li><li>created_at</li><li>updated_at</li>
+    </ul></section>
+    <section class="relation"><h2>GPS_LOGS</h2><ul>
+      <li>gps_log_id (PK)</li><li>driver_id (FK → DRIVERS.driver_id)</li><li>latitude</li><li>longitude</li><li>recorded_at</li>
+      <li>speed_kmh</li><li>speed_status</li><li>speed_limit_kmh</li><li>created_at</li><li>updated_at</li>
+    </ul></section>
+    <section class="relation"><h2>VEHICLE_MAINTENANCES</h2><ul>
+      <li>maintenance_id (PK)</li><li>ambulance_id (FK → AMBULANCES.ambulance_id)</li><li>maintenance_type</li><li>description</li>
+      <li>scheduled_date</li><li>completed_date</li><li>status</li><li>archived_at</li><li>archived_by (FK → USERS.user_id)</li><li>created_at</li><li>updated_at</li>
+    </ul></section>
+    <section class="relation"><h2>PANIC_ALERTS</h2><ul>
+      <li>panic_alert_id (PK)</li><li>driver_id (FK → DRIVERS.driver_id)</li><li>latitude</li><li>longitude</li><li>triggered_at</li><li>resolved</li><li>created_at</li><li>updated_at</li>
+    </ul></section>
+    <section class="relation"><h2>AMBULANCE_LOCATIONS</h2><ul>
+      <li>ambulance_location_id (PK)</li><li>ambulance_id (FK → AMBULANCES.ambulance_id)</li><li>latitude</li><li>longitude</li><li>created_at</li><li>updated_at</li>
+    </ul></section>
+    <section class="relation"><h2>NOTIFICATIONS</h2><ul>
+      <li>notification_id (PK)</li><li>user_id (FK → USERS.user_id)</li><li>title</li><li>message</li><li>type</li><li>related_id</li><li>related_type</li>
+      <li>is_read</li><li>created_at</li><li>read_at</li><li>updated_at</li>
+    </ul></section>
+    <section class="relation"><h2>AUDIT_LOGS</h2><ul>
+      <li>audit_id (PK)</li><li>user_id (FK → USERS.user_id)</li><li>action</li><li>module</li><li>description</li><li>ip_address</li><li>created_at</li><li>updated_at</li>
+    </ul></section>
+  </main>
+  <p class="note"><strong>2NF check:</strong> every listed relation has a single-column primary key. No composite candidate key is established by the source schema, so no partial dependency is evidenced and no further table split is justified at this stage. The relations remain separate as they were in corrected 1NF.</p>
+</body>
+</html>
