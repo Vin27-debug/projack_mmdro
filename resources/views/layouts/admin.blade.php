@@ -215,6 +215,24 @@
             display: none;
         }
 
+        .admin-reports-nav summary > i {
+            display: none;
+        }
+
+        @media (min-width: 992px) {
+            .admin-sidebar:not(:hover):not(:focus-within) .admin-reports-nav summary {
+                justify-content: center;
+                padding: 0;
+                color: rgba(255, 255, 255, 0.72);
+                cursor: pointer;
+            }
+
+            .admin-sidebar:not(:hover):not(:focus-within) .admin-reports-nav summary > i {
+                display: block;
+                font-size: 1.05rem;
+            }
+        }
+
         .admin-nav-group summary::after {
             content: '\F282';
             margin-left: auto;
@@ -796,7 +814,10 @@ return Route::has($name) ? route($name) : '#';
                 </details>
 
                 <details class="admin-nav-group admin-reports-nav" {{ request()->routeIs('admin.reports.*') ? 'open' : '' }}>
-                    <summary><span>Reports</span></summary>
+                    <summary aria-label="Reports" title="Reports">
+                        <i class="bi bi-bar-chart-line" aria-hidden="true"></i>
+                        <span>Reports</span>
+                    </summary>
 
                     <nav class="nav flex-column">
                         <a href="{{ $adminRoute('admin.reports.center') }}"

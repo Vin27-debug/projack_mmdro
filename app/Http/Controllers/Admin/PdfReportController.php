@@ -46,7 +46,9 @@ class PdfReportController extends Controller
             compact('incidents')
         );
 
-        return $pdf->stream('incident-report.pdf');
+        return view('admin.reports.pdf-view', [
+            'pdfData' => base64_encode($pdf->output()),
+        ]);
     }
 
     public function downloadReport()

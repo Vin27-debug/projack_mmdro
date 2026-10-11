@@ -22,17 +22,49 @@ class AdminModuleRoutesTest extends TestCase
 
         $this->actingAs($admin);
 
-        $this->get('/admin/dashboard')
+        $dashboard = $this->get('/admin/dashboard')
             ->assertOk()
-            ->assertSee('<summary><span>Reports</span></summary>', false)
+            ->assertSee('<summary aria-label="Reports" title="Reports">', false)
+            ->assertSee('<span>Reports</span>', false)
+            ->assertSee('bi bi-bar-chart-line', false)
             ->assertSee('class="admin-nav-group admin-reports-nav"', false)
             ->assertDontSee('class="admin-nav-group admin-reports-nav" open', false)
+            ->assertSee('Reports Center')
+            ->assertSee('Incident Reports')
+            ->assertSee('Driver Performance')
+            ->assertSee('Response Time Analytics')
+            ->assertSee('Vehicle Utilization')
+            ->assertSee('PDF Reports')
             ->assertSee(route('admin.reports.center'), false)
             ->assertSee(route('admin.reports.index'), false)
             ->assertSee(route('admin.reports.driver-performance'), false)
             ->assertSee(route('admin.reports.response-time'), false)
             ->assertSee(route('admin.reports.vehicle-utilization'), false)
             ->assertSee(route('admin.reports.pdf.view'), false);
+
+        $dashboardHtml = $dashboard->getContent();
+        preg_match_all(
+            '/<details\b(?=[^>]*\badmin-reports-nav\b)[^>]*>(.*?)<\/details>/si',
+            $dashboardHtml,
+            $reportsGroups
+        );
+
+        $this->assertCount(1, $reportsGroups[0], 'The rendered sidebar should contain one Reports group.');
+
+        foreach ([
+            'admin.reports.center',
+            'admin.reports.index',
+            'admin.reports.driver-performance',
+            'admin.reports.response-time',
+            'admin.reports.vehicle-utilization',
+            'admin.reports.pdf.view',
+        ] as $routeName) {
+            $this->assertStringContainsString(
+                'href="' . route($routeName) . '"',
+                $reportsGroups[1][0],
+                "The Reports group should contain the {$routeName} link."
+            );
+        }
 
         $this->get('/admin/operations-center')->assertOk();
         $this->get('/admin/audit-logs')->assertOk();
@@ -78,7 +110,13 @@ class AdminModuleRoutesTest extends TestCase
             ->assertSee('class="admin-nav-group admin-reports-nav" open', false)
             ->assertSee('href="' . route('admin.reports.vehicle-utilization') . '"', false)
             ->assertSee('class="nav-link active"', false);
-        $this->get('/admin/reports/pdf/view')->assertOk();
+        $this->get('/admin/reports/pdf/view')
+            ->assertOk()
+            ->assertSee('class="admin-nav-group admin-reports-nav" open', false)
+            ->assertSee('href="' . route('admin.reports.pdf.view') . '"', false)
+            ->assertSee('class="nav-link active"', false)
+            ->assertSee('Incident report PDF preview', false)
+            ->assertSee('href="' . route('admin.reports.pdf') . '"', false);
         $this->get(route('admin.reports.pdf'))->assertOk();
         $this->get(route('admin.reports.center.export.pdf'))->assertOk();
         $this->get(route('admin.reports.center.export.excel'))->assertOk();

@@ -58,31 +58,6 @@
                         Vehicle Maintenance
                     </a>
 
-                    <a href="{{ route('admin.reports.index') }}"
-                        class="list-group-item list-group-item-action">
-                        Incident Reports
-                    </a>
-
-                    <a href="{{ route('admin.reports.driver-performance') }}"
-                        class="list-group-item list-group-item-action">
-                        Driver Performance
-                    </a>
-
-                    <a href="{{ route('admin.reports.response-time') }}"
-                        class="list-group-item list-group-item-action">
-                        Response Time
-                    </a>
-
-                    <a href="{{ route('admin.reports.vehicle-utilization') }}"
-                        class="list-group-item list-group-item-action">
-                        Vehicle Utilization
-                    </a>
-
-                    <a href="{{ route('admin.reports.pdf.view') }}"
-                        class="list-group-item list-group-item-action">
-                        PDF Reports
-                    </a>
-
                 </div>
 
             </div>
