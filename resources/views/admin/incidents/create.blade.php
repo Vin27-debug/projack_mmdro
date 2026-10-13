@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends(auth()->user()->hasRole('super-admin') ? 'layouts.superadmin' : 'layouts.admin')
 
 @section('content')
 
@@ -44,7 +44,7 @@
 <div class="container">
     <h1 class="mb-4">Create Incident</h1>
 
-    <form method="POST" action="{{ route('admin.incidents.store') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ route('admin.incidents.store') }}">
         @if($errors->any())
         <div class="alert alert-danger">{{ $errors->first() }}</div>
         @endif
@@ -220,25 +220,6 @@
                 rows="4"
                 class="form-control"
                 placeholder="Describe the incident...">{{ old('description') }}</textarea>
-        </div>
-
-        <div class="mb-4">
-            <label for="attachments" class="form-label fw-semibold">
-                Photos / Documents
-            </label>
-
-            <input type="file"
-                id="attachments"
-                name="attachments[]"
-                class="form-control"
-                multiple
-                accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx">
-
-            <div class="form-text">
-                Attach up to 10 official photos or documents.
-                Maximum 10 MB per file.
-                Attachments are retained with the incident record.
-            </div>
         </div>
 
         <button type="submit" class="btn btn-success">

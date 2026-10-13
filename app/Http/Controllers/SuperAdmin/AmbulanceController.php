@@ -5,7 +5,9 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\Ambulance;
 use App\Models\Dispatch;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class AmbulanceController extends Controller
 {
@@ -29,18 +31,15 @@ class AmbulanceController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'plate_number' => 'required|unique:ambulances',
-            'vehicle_name' => 'required',
-            'vehicle_type' => 'required',
+        $data = $request->validate([
+            'plate_number' => ['required', 'string', 'max:255', 'unique:ambulances,plate_number'],
+            'vehicle_name' => ['required', 'string', 'max:255'],
+            'vehicle_type' => ['required', Rule::in(Ambulance::VALID_TYPES)],
         ]);
 
-        Ambulance::create([
-            'plate_number' => $request->plate_number,
-            'vehicle_name' => $request->vehicle_name,
-            'vehicle_type' => $request->vehicle_type,
-            'status' => 'available',
-        ]);
+        $data['status'] = Ambulance::STATUS_AVAILABLE;
+        $vehicle = Ambulance::create($data);
+        AuditService::log('created', 'Vehicle', sprintf('Vehicle ID %d added as %s.', $vehicle->id, $vehicle->vehicle_type));
 
         return redirect()
             ->route('superadmin.ambulances.index')
@@ -63,11 +62,12 @@ class AmbulanceController extends Controller
         $validated = $request->validate([
             'plate_number' => 'required',
             'vehicle_name' => 'required',
-            'vehicle_type' => 'required|in:ambulance,rescue_van,fire_truck',
+            'vehicle_type' => ['required', Rule::in(Ambulance::VALID_TYPES)],
             'status' => 'required|in:available,on_duty,maintenance',
         ]);
 
         $ambulance->update($validated);
+        AuditService::log('updated', 'Vehicle', sprintf('Vehicle ID %d updated. Changed fields: %s.', $ambulance->id, implode(', ', array_keys($ambulance->getChanges()))));
 
         return redirect()
             ->route('superadmin.ambulances.index')
@@ -86,6 +86,7 @@ class AmbulanceController extends Controller
             'archived_at' => now(),
             'archived_by' => auth()->id(),
         ]);
+        AuditService::log('archived', 'Vehicle', sprintf('Vehicle ID %d archived.', $ambulance->id));
 
         return back()
             ->with('success', 'Vehicle archived. Historical dispatch and maintenance records remain available.');
@@ -99,6 +100,7 @@ class AmbulanceController extends Controller
             'archived_at' => null,
             'archived_by' => null,
         ]);
+        AuditService::log('restored', 'Vehicle', sprintf('Vehicle ID %d restored.', $ambulance->id));
 
         return back()->with('success', 'Vehicle restored.');
     }

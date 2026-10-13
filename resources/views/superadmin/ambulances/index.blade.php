@@ -6,7 +6,7 @@
     <div>
         <h2 class="fw-bold mb-1 text-danger">Vehicle Fleet</h2>
         <p class="text-muted mb-0">
-            Manage ambulance availability, maintenance status, and fleet readiness.
+            Manage vehicle availability, maintenance, and fleet readiness.
         </p>
     </div>
 
@@ -15,7 +15,7 @@
             {{ $archived ? 'Active Vehicles' : 'Archived Vehicles' }}
         </a>
         @unless($archived)
-        <a href="{{ route('superadmin.ambulances.create') }}" class="btn btn-danger">Add Ambulance</a>
+        <a href="{{ route('superadmin.ambulances.create') }}" class="btn btn-danger">Add  Vehicle</a>
         @endunless
     </div>
 </div>
@@ -81,7 +81,7 @@
                             <div class="d-flex gap-2">
 
                                 @if($archived)
-                                <form method="POST" action="{{ route('superadmin.ambulances.restore', $ambulance) }}">
+                                <form method="POST" action="{{ route('superadmin.ambulances.restore', $ambulance) }}" onsubmit="return confirm('Restore this vehicle to the active fleet?');">
                                     @csrf
                                     <button type="submit" class="btn btn-sm btn-outline-success">Restore</button>
                                 </form>
@@ -94,7 +94,8 @@
 
                                 <form
                                     action="{{ route('superadmin.ambulances.archive', $ambulance->id) }}"
-                                    method="POST">
+                                    method="POST"
+                                    onsubmit="return confirm('Archive this vehicle? Historical dispatch records will remain available.');">
                                     @csrf
 
                                     <button

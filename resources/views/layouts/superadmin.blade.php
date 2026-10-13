@@ -609,6 +609,42 @@
                 padding: 1rem 1.25rem 2rem;
             }
         }
+
+        .super-layout {
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .super-sidebar .nav-link {
+            font-size: 0.95rem;
+        }
+
+        .super-nav-group summary {
+            font-size: 0.8125rem;
+        }
+
+        .super-content .form-label {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .super-content .form-text,
+        .super-content .text-muted,
+        .super-content .small,
+        .super-content .table th,
+        .super-content .table td {
+            font-size: max(0.875rem, 1em);
+        }
+
+        .super-content .btn {
+            min-height: 2.5rem;
+            font-size: 1rem;
+        }
+
+        .super-content .btn-sm {
+            min-height: 2.25rem;
+            font-size: 0.875rem;
+        }
     </style>
 </head>
 
@@ -638,7 +674,7 @@
                 <details class="super-nav-group" open>
                     <summary><span>Fleet</span></summary>
                     <nav class="nav flex-column">
-                        <a href="{{ route('superadmin.ambulances.index') }}" class="nav-link {{ request()->routeIs('superadmin.ambulances.*') ? 'active' : '' }}"><i class="bi bi-truck"></i><span class="nav-label">Ambulances / Vehicles</span></a>
+                        <a href="{{ route('superadmin.ambulances.index') }}" class="nav-link {{ request()->routeIs('superadmin.ambulances.*') ? 'active' : '' }}"><i class="bi bi-truck"></i><span class="nav-label">Vehicles</span></a>
 
                     </nav>
                 </details>

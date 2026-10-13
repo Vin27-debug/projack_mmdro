@@ -6,6 +6,7 @@ use App\Models\Ambulance;
 use App\Models\Driver;
 use App\Models\GpsLocation;
 use App\Models\User;
+use App\Models\VulnerableArea;
 use App\Models\VehicleDriverAssignment;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -15,6 +16,169 @@ use Tests\TestCase;
 class GpsLocationFreshnessTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_live_map_uses_latest_recorded_gps_location_and_excludes_archived_vehicles(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-02 12:00:00'));
+        $admin = User::factory()->create(['status' => 'approved']);
+        $admin->assignRole(Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']));
+
+        $driverUser = User::factory()->create(['status' => 'approved']);
+        $driver = Driver::create([
+            'user_id' => $driverUser->id,
+            'badge_id' => 'GPS-ORDER-' . $driverUser->id,
+            'contact_number' => '09123456789',
+            'license_number' => 'GPS-ORDER-LICENSE-' . $driverUser->id,
+            'license_expiry' => '2030-01-01',
+            'status' => Driver::STATUS_AVAILABLE,
+        ]);
+        $activeAmbulance = Ambulance::create([
+            'plate_number' => 'GPS-ORDER-ACTIVE-' . $driver->id,
+            'vehicle_name' => 'GPS Order Active Unit',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_AVAILABLE,
+        ]);
+        Ambulance::create([
+            'plate_number' => 'GPS-ORDER-ARCHIVED-' . $driver->id,
+            'vehicle_name' => 'GPS Order Archived Unit',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_AVAILABLE,
+            'archived_at' => now(),
+        ]);
+        VehicleDriverAssignment::create([
+            'driver_id' => $driver->id,
+            'ambulance_id' => $activeAmbulance->id,
+            'status' => 'active',
+            'assigned_at' => now(),
+        ]);
+
+        GpsLocation::create([
+            'driver_id' => $driver->id,
+            'latitude' => 15.5,
+            'longitude' => 120.9,
+            'recorded_at' => now()->subSeconds(30),
+        ]);
+        GpsLocation::create([
+            'driver_id' => $driver->id,
+            'latitude' => 15.4,
+            'longitude' => 120.8,
+            'recorded_at' => now()->subSeconds(120),
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->getJson(route('admin.dashboard.live-command-map'))
+            ->assertOk();
+
+        $vehicles = collect($response->json('ambulances'))->keyBy('name');
+        $this->assertCount(1, $vehicles);
+        $this->assertArrayNotHasKey('GPS Order Archived Unit', $vehicles->all());
+        $this->assertSame(15.5, $vehicles['GPS Order Active Unit']['latitude']);
+        $this->assertSame('2026-10-02T11:59:30.000000Z', $vehicles['GPS Order Active Unit']['recorded_at']);
+        $this->assertSame(15.5, $response->json('drivers.0.latitude'));
+    }
+
+    public function test_live_map_does_not_return_future_gps_coordinates_for_markers(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-02 12:00:00'));
+        $admin = User::factory()->create(['status' => 'approved']);
+        $admin->assignRole(Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']));
+
+        $driverUser = User::factory()->create(['status' => 'approved']);
+        $driver = Driver::create([
+            'user_id' => $driverUser->id,
+            'badge_id' => 'GPS-FUTURE-MARKER-' . $driverUser->id,
+            'contact_number' => '09123456789',
+            'license_number' => 'GPS-FUTURE-MARKER-LICENSE-' . $driverUser->id,
+            'license_expiry' => '2030-01-01',
+            'status' => Driver::STATUS_AVAILABLE,
+        ]);
+        $ambulance = Ambulance::create([
+            'plate_number' => 'GPS-FUTURE-MARKER-' . $driver->id,
+            'vehicle_name' => 'Future Timestamp Unit',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_AVAILABLE,
+        ]);
+        VehicleDriverAssignment::create([
+            'driver_id' => $driver->id,
+            'ambulance_id' => $ambulance->id,
+            'status' => 'active',
+            'assigned_at' => now(),
+        ]);
+        GpsLocation::create([
+            'driver_id' => $driver->id,
+            'latitude' => 15.4866,
+            'longitude' => 120.9675,
+            'recorded_at' => now()->addMinute(),
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->getJson(route('admin.dashboard.live-command-map'))
+            ->assertOk();
+
+        $unit = collect($response->json('ambulances'))->firstWhere('name', 'Future Timestamp Unit');
+        $driverLocation = collect($response->json('drivers'))->firstWhere('id', $driver->id);
+        $this->assertSame('invalid', $unit['gps_status']);
+        $this->assertNull($unit['latitude']);
+        $this->assertNull($unit['longitude']);
+        $this->assertSame('invalid', $driverLocation['gps_status']);
+        $this->assertNull($driverLocation['latitude']);
+        $this->assertNull($driverLocation['longitude']);
+
+        $this->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee("if (getGpsFreshness(item).status === 'invalid') return false;", false);
+    }
+
+    public function test_live_map_selects_highest_id_when_latest_recorded_at_is_tied(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-02 12:00:00'));
+        $admin = User::factory()->create(['status' => 'approved']);
+        $admin->assignRole(Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']));
+
+        $driverUser = User::factory()->create(['status' => 'approved']);
+        $driver = Driver::create([
+            'user_id' => $driverUser->id,
+            'badge_id' => 'GPS-TIED-TIMESTAMP-' . $driverUser->id,
+            'contact_number' => '09123456789',
+            'license_number' => 'GPS-TIED-TIMESTAMP-LICENSE-' . $driverUser->id,
+            'license_expiry' => '2030-01-01',
+            'status' => Driver::STATUS_AVAILABLE,
+        ]);
+        $ambulance = Ambulance::create([
+            'plate_number' => 'GPS-TIED-TIMESTAMP-' . $driver->id,
+            'vehicle_name' => 'Tied Timestamp Unit',
+            'vehicle_type' => 'ambulance',
+            'status' => Ambulance::STATUS_AVAILABLE,
+        ]);
+        VehicleDriverAssignment::create([
+            'driver_id' => $driver->id,
+            'ambulance_id' => $ambulance->id,
+            'status' => 'active',
+            'assigned_at' => now(),
+        ]);
+        $latestTimestamp = now()->subSeconds(30);
+        GpsLocation::create([
+            'driver_id' => $driver->id,
+            'latitude' => 15.4,
+            'longitude' => 120.8,
+            'recorded_at' => $latestTimestamp,
+        ]);
+        $expectedLatestRow = GpsLocation::create([
+            'driver_id' => $driver->id,
+            'latitude' => 15.5,
+            'longitude' => 120.9,
+            'recorded_at' => $latestTimestamp,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->getJson(route('admin.dashboard.live-command-map'))
+            ->assertOk();
+
+        $unit = collect($response->json('ambulances'))->firstWhere('name', 'Tied Timestamp Unit');
+        $this->assertSame('fresh', $unit['gps_status']);
+        $this->assertSame((float) $expectedLatestRow->latitude, $unit['latitude']);
+        $this->assertSame((float) $expectedLatestRow->longitude, $unit['longitude']);
+    }
 
     public function test_live_map_returns_timestamp_and_gps_freshness_for_each_vehicle(): void
     {
@@ -87,6 +251,8 @@ class GpsLocationFreshnessTest extends TestCase
         $this->assertSame('missing', $vehicles['Missing Unit']['gps_status']);
         $this->assertNull($vehicles['Missing Unit']['latitude']);
         $this->assertSame('invalid', $vehicles['Future Unit']['gps_status']);
+        $this->assertNull($vehicles['Future Unit']['latitude']);
+        $this->assertNull($vehicles['Future Unit']['longitude']);
         $this->assertSame(15.4866, $vehicles['Stale Unit']['latitude']);
 
         $monitoringVehicles = collect($this->getJson(route('admin.gps.locations'))->json())
@@ -123,6 +289,47 @@ class GpsLocationFreshnessTest extends TestCase
         $this->assertSame('invalid', $metadata['gps_status']);
         $this->assertNull($metadata['recorded_at']);
         $this->assertNull($metadata['gps_age_seconds']);
+    }
+
+    public function test_live_command_map_includes_active_geolocated_vulnerable_areas(): void
+    {
+        $role = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $admin = User::factory()->create(['status' => 'approved']);
+        $admin->assignRole($role);
+
+        VulnerableArea::create([
+            'name' => 'Riverside Community',
+            'area_type' => 'Flood-prone community',
+            'address' => 'Riverside barangay',
+            'household_count' => 18,
+            'population_count' => 64,
+            'vulnerability_level' => 'High',
+            'latitude' => 15.49,
+            'longitude' => 120.97,
+            'status' => 'active',
+        ]);
+
+        VulnerableArea::create([
+            'name' => 'Inactive Area',
+            'area_type' => 'Household Cluster',
+            'address' => 'Inactive barangay',
+            'household_count' => 1,
+            'population_count' => 2,
+            'vulnerability_level' => 'Critical',
+            'latitude' => 15.5,
+            'longitude' => 120.98,
+            'status' => 'inactive',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->getJson(route('admin.dashboard.live-command-map'))
+            ->assertOk();
+
+        $areas = $response->json('vulnerable_areas');
+        $this->assertCount(1, $areas);
+        $this->assertSame('Riverside Community', $areas[0]['name']);
+        $this->assertSame('High', $areas[0]['vulnerability_level']);
+        $this->assertSame(15.49, $areas[0]['latitude']);
     }
 
     protected function tearDown(): void

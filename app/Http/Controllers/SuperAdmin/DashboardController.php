@@ -2,39 +2,12 @@
 
 namespace App\Http\Controllers\SuperAdmin;
 
-use App\Http\Controllers\Controller;
-use App\Models\Ambulance;
-use App\Models\Driver;
-use App\Models\Incident;
-use App\Models\PanicAlert;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 
-class DashboardController extends Controller
+class DashboardController extends AdminDashboardController
 {
-    public function index()
+    protected function dashboardView(): string
     {
-        $stats = [
-            'total_incidents' => Incident::count(),
-            'pending_incidents' => Incident::where('status', 'pending')->count(),
-            'dispatched_incidents' => Incident::where('status', 'dispatched')->count(),
-            'completed_incidents' => Incident::where('status', 'completed')->count(),
-            'total_drivers' => Driver::notArchived()->count(),
-            'available_ambulances' => Ambulance::available()->count(),
-        ];
-
-        $recentIncidents = Incident::latest()->take(5)->get();
-
-        $activePanicAlerts = PanicAlert::with('driver.user')
-            ->where('resolved', false)
-            ->latest()
-            ->get();
-
-        return view(
-            'superadmin.dashboard',
-            compact(
-                'stats',
-                'recentIncidents',
-                'activePanicAlerts'
-            )
-        );
+        return 'superadmin.dashboard';
     }
 }

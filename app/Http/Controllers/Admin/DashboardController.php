@@ -12,14 +12,16 @@ use App\Models\Dispatch;
 use App\Models\Notification;
 use App\Models\AuditLog;
 use App\Models\GpsLocation;
+use App\Models\VulnerableArea;
 use App\Services\GpsFreshnessService;
+use App\Services\DispatchRecommendationService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(DispatchRecommendationService $dispatchRecommendations)
     {
 
 
@@ -38,12 +40,20 @@ class DashboardController extends Controller
             ->pluck('count', 'month');
 
         $incidentList = Incident::latest()->get();
-        $ambulanceList = Ambulance::notArchived()->latest()->get();
+        $totalFleet = Ambulance::notArchived()->count();
 
-        $totalIncidents = Incident::query()->count();
-        $activeIncidents = Incident::query()->whereNotIn('status', ['completed', 'closed', 'cancelled'])->count();
-        $completedIncidents = Incident::query()->whereIn('status', ['completed', 'closed'])->count();
-        $closedIncidents = Incident::query()->where('status', 'closed')->count();
+        $totalIncidents = Incident::query()->notArchived()->count();
+        $activeIncidents = Incident::query()->notArchived()->open()->count();
+        $priorityIncidents = Incident::query()->notArchived()->open()
+            ->whereIn('priority', [Incident::PRIORITY_HIGH, Incident::PRIORITY_CRITICAL])
+            ->count();
+        $incidentStatusCounts = Incident::query()
+            ->notArchived()
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+        $completedIncidents = Incident::query()->notArchived()->where('status', Incident::STATUS_COMPLETED)->count();
+        $closedIncidents = Incident::query()->notArchived()->where('status', Incident::STATUS_CLOSED)->count();
 
         $incidentChart = [
             'Active' => $activeIncidents,
@@ -52,16 +62,27 @@ class DashboardController extends Controller
 
         $totalDrivers = Driver::notArchived()->count();
 
-        $availableDrivers = Driver::dispatchEligible()->count();
+        $availableDrivers = $dispatchRecommendations->eligibleDrivers()->count();
 
-        $availableVehicles = Ambulance::notArchived()->whereIn('status', ['available', 'ready', 'standby'])->count();
+        $availableVehicles = Ambulance::available()->count();
+        $respondingVehicles = Ambulance::notArchived()
+            ->where('status', '!=', Ambulance::STATUS_MAINTENANCE)
+            ->where(function ($query): void {
+                $query->where('status', Ambulance::STATUS_ON_DUTY)
+                    ->orWhereHas('dispatches', fn($dispatches) => $dispatches
+                        ->active()
+                        ->whereHas('incident', fn($incident) => $incident->notArchived()));
+            })
+            ->count();
 
         $maintenanceVehicles = Ambulance::notArchived()->where(
             'status',
             'maintenance'
         )->count();
 
-        $activeDispatches = Dispatch::whereNotIn('status', ['completed', 'cancelled'])->count();
+        $activeDispatches = Dispatch::active()
+            ->whereHas('incident', fn($query) => $query->notArchived())
+            ->count();
 
         $completedDispatches = Dispatch::where(
             'status',
@@ -138,33 +159,51 @@ class DashboardController extends Controller
             ->get();
 
         // Detailed dispatch list for operations panel (preserve $activeDispatches as count)
-        $dispatchList = Dispatch::with(['incident', 'vehicle', 'driver'])
-            ->latest()
+        $dispatchList = Dispatch::active()
+            ->whereHas('incident', fn($query) => $query->notArchived())
+            ->with(['incident', 'vehicle', 'driver.user'])
+            ->latest('updated_at')
+            ->take(6)
             ->get();
 
         // Collections for dashboard panels (separate from integer counts used in KPI cards)
         $incidents = Incident::with(['ambulance'])->latest()->take(20)->get();
         $ambulances = Ambulance::latest()->get();
         $drivers = Driver::latest()->get();
-        $recentIncidents = Incident::latest()->take(8)->get();
+        $recentIncidents = Incident::notArchived()->open()->latest()->take(8)->get();
         $priorityAdvisories = Incident::query()
-            ->with('dispatches')
+            ->with(['dispatches' => fn($query) => $query->active()->latest('created_at')])
+            ->notArchived()
             ->open()
             ->whereIn('priority', [Incident::PRIORITY_CRITICAL, Incident::PRIORITY_HIGH])
-            ->latest()
+            ->orderByRaw("CASE priority WHEN 'Critical' THEN 0 WHEN 'High' THEN 1 ELSE 2 END")
+            ->latest('created_at')
             ->take(6)
             ->get();
 
+        $stats = [
+            'total_incidents' => $totalIncidents,
+            'pending_incidents' => (int) ($incidentStatusCounts[Incident::STATUS_PENDING] ?? 0),
+            'dispatched_incidents' => (int) ($incidentStatusCounts[Incident::STATUS_DISPATCHED] ?? 0),
+            'completed_incidents' => $completedIncidents,
+            'total_drivers' => $totalDrivers,
+            'available_ambulances' => $availableVehicles,
+        ];
+
         return view(
-            'admin.dashboard',
+            $this->dashboardView(),
             compact(
                 'totalIncidents',
                 'activeIncidents',
+                'priorityIncidents',
+                'incidentStatusCounts',
                 'completedIncidents',
                 'closedIncidents',
                 'totalDrivers',
                 'availableDrivers',
+                'totalFleet',
                 'availableVehicles',
+                'respondingVehicles',
                 'maintenanceVehicles',
                 'activeDispatches',
                 'completedDispatches',
@@ -180,14 +219,19 @@ class DashboardController extends Controller
                 'recentNotifications',
                 'dispatchList',
                 'incidentList',
-                'ambulanceList',
                 'incidents',
                 'ambulances',
                 'drivers',
                 'recentIncidents',
-                'priorityAdvisories'
+                'priorityAdvisories',
+                'stats'
             )
         );
+    }
+
+    protected function dashboardView(): string
+    {
+        return 'admin.dashboard';
     }
 
     public function counters()
@@ -229,17 +273,21 @@ class DashboardController extends Controller
     {
         // Get latest GPS location per driver more efficiently using subquery
         $latestDriverLocations = GpsLocation::with('driver.user')
+            ->whereHas('driver', fn($query) => $query->notArchived())
             ->whereIn('id', function ($query) {
-                $query->selectRaw('MAX(id)')
-                    ->from('gps_locations')
-                    ->groupBy('driver_id');
+                $query->selectRaw('MAX(candidate.id)')
+                    ->from('gps_locations as candidate')
+                    ->whereNotNull('candidate.recorded_at')
+                    ->whereRaw('candidate.recorded_at = (SELECT MAX(latest.recorded_at) FROM gps_locations AS latest WHERE latest.driver_id = candidate.driver_id)')
+                    ->groupBy('candidate.driver_id');
             })
             ->get()
             ->keyBy('driver_id');
 
-        $ambulances = Ambulance::with([
+        $ambulances = Ambulance::notArchived()->with([
             'driverAssignments' => fn($query) => $query
                 ->where('status', 'active')
+                ->whereHas('driver', fn($driverQuery) => $driverQuery->notArchived())
                 ->with('driver.user')
                 ->latest('assigned_at'),
         ])->get()->map(function ($ambulance) use ($latestDriverLocations, $gpsFreshness) {
@@ -250,13 +298,14 @@ class DashboardController extends Controller
                 $driver?->status
             );
             $gpsMetadata = $gpsFreshness->metadata($location);
+            $hasValidGpsTimestamp = $gpsMetadata['gps_status'] !== 'invalid';
 
             return [
                 'id' => $ambulance->id,
                 'name' => $ambulance->vehicle_name ?? 'Ambulance',
                 'plate_number' => $ambulance->plate_number,
-                'latitude' => $location?->latitude !== null ? (float) $location->latitude : null,
-                'longitude' => $location?->longitude !== null ? (float) $location->longitude : null,
+                'latitude' => $hasValidGpsTimestamp && $location?->latitude !== null ? (float) $location->latitude : null,
+                'longitude' => $hasValidGpsTimestamp && $location?->longitude !== null ? (float) $location->longitude : null,
                 'status' => $ambulance->status ?? 'available',
                 'status_key' => $mapStatus,
                 'driver_name' => $driver?->user?->name ?? 'Unassigned',
@@ -268,7 +317,7 @@ class DashboardController extends Controller
             ];
         });
 
-        $incidents = Incident::whereNotIn('status', ['completed', 'closed'])
+        $incidents = Incident::query()->notArchived()->open()
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->latest()
@@ -303,13 +352,14 @@ class DashboardController extends Controller
             $driverStatus = strtolower((string) ($driver->status ?? 'available'));
             $mapStatus = $this->resolveMapStatus($driverStatus, $driverStatus);
             $gpsMetadata = $gpsFreshness->metadata($location);
+            $hasValidGpsTimestamp = $gpsMetadata['gps_status'] !== 'invalid';
 
             return [
                 'id' => $driver->id,
                 'driver_name' => $driver->user?->name ?? 'Driver',
                 'ambulance_unit' => $ambulance?->vehicle_name ?? 'Unassigned',
-                'latitude' => (float) $location->latitude,
-                'longitude' => (float) $location->longitude,
+                'latitude' => $hasValidGpsTimestamp ? (float) $location->latitude : null,
+                'longitude' => $hasValidGpsTimestamp ? (float) $location->longitude : null,
                 'status' => $driver->status ?? 'available',
                 'status_key' => $mapStatus,
                 'speed_kmh' => $location->speed_kmh,
@@ -320,10 +370,27 @@ class DashboardController extends Controller
             ];
         })->filter();
 
+        $vulnerableAreas = VulnerableArea::query()
+            ->where('status', 'active')
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->get()
+            ->map(fn(VulnerableArea $area) => [
+                'id' => $area->id,
+                'name' => $area->name,
+                'address' => $area->address,
+                'vulnerability_level' => $area->vulnerability_level,
+                'area_type' => $area->area_type,
+                'latitude' => (float) $area->latitude,
+                'longitude' => (float) $area->longitude,
+                'type_label' => 'vulnerable_area',
+            ]);
+
         return response()->json([
             'ambulances' => $ambulances->values(),
             'incidents' => $incidents->values(),
             'drivers' => $drivers->values(),
+            'vulnerable_areas' => $vulnerableAreas->values(),
             'generated_at' => now()->toISOString(),
         ]);
     }

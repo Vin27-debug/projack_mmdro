@@ -243,7 +243,8 @@ Route::middleware([
         ->name('dispatch.center');
 
     Route::post('/dispatches/{incident}/assign', [DispatchController::class, 'assign'])
-        ->name('admin.dispatches.assign');
+        ->name('admin.dispatches.assign')
+        ->middleware('admin-incident-write');
 
     Route::get('/panic-alerts', [AdminPanicAlertController::class, 'index'])
         ->name('admin.panic.index');
@@ -305,29 +306,38 @@ Route::middleware([
     Route::get('/admin/incidents', [AdminIncidentController::class, 'index'])
         ->name('admin.incidents.index');
     Route::get('/admin/incidents/create', [AdminIncidentController::class, 'create'])
-        ->name('admin.incidents.create');
+        ->name('admin.incidents.create')
+        ->middleware('admin-incident-write');
     Route::post('/admin/incidents', [AdminIncidentController::class, 'store'])
-        ->name('admin.incidents.store');
+        ->name('admin.incidents.store')
+        ->middleware('admin-incident-write');
     Route::get('/admin/incidents/history', [IncidentHistoryController::class, 'index'])
         ->name('admin.incidents.history');
     Route::get('/admin/incidents/{incident}', [AdminIncidentController::class, 'show'])
         ->name('admin.incidents.show');
     Route::get('/admin/incidents/{incident}/edit', [AdminIncidentController::class, 'edit'])
-        ->name('admin.incidents.edit');
+        ->name('admin.incidents.edit')
+        ->middleware('admin-incident-write');
     Route::put('/admin/incidents/{incident}', [AdminIncidentController::class, 'update'])
-        ->name('admin.incidents.update');
+        ->name('admin.incidents.update')
+        ->middleware('admin-incident-write');
     Route::post('/admin/incidents/{incident}/timestamps/{field}', [AdminIncidentController::class, 'updateTimestamp'])
-        ->name('admin.incidents.timestamp.update');
+        ->name('admin.incidents.timestamp.update')
+        ->middleware('admin-incident-write');
     Route::post('/admin/incidents/{incident}/archive', [AdminIncidentController::class, 'archive'])
-        ->name('admin.incidents.archive');
+        ->name('admin.incidents.archive')
+        ->middleware('admin-incident-write');
     Route::post('/admin/incidents/{incident}/restore', [AdminIncidentController::class, 'restore'])
-        ->name('admin.incidents.restore');
+        ->name('admin.incidents.restore')
+        ->middleware('admin-incident-write');
     Route::get('/admin/incidents/{incident}/attachments/{attachment}/download', [AdminIncidentController::class, 'downloadAttachment'])
         ->name('admin.incidents.attachments.download');
     Route::get('/admin/incidents/{incident}/dispatch', [AdminIncidentController::class, 'dispatchForm'])
-        ->name('admin.incidents.dispatch.form');
+        ->name('admin.incidents.dispatch.form')
+        ->middleware('admin-incident-write');
     Route::post('/admin/incidents/{incident}/dispatch', [AdminIncidentController::class, 'dispatch'])
-        ->name('admin.incidents.dispatch');
+        ->name('admin.incidents.dispatch')
+        ->middleware('admin-incident-write');
 
     Route::get('/admin/incident-reports', [AdminIncidentReportController::class, 'index'])
         ->name('admin.reports.index');
@@ -355,7 +365,8 @@ Route::middleware([
     Route::post('/admin/response-equipment/{responseEquipment}/deactivate', [ResponseEquipmentController::class, 'deactivate'])
         ->name('admin.response-equipment.deactivate');
 
-    Route::resource('dispatches', DispatchController::class);
+    Route::resource('dispatches', DispatchController::class)
+        ->middlewareFor(['create', 'edit', 'store', 'update', 'destroy'], 'admin-incident-write');
 
     Route::get('/admin/vehicle-utilization', [VehicleUtilizationController::class, 'index'])
         ->name('admin.reports.vehicle-utilization');
@@ -390,7 +401,8 @@ Route::middleware([
     Route::resource('nearest-vehicle', NearestVehicleController::class);
 
     Route::post('/admin/incidents/{incident}/auto-dispatch', [AutoDispatchController::class, 'dispatch'])
-        ->name('admin.incidents.auto-dispatch');
+        ->name('admin.incidents.auto-dispatch')
+        ->middleware('admin-incident-write');
 
     Route::get('/dispatch-center', [DispatchController::class, 'index'])
         ->name('dispatch.center');
@@ -481,6 +493,11 @@ Route::middleware([
 
     Route::get('/superadmin/dashboard', [SuperAdminDashboardController::class, 'index'])
         ->name('superadmin.dashboard');
+
+    Route::get('/superadmin/incidents', [AdminIncidentController::class, 'index'])
+        ->name('superadmin.incidents.index');
+    Route::get('/superadmin/incidents/{incident}', [AdminIncidentController::class, 'show'])
+        ->name('superadmin.incidents.show');
 
     Route::get('/superadmin/drivers', [UserApprovalController::class, 'drivers'])
         ->name('superadmin.drivers');

@@ -26,6 +26,7 @@ class DriverLayoutTest extends TestCase
         $this->assertStringContainsString('Navigation', $view);
         $this->assertStringContainsString('Reports', $view);
         $this->assertStringContainsString('Profile', $view);
+        $this->assertStringNotContainsString("route('driver.settings')", $view);
     }
 
     public function test_driver_dashboard_renders_without_blade_errors(): void

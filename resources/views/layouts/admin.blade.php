@@ -711,6 +711,45 @@
                 padding: 1rem 1.25rem 2rem;
             }
         }
+
+        body {
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .admin-sidebar .nav-link {
+            font-size: 0.95rem;
+        }
+
+        .admin-nav-group summary {
+            font-size: 0.8125rem;
+        }
+
+        .admin-content .form-label {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .admin-content .form-text,
+        .admin-content .text-muted,
+        .admin-content .small {
+            font-size: max(0.875rem, 1em);
+        }
+
+        .admin-content .table th,
+        .admin-content .table td {
+            font-size: max(0.875rem, 1em);
+        }
+
+        .admin-content .btn {
+            min-height: 2.5rem;
+            font-size: 1rem;
+        }
+
+        .admin-content .btn-sm {
+            min-height: 2.25rem;
+            font-size: 0.875rem;
+        }
     </style>
 </head>
 

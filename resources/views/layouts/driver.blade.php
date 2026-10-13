@@ -796,6 +796,38 @@
                 padding-top: .25rem;
             }
         }
+
+        .driver-layout {
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .driver-layout .sidebar-link {
+            font-size: 0.95rem;
+        }
+
+        .driver-layout .form-label {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .driver-layout .form-text,
+        .driver-layout .text-muted,
+        .driver-layout .small,
+        .driver-layout .table th,
+        .driver-layout .table td {
+            font-size: max(0.875rem, 1em);
+        }
+
+        .driver-layout .btn {
+            min-height: 2.5rem;
+            font-size: 1rem;
+        }
+
+        .driver-layout .btn-sm {
+            min-height: 2.25rem;
+            font-size: 0.875rem;
+        }
     </style>
 
 

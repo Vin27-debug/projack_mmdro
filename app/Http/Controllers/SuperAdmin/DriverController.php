@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use App\Models\User;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
@@ -47,6 +48,7 @@ class DriverController extends Controller
             'contact_number' => $request->contact_number,
             'status' => 'available',
         ]);
+        AuditService::log('created', 'Driver Account', sprintf('Driver account ID %d created with profile ID %d.', $user->id, $user->driver->id));
 
         return redirect()
             ->route('superadmin.drivers')

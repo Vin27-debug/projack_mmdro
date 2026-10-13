@@ -9,7 +9,7 @@
         <div>
             <h2 class="fw-bold mb-1">Vehicle Management</h2>
             <p class="text-muted mb-0">
-                Manage ambulances, fire trucks, police units, and rescue vehicles.
+                Manage ambulances, rescue vans, and fire trucks.
             </p>
         </div>
 
@@ -244,7 +244,7 @@
 
                                     <p class="small mb-3">
                                         Add your first ambulance, fire truck,
-                                        police unit, or rescue vehicle.
+                                        rescue van, or fire truck.
                                     </p>
 
                                     <a href="{{ route('admin.ambulances.create') }}"

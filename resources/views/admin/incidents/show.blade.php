@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends(auth()->user()->hasRole('super-admin') ? 'layouts.superadmin' : 'layouts.admin')
 
 @section('content')
 
@@ -16,6 +16,17 @@
 
     <div class="d-flex gap-2 flex-wrap">
 
+        <a
+            href="{{ route($readOnly ? 'superadmin.incidents.index' : 'admin.incidents.index') }}"
+            class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Back to Incidents
+        </a>
+
+        @if($readOnly)
+        <span class="badge bg-secondary d-flex align-items-center px-3">VIEW ONLY</span>
+        @endif
+
         <button
             type="button"
             onclick="window.print()"
@@ -24,7 +35,7 @@
             Print Record
         </button>
 
-        @if(!$incident->archived_at)
+        @if(!$readOnly && !$incident->archived_at)
 
         <a
             href="{{ route('admin.incidents.edit', $incident) }}"
@@ -45,12 +56,13 @@
             </button>
         </form>
 
-        @else
+        @elseif($incident->archived_at)
 
         <span class="badge bg-dark d-flex align-items-center px-3">
             ARCHIVED
         </span>
 
+        @if(!$readOnly)
         <form
             method="POST"
             action="{{ route('admin.incidents.restore', $incident) }}">
@@ -61,6 +73,7 @@
                 Restore
             </button>
         </form>
+        @endif
 
         @endif
 
@@ -307,7 +320,7 @@
                     <i class="bi bi-stopwatch me-2"></i>
                     Emergency Time Record
                 </span>
-                @if(auth()->user()?->hasRole(['admin', 'super-admin']))
+                @if(!$readOnly && auth()->user()?->hasRole(['admin', 'super-admin']))
                 <button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#editTimeRecordModal">
                     <i class="bi bi-pencil-square me-1"></i>
                     Edit Time Record
@@ -317,7 +330,7 @@
 
             <div class="card-body">
                 @php
-                $canEditTimestamps = auth()->user()?->hasRole(['admin', 'super-admin']);
+                $canEditTimestamps = !$readOnly && auth()->user()?->hasRole(['admin', 'super-admin']);
                 $latestDispatch = $incident->dispatches->sortByDesc('created_at')->first();
                 $timeLabels = [
                 'Incident Reported' => ['timestamp' => $incident->created_at, 'field' => 'incident-reported'],
@@ -535,6 +548,7 @@
                 {{-- DISPATCH BUTTON --}}
 
                 @if(
+                !$readOnly &&
                 !$incident->archived_at &&
                 in_array($incident->status, [
                 \App\Models\Incident::STATUS_PENDING

@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'not-suspended' => \App\Http\Middleware\EnsureUserNotSuspended::class,
+            'admin-incident-write' => \App\Http\Middleware\EnsureAdminIncidentWriteAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use App\Models\Ambulance;
 use App\Models\VehicleDriverAssignment;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 
 class AssignmentController extends Controller
@@ -47,15 +48,16 @@ class AssignmentController extends Controller
         $ambulance = Ambulance::available()->find($validated['ambulance_id']);
         abort_unless($ambulance, 422, 'Only available vehicles can be assigned.');
 
-        VehicleDriverAssignment::create([
+        $assignment = VehicleDriverAssignment::create([
             'driver_id' => $driver->id,
             'ambulance_id' => $ambulance->id,
             'status' => 'active',
             'assigned_at' => now(),
         ]);
+        AuditService::log('assigned', 'Vehicle Assignment', sprintf('Driver ID %d assigned to vehicle ID %d (assignment ID %d).', $driver->id, $ambulance->id, $assignment->id));
 
         return redirect()
             ->route('assignments.index');
     }
 }
-    
+

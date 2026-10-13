@@ -49,9 +49,161 @@ class DashboardAccessTest extends TestCase
         $response = $this->actingAs($user)->get('/superadmin/dashboard');
 
         $response->assertOk();
-        $response->assertSee('Total Incidents');
-        $response->assertSee('Awaiting response');
-        $response->assertSee('Recent Incidents');
+        $response->assertSee('Command Center');
+        $response->assertSee('System Overview');
+        $response->assertDontSee('Priority Incident Queue');
+        $response->assertSee(route('superadmin.incidents.index'), false);
+        $response->assertSee('<title>MuniResQ Super Admin</title>', false);
+        $response->assertDontSee(route('admin.incidents.create'), false);
+        $response->assertDontSee('Create Incident');
+        $response->assertSee('View Incidents');
+
+        preg_match('/<a href="(' . preg_quote(route('superadmin.incidents.index'), '/') . ')"[^>]*>[\s\S]*?View all/s', $response->getContent(), $viewAllLink);
+        $this->assertSame(route('superadmin.incidents.index'), html_entity_decode($viewAllLink[1] ?? ''));
+
+        $incident = Incident::where('incident_number', 'INC-0001')->firstOrFail();
+        $response->assertSee('#' . $incident->id);
+        $response->assertSee(route('superadmin.incidents.show', $incident), false);
+        $response->assertSee('View details');
+        $response->assertSee('Main Street');
+        $response->assertSee('Medical');
+        $response->assertSee('PENDING');
+        $response->assertSee('Elapsed');
+        preg_match('/<div class="sa-section-heading sa-recent-heading">[\s\S]*?<\/table>/', $response->getContent(), $recentSection);
+        $this->assertNotSame('', $recentSection[0] ?? '');
+        $this->assertDoesNotMatchRegularExpression('/Create Incident|Edit|Delete|Archive|Restore|Dispatch Response/', $recentSection[0]);
+
+        $this->get(route('superadmin.incidents.index'))
+            ->assertOk()
+            ->assertSee('Incident Command')
+            ->assertSee('<title>MuniResQ Super Admin</title>', false)
+            ->assertSee('INC-0001')
+            ->assertSee(route('superadmin.incidents.show', $incident), false)
+            ->assertDontSee('Create Incident')
+            ->assertDontSee(route('admin.incidents.archive', $incident), false);
+
+        $superAdminDetail = $this->get(route('superadmin.incidents.show', $incident));
+        $superAdminDetail
+            ->assertOk()
+            ->assertSee('Incident Details')
+            ->assertSee('VIEW ONLY')
+            ->assertSee('Back to Incidents')
+            ->assertSee(route('superadmin.incidents.index'), false)
+            ->assertDontSee('Create Incident')
+            ->assertDontSee(route('admin.incidents.archive', $incident), false)
+            ->assertDontSee(route('admin.incidents.create'), false)
+            ->assertDontSee('Edit Time Record')
+            ->assertDontSee('Dispatch Response')
+            ->assertSee('<title>MuniResQ Super Admin</title>', false)
+            ->assertSee('INC-0001');
+        $this->assertDoesNotMatchRegularExpression('/<button[^>]*>[\s\S]*?\bArchive\b[\s\S]*?<\/button>/i', $superAdminDetail->getContent());
+    }
+
+    public function test_admin_can_access_the_admin_incidents_listing(): void
+    {
+        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $admin = User::factory()->create(['status' => 'approved']);
+        $admin->assignRole('admin');
+
+        $this->actingAs($admin)
+            ->get(route('admin.incidents.index'))
+            ->assertOk()
+            ->assertSee('Incident Command')
+            ->assertSee('Create Incident')
+            ->assertSee('<title>MuniResQ Admin Panel</title>', false);
+
+        $incident = Incident::create([
+            'incident_number' => 'INC-ADMIN-DETAIL',
+            'reporter_name' => 'Admin Test',
+            'contact_number' => '09120000000',
+            'incident_type' => 'Medical',
+            'location' => 'Admin test location',
+            'description' => 'Existing incident record',
+            'status' => 'pending',
+            'priority' => 'High',
+        ]);
+
+        $this->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee(route('admin.incidents.index'), false)
+            ->assertSee(route('admin.incidents.show', $incident), false)
+            ->assertSee('View details');
+        $this->get(route('admin.incidents.show', $incident))
+            ->assertOk()
+            ->assertSee('<title>MuniResQ Admin Panel</title>', false)
+            ->assertSee('Back to Incidents')
+            ->assertSee(route('admin.incidents.index'), false)
+            ->assertSee('Edit Time Record')
+            ->assertSee('Archive')
+            ->assertSee(route('admin.incidents.archive', $incident), false)
+            ->assertSee('INC-ADMIN-DETAIL');
+        $this->get(route('admin.incidents.create'))
+            ->assertOk()
+            ->assertSee('Create Incident');
+        $this->get(route('superadmin.dashboard'))->assertForbidden();
+    }
+
+    public function test_driver_cannot_access_admin_or_superadmin_incidents_listings(): void
+    {
+        Role::firstOrCreate(['name' => 'driver', 'guard_name' => 'web']);
+        $driver = User::factory()->create(['status' => 'approved']);
+        $driver->assignRole('driver');
+
+        $this->actingAs($driver)->get(route('admin.incidents.index'))->assertForbidden();
+        $this->actingAs($driver)->get(route('superadmin.incidents.index'))->assertForbidden();
+        $incident = Incident::create([
+            'incident_number' => 'INC-DRIVER-DENIED',
+            'reporter_name' => 'Driver Test',
+            'incident_type' => 'Medical',
+            'location' => 'Test location',
+            'description' => 'Driver should not view this record',
+            'status' => 'pending',
+        ]);
+        $this->actingAs($driver)->get(route('superadmin.incidents.show', $incident))->assertForbidden();
+        $this->actingAs($driver)->get(route('admin.dashboard'))->assertForbidden();
+        $this->actingAs($driver)->get(route('superadmin.dashboard'))->assertForbidden();
+    }
+
+    public function test_dashboard_active_and_priority_counts_follow_incident_status_rules(): void
+    {
+        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $admin = User::factory()->create(['status' => 'approved']);
+        $admin->assignRole('admin');
+
+        foreach ([
+            ['INC-ACTIVE', 'pending', 'Critical', null],
+            ['INC-COMPLETE', 'completed', 'High', null],
+            ['INC-CLOSED', 'closed', 'High', null],
+            ['INC-CANCELLED', 'cancelled', 'Critical', null],
+            ['INC-ARCHIVED', 'pending', 'High', now()],
+        ] as [$number, $status, $priority, $archivedAt]) {
+            Incident::create([
+                'incident_number' => $number,
+                'reporter_name' => 'Dashboard Test',
+                'contact_number' => '09120000000',
+                'incident_type' => 'Medical',
+                'location' => 'Test location',
+                'description' => 'Dashboard count test',
+                'status' => $status,
+                'priority' => $priority,
+                'archived_at' => $archivedAt,
+            ]);
+        }
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('data-counter="activeIncidents">1', false)
+            ->assertSee('data-counter="priorityIncidents">1', false)
+            ->assertSee('High / critical incidents')
+            ->assertSee('Open priority cases')
+            ->assertSee('data-status-count="pending"', false)
+            ->assertSee('data-status-count="completed"', false)
+            ->assertSee('data-status-count="closed"', false)
+            ->assertSee('data-status-count="cancelled"', false)
+            ->assertSee('Elapsed')
+            ->assertSee('INC-ACTIVE')
+            ->assertDontSee('INC-ARCHIVED');
     }
 
     public function test_driver_registration_assigns_the_driver_role(): void

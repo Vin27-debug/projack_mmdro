@@ -4,6 +4,7 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -65,6 +66,7 @@ class AdminController extends Controller
         ]);
 
         $admin->assignRole('admin');
+        AuditService::log('created', 'Admin Account', sprintf('Admin account ID %d created by user ID %d.', $admin->id, auth()->id()));
 
         return redirect()
             ->route('admins.index')
@@ -101,6 +103,7 @@ class AdminController extends Controller
         ]);
 
         $user->update($validated);
+        AuditService::log('updated', 'Admin Account', sprintf('Admin account ID %d updated. Changed fields: %s.', $user->id, implode(', ', array_keys($user->getChanges()))));
 
         return redirect()->route('admins.show', $user)->with('success', 'Administrator account updated successfully.');
     }
@@ -109,6 +112,7 @@ class AdminController extends Controller
     {
         $this->ensureAdminAccount($user);
         $user->update(['status' => 'suspended']);
+        AuditService::log('suspended', 'Admin Account', sprintf('Admin account ID %d suspended.', $user->id));
 
         return back()->with('success', 'Administrator account suspended.');
     }

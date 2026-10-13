@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Ambulance;
 use App\Models\Dispatch;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -32,18 +33,15 @@ class AmbulanceController extends Controller
             'vehicle_name' => ['required', 'string', 'max:255'],
             'vehicle_type' => [
                 'required',
-                Rule::in([
-                    'ambulance',
-                    'rescue_van',
-                    'fire_truck',
-                    'police',
-                ]),
+                Rule::in(Ambulance::VALID_TYPES),
             ],
         ]);
 
         $data['status'] = Ambulance::STATUS_AVAILABLE;
 
-        Ambulance::create($data);
+        $ambulance = Ambulance::create($data);
+
+        AuditService::log('created', 'Vehicle', sprintf('Vehicle ID %d added as %s.', $ambulance->id, $data['vehicle_type']));
 
         return redirect()
             ->route('admin.ambulances.index')
@@ -72,12 +70,7 @@ class AmbulanceController extends Controller
             'vehicle_name' => ['required', 'string', 'max:255'],
             'vehicle_type' => [
                 'required',
-                Rule::in([
-                    'ambulance',
-                    'rescue_van',
-                    'fire_truck',
-                    'police',
-                ]),
+                Rule::in(Ambulance::VALID_TYPES),
             ],
             'status' => [
                 'required',
@@ -86,6 +79,7 @@ class AmbulanceController extends Controller
         ]);
 
         $ambulance->update($data);
+        AuditService::log('updated', 'Vehicle', sprintf('Vehicle ID %d updated. Changed fields: %s.', $ambulance->id, implode(', ', array_keys($ambulance->getChanges()))));
 
         return redirect()
             ->route('admin.ambulances.index')
@@ -107,6 +101,7 @@ class AmbulanceController extends Controller
             'archived_at' => now(),
             'archived_by' => auth()->id(),
         ]);
+        AuditService::log('archived', 'Vehicle', sprintf('Vehicle ID %d archived.', $ambulance->id));
 
         return back()->with(
             'success',
@@ -122,6 +117,7 @@ class AmbulanceController extends Controller
             'archived_at' => null,
             'archived_by' => null,
         ]);
+        AuditService::log('restored', 'Vehicle', sprintf('Vehicle ID %d restored.', $ambulance->id));
 
         return back()->with('success', 'Vehicle restored.');
     }

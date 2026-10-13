@@ -1,18 +1,23 @@
-@extends('layouts.admin')
+@extends(auth()->user()->hasRole('super-admin') ? 'layouts.superadmin' : 'layouts.admin')
 
 @section('content')
+@php
+$isSuperAdmin = auth()->user()?->hasRole('super-admin') ?? false;
+$incidentIndexRoute = $isSuperAdmin ? 'superadmin.incidents.index' : 'admin.incidents.index';
+$incidentShowRoute = $isSuperAdmin ? 'superadmin.incidents.show' : 'admin.incidents.show';
+@endphp
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
     <div>
         <h2 class="section-heading mb-1 text-danger">Incident Command</h2>
         <p class="section-excerpt mb-0">Search, manage, dispatch, and archive official disaster incident records.</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="{{ route('admin.incidents.index', ['archived' => $showArchived ? 0 : 1]) }}" class="btn btn-outline-secondary">
+        <a href="{{ route($incidentIndexRoute, ['archived' => $showArchived ? 0 : 1]) }}" class="btn btn-outline-secondary">
             <i class="bi bi-archive"></i> {{ $showArchived ? 'Active Records' : 'Archived Records' }}
         </a>
-        @unless($showArchived)
+        @if(!$isSuperAdmin && !$showArchived)
         <a href="{{ route('admin.incidents.create') }}" class="btn btn-danger">Create Incident</a>
-        @endunless
+        @endif
     </div>
 </div>
 
@@ -22,7 +27,7 @@
 
 <div class="card border-0 shadow-sm rounded-4 mb-4">
     <div class="card-body">
-        <form method="GET" action="{{ route('admin.incidents.index') }}" class="row g-3 align-items-end">
+        <form method="GET" action="{{ route($incidentIndexRoute) }}" class="row g-3 align-items-end">
             <input type="hidden" name="archived" value="{{ $showArchived ? 1 : 0 }}">
             <div class="col-lg-3">
                 <label class="form-label">Search</label>
@@ -69,7 +74,7 @@
                         <th>Location</th>
                         <th>Status</th>
                         <th>Priority</th>
-                        <th>Actions</th>
+            <th>{{ $isSuperAdmin ? 'View' : 'Actions' }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -88,7 +93,8 @@
                         </td>
                         <td>
                             <div class="d-flex flex-wrap gap-1">
-                                <a href="{{ route('admin.incidents.show', $incident) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                <a href="{{ route($incidentShowRoute, $incident) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                @unless($isSuperAdmin)
                                 @if(!$incident->archived_at)
                                 <a href="{{ route('admin.incidents.edit', $incident) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
                                 @if(!in_array($incident->status, ['completed','closed','cancelled'], true))
@@ -99,11 +105,12 @@
                                     <button class="btn btn-sm btn-outline-dark">Archive</button>
                                 </form>
                                 @else
-                                <form method="POST" action="{{ route('admin.incidents.restore', $incident) }}">
+                                <form method="POST" action="{{ route('admin.incidents.restore', $incident) }}" onsubmit="return confirm('Restore this incident record?');">
                                     @csrf
                                     <button class="btn btn-sm btn-outline-success">Restore</button>
                                 </form>
                                 @endif
+                                @endunless
                             </div>
                         </td>
                     </tr>

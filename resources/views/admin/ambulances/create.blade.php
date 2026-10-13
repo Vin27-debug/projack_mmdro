@@ -9,7 +9,7 @@
          <div>
              <h2 class="fw-bold mb-1">Add Vehicle</h2>
              <p class="text-muted mb-0">
-                 Register a new ambulance, rescue vehicle, fire truck, or police unit.
+                 Register an ambulance, rescue van, or fire truck.
              </p>
          </div>
 
@@ -126,10 +126,6 @@
                              Fire Truck
                          </option>
 
-                         <option value="police"
-                             {{ old('vehicle_type') === 'police' ? 'selected' : '' }}>
-                             Police
-                         </option>
                      </select>
 
                      @error('vehicle_type')

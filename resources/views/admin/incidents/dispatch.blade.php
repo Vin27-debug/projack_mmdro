@@ -9,6 +9,10 @@
     {{ $incident->incident_number }}
 </p>
 
+<div class="alert alert-info" role="note">
+    This workflow supports one active dispatch per incident. The incident can be dispatched again after the current dispatch is closed.
+</div>
+
 @if(!is_numeric($incident->latitude) || !is_numeric($incident->longitude))
 <div class="alert alert-warning">
     Incident coordinates are unavailable. Eligible drivers and available vehicles are listed without distance ranking.
@@ -73,7 +77,7 @@
     </div>
 
     <div class="mb-3">
-        <label class="form-label fw-semibold">Ambulance / Vehicle</label>
+        <label class="form-label fw-semibold">Response vehicle</label>
         <select name="vehicle_id" class="form-control" @if($vehicles->isEmpty()) disabled @endif>
             @if($vehicles->isEmpty())
             <option value="" disabled>No available vehicles; driver can choose one later</option>

@@ -943,20 +943,6 @@
 
 
                 <a
-                    href="{{ route('driver.settings') }}"
-                    class="sidebar-link
-                    {{ request()->routeIs('driver.settings') ? 'active' : '' }}">
-
-                    <i class="bi bi-gear fs-5"></i>
-
-                    <span>
-                        Settings
-                    </span>
-
-                </a>
-
-
-                <a
                     href="{{ route('profile.edit') }}"
                     class="sidebar-link
                     {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
@@ -1181,20 +1167,6 @@
 
                     <span>
                         Dispatch History
-                    </span>
-
-                </a>
-
-
-                <a
-                    href="{{ route('driver.settings') }}"
-                    class="sidebar-link
-                    {{ request()->routeIs('driver.settings') ? 'active' : '' }}">
-
-                    <i class="bi bi-gear fs-5"></i>
-
-                    <span>
-                        Settings
                     </span>
 
                 </a>

@@ -7,6 +7,7 @@ use App\Models\Ambulance;
 use App\Models\Driver;
 use App\Models\Dispatch;
 use App\Models\VehicleDriverAssignment;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -54,6 +55,7 @@ class UserApprovalController extends Controller
         ) {
             $driver->update(['status' => Driver::STATUS_AVAILABLE]);
         }
+        AuditService::log($validated['status'] === 'suspended' ? 'suspended' : 'activated', 'Driver Account', sprintf('Driver account ID %d status changed to %s.', $driver->id, $validated['status']));
 
         return back()->with('success', 'Driver status updated.');
     }
@@ -73,6 +75,7 @@ class UserApprovalController extends Controller
                 'management_status' => Driver::MANAGEMENT_STATUS_SUSPENDED,
             ]);
         });
+        AuditService::log('archived', 'Driver Account', sprintf('Driver account ID %d archived and suspended.', $driver->id));
 
         return redirect()->route('superadmin.drivers')->with('success', 'Driver archived. Historical records remain available.');
     }
@@ -85,6 +88,7 @@ class UserApprovalController extends Controller
             'archived_at' => null,
             'archived_by' => null,
         ]);
+        AuditService::log('restored', 'Driver Account', sprintf('Driver account ID %d restored.', $driver->id));
 
         return redirect()->route('superadmin.drivers')->with('success', 'Driver restored. Set the driver status to Active when ready for dispatch.');
     }
@@ -138,6 +142,7 @@ class UserApprovalController extends Controller
             $driver,
             $ambulance
         );
+        AuditService::log('assigned', 'Vehicle Assignment', sprintf('Driver ID %d assigned to vehicle ID %d.', $driver->id, $ambulance->id));
 
         return redirect()
             ->route('superadmin.drivers')

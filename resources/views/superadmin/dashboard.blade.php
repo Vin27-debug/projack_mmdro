@@ -29,7 +29,7 @@
 
             <div class="sa-system-status">
                 <span></span>
-                System Operational
+                Operational data snapshot
             </div>
 
             <div class="sa-date">
@@ -42,6 +42,11 @@
 
         </div>
 
+    </div>
+
+
+    <div class="sa-dashboard-actions" aria-label="Emergency incident actions">
+        <a href="{{ route('superadmin.incidents.index') }}" class="btn btn-outline-light">View Incidents</a>
     </div>
 
 
@@ -174,7 +179,7 @@
             </div>
 
             <strong>
-                {{ $stats['total_incidents'] }}
+                {{ $stats['total_incidents'] ?? 0 }}
             </strong>
 
             <small>
@@ -193,7 +198,7 @@
             </div>
 
             <strong>
-                {{ $stats['pending_incidents'] }}
+                {{ $stats['pending_incidents'] ?? 0 }}
             </strong>
 
             <small>
@@ -212,7 +217,7 @@
             </div>
 
             <strong>
-                {{ $stats['dispatched_incidents'] }}
+                {{ $stats['dispatched_incidents'] ?? 0 }}
             </strong>
 
             <small>
@@ -231,7 +236,7 @@
             </div>
 
             <strong>
-                {{ $stats['completed_incidents'] }}
+                {{ $stats['completed_incidents'] ?? 0 }}
             </strong>
 
             <small>
@@ -250,7 +255,7 @@
             </div>
 
             <strong>
-                {{ $stats['total_drivers'] }}
+                {{ $stats['total_drivers'] ?? 0 }}
             </strong>
 
             <small>
@@ -269,7 +274,7 @@
             </div>
 
             <strong>
-                {{ $stats['available_ambulances'] }}
+                {{ $stats['available_ambulances'] ?? 0 }}
             </strong>
 
             <small>
@@ -279,6 +284,39 @@
         </div>
 
     </div>
+
+
+    <div class="sa-section-heading sa-stats-heading">
+        <div>
+            <h2>Fleet Readiness</h2>
+            <p>Current availability from registered response vehicles.</p>
+        </div>
+        <a href="{{ route('superadmin.ambulances.index') }}" class="btn btn-sm btn-outline-light">View fleet</a>
+    </div>
+
+    @if(($totalFleet ?? 0) > 0)
+    <div class="sa-stat-grid sa-fleet-grid">
+        <div class="sa-stat-card" data-fleet-total="{{ $totalFleet }}">
+            <div class="sa-stat-top"><span>Available units</span><i class="bi bi-truck"></i></div>
+            <strong data-fleet-available="{{ $availableVehicles ?? 0 }}">{{ $availableVehicles ?? 0 }} / {{ $totalFleet }}</strong>
+            <small>Ready for deployment</small>
+        </div>
+        <div class="sa-stat-card">
+            <div class="sa-stat-top"><span>Responding</span><i class="bi bi-send"></i></div>
+            <strong data-fleet-responding="{{ $respondingVehicles ?? 0 }}">{{ $respondingVehicles ?? 0 }}</strong>
+            <small>On duty or actively dispatched</small>
+        </div>
+        <div class="sa-stat-card">
+            <div class="sa-stat-top"><span>Maintenance</span><i class="bi bi-wrench"></i></div>
+            <strong data-fleet-maintenance="{{ $maintenanceVehicles ?? 0 }}">{{ $maintenanceVehicles ?? 0 }}</strong>
+            <small>Unavailable for deployment</small>
+        </div>
+    </div>
+    @else
+    <div class="sa-table-card p-3 mb-4" role="status">
+        <div class="sa-empty"><i class="bi bi-truck"></i><strong>No active vehicles are registered.</strong><p>Fleet readiness counts will appear when vehicles are added.</p></div>
+    </div>
+    @endif
 
 
     {{-- =====================================================
@@ -356,6 +394,64 @@
     @endif
 
 
+    <div class="row g-3 mb-4">
+        <section class="col-lg-6" aria-labelledby="sa-recent-activity-heading">
+            <div class="sa-table-card h-100">
+                <div class="p-3 border-bottom border-white border-opacity-10">
+                    <h2 id="sa-recent-activity-heading" class="h5 mb-1">Recent Activity</h2>
+                    <p class="mb-0 text-secondary">Latest system activity.</p>
+                </div>
+                <div class="p-3">
+                    @forelse(($recentActivities ?? collect())->take(5) as $activity)
+                    <div class="d-flex justify-content-between align-items-start gap-3 py-2 border-bottom border-white border-opacity-10">
+                        <div>
+                            <strong>{{ $activity->action ?? 'System update' }}</strong>
+                            <div class="text-secondary">{{ $activity->module ?? 'System' }}</div>
+                            @if($activity->description)
+                            <p class="mb-0 mt-1">{{ $activity->description }}</p>
+                            @endif
+                        </div>
+                        <small class="text-secondary text-nowrap">{{ $activity->created_at?->diffForHumans() ?? 'Unknown' }}</small>
+                    </div>
+                    @empty
+                    <div class="sa-empty" role="status">No recent activity recorded.</div>
+                    @endforelse
+                </div>
+            </div>
+        </section>
+
+        <section class="col-lg-6" aria-labelledby="sa-recent-notifications-heading">
+            <div class="sa-table-card h-100">
+                <div class="p-3 border-bottom border-white border-opacity-10">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div>
+                            <h2 id="sa-recent-notifications-heading" class="h5 mb-1">Recent Notifications</h2>
+                            <p class="mb-0 text-secondary">Latest messages for your account.</p>
+                        </div>
+                        <span class="sa-status">{{ $unreadNotifications ?? 0 }} unread</span>
+                    </div>
+                </div>
+                <div class="p-3">
+                    @forelse(($recentNotifications ?? collect())->take(5) as $notification)
+                    <article class="py-2 border-bottom border-white border-opacity-10">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
+                            <strong>{{ $notification->title }}</strong>
+                            @if(!$notification->is_read)
+                            <span class="sa-critical">Unread</span>
+                            @endif
+                        </div>
+                        <p class="mb-1 mt-1">{{ $notification->message }}</p>
+                        <small class="text-secondary">{{ $notification->created_at?->diffForHumans() ?? 'Unknown' }}</small>
+                    </article>
+                    @empty
+                    <div class="sa-empty" role="status">No notifications to display.</div>
+                    @endforelse
+                </div>
+            </div>
+        </section>
+    </div>
+
+
     {{-- =====================================================
          RECENT INCIDENTS
     ====================================================== --}}
@@ -369,7 +465,7 @@
             </p>
         </div>
 
-        <a href="{{ route('admin.incidents.index') }}">
+        <a href="{{ route('superadmin.incidents.index') }}">
             View all
             <i class="bi bi-arrow-right"></i>
         </a>
@@ -386,11 +482,14 @@
                 <thead>
 
                     <tr>
+                        <th>ID</th>
                         <th>Incident</th>
-                        <th>Reporter</th>
                         <th>Type</th>
                         <th>Location</th>
+                        <th>Priority</th>
                         <th>Status</th>
+                        <th>Elapsed</th>
+                        <th>Details</th>
                     </tr>
 
                 </thead>
@@ -401,15 +500,9 @@
 
                     <tr>
 
-                        <td>
-                            <strong>
-                                {{ $incident->incident_number }}
-                            </strong>
-                        </td>
+                        <td>#{{ $incident->id }}</td>
 
-                        <td>
-                            {{ $incident->reporter_name }}
-                        </td>
+                        <td><strong>{{ $incident->incident_number }}</strong></td>
 
                         <td>
                             {{ $incident->incident_type }}
@@ -418,9 +511,11 @@
                         <td>
                             <span class="sa-location">
                                 <i class="bi bi-geo-alt"></i>
-                                {{ $incident->location }}
+                                {{ $incident->formattedAddress() }}
                             </span>
                         </td>
+
+                        <td>{{ $incident->priority ?: 'Not set' }}</td>
 
                         <td>
 
@@ -430,13 +525,17 @@
 
                         </td>
 
+                        <td>{{ ($incident->call_received_at ?? $incident->created_at)?->diffForHumans() ?? 'Unknown' }}</td>
+
+                        <td><a class="btn btn-sm btn-outline-light" href="{{ route('superadmin.incidents.show', $incident) }}">View details</a></td>
+
                     </tr>
 
                     @empty
 
                     <tr>
 
-                        <td colspan="5">
+                        <td colspan="8">
 
                             <div class="sa-empty">
 
@@ -479,6 +578,13 @@
         max-width: 1500px;
         margin: 0 auto;
         padding: 8px 4px 40px;
+    }
+
+    .sa-dashboard-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .65rem;
+        margin: 1rem 0 1.5rem;
     }
 
 
@@ -746,6 +852,8 @@
 
         margin-bottom: 30px;
     }
+
+    .sa-fleet-grid { margin-bottom: 1.5rem; }
 
     .sa-stat-card {
         padding: 17px;

@@ -8,6 +8,8 @@ use App\Models\Dispatch;
 use App\Models\Incident;
 use App\Models\IncidentReport;
 use App\Models\Notification;
+use App\Services\IncidentAttachmentService;
+use App\Services\AuditService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +17,8 @@ use Illuminate\Support\Facades\DB;
 
 class IncidentReportController extends Controller
 {
+    public function __construct(protected IncidentAttachmentService $attachmentService) {}
+
     public function create(?Incident $incident = null)
     {
         $incident = $this->resolveIncident($incident, false);
@@ -36,9 +40,10 @@ class IncidentReportController extends Controller
             'actions_taken' => ['required', 'string', 'max:2000'],
             'casualties' => ['required', 'string', 'max:255'],
             'remarks' => ['nullable', 'string', 'max:2000'],
+            ...$this->attachmentService->validationRules(),
         ]);
 
-        DB::transaction(function () use ($incident, $driver, $data) {
+        $attachmentCount = DB::transaction(function () use ($incident, $driver, $data, $request) {
             abort_if($incident->report()->exists(), 409, 'A report has already been submitted.');
 
             IncidentReport::create([
@@ -100,13 +105,27 @@ class IncidentReportController extends Controller
                 'related_id' => $incident->id,
                 'related_type' => Incident::class,
             ]);
+
+            return $this->attachmentService->store(
+                $request->file('attachments', []),
+                $incident,
+                $driver->user_id
+            );
         });
+
+        AuditService::log(
+            'submitted',
+            'Incident Report',
+            sprintf('Driver ID %d submitted a report for Incident %s (ID %d) with %d attachment(s).', $driver->id, $incident->incident_number, $incident->id, $attachmentCount)
+        );
 
         return redirect()
             ->route('driver.dashboard')
             ->with(
                 'success',
-                'Incident report submitted successfully.'
+                $attachmentCount > 0
+                    ? 'Incident report and ' . $attachmentCount . ' attachment' . ($attachmentCount === 1 ? '' : 's') . ' submitted successfully.'
+                    : 'Incident report submitted successfully.'
             );
     }
 

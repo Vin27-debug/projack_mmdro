@@ -12,6 +12,7 @@ use App\Models\Notification;
 use App\Models\VehicleDriverAssignment;
 use App\Services\AuditService;
 use App\Services\DispatchRecommendationService;
+use App\Services\IncidentAttachmentService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +22,10 @@ use Illuminate\Validation\Rule;
 
 class IncidentController extends Controller
 {
-    public function __construct(protected DispatchRecommendationService $recommendationService) {}
+    public function __construct(
+        protected DispatchRecommendationService $recommendationService,
+        protected IncidentAttachmentService $attachmentService
+    ) {}
 
     public function index(Request $request)
     {
@@ -57,7 +61,7 @@ class IncidentController extends Controller
 
     public function store(Request $request)
     {
-        $data = $this->validateIncident($request);
+        $data = $this->validateIncident($request, false);
 
         [$data['latitude'], $data['longitude']] = $this->resolveCoordinates($request);
 
@@ -69,8 +73,6 @@ class IncidentController extends Controller
                 'call_received_at' => now(),
             ]);
 
-            $this->storeAttachments($request, $incident);
-
             Notification::create([
                 'title' => 'New Incident Reported',
                 'message' => 'A new incident ' . $incident->incident_number . ' has been reported and requires attention.',
@@ -81,14 +83,26 @@ class IncidentController extends Controller
             return $incident;
         });
 
-        return redirect()->route('admin.incidents.index')->with('success', 'Incident created successfully.');
+        AuditService::log(
+            'created',
+            'Incident',
+            sprintf('Incident %s (ID %d) created with type %s and priority %s.', $incident->incident_number, $incident->id, $incident->incident_type, $incident->priority)
+        );
+
+        $listingRoute = auth()->user()?->hasRole('super-admin')
+            ? 'superadmin.incidents.index'
+            : 'admin.incidents.index';
+
+        return redirect()->route($listingRoute)->with('success', 'Incident created successfully.');
     }
 
     public function show(Incident $incident)
     {
         $incident->load(['driver.user', 'ambulance', 'dispatches.driver.user', 'attachments.uploader']);
+        $readOnly = request()->routeIs('superadmin.incidents.show')
+            || auth()->user()?->hasRole('super-admin');
 
-        return view('admin.incidents.show', compact('incident'));
+        return view('admin.incidents.show', compact('incident', 'readOnly'));
     }
 
     public function edit(Incident $incident)
@@ -105,8 +119,18 @@ class IncidentController extends Controller
         $data = $this->validateIncident($request);
         [$data['latitude'], $data['longitude']] = $this->resolveCoordinates($request);
 
-        $incident->update($data);
+        $incident->fill($data);
+        $changedFields = array_keys($incident->getDirty());
+        $incident->save();
         $this->storeAttachments($request, $incident);
+
+        if ($changedFields !== []) {
+            AuditService::log(
+                'updated',
+                'Incident',
+                sprintf('Incident %s (ID %d) updated. Changed fields: %s.', $incident->incident_number, $incident->id, implode(', ', $changedFields))
+            );
+        }
 
         return redirect()->route('admin.incidents.show', $incident)->with('success', 'Incident updated successfully.');
     }
@@ -124,6 +148,8 @@ class IncidentController extends Controller
             'closed_at' => now(),
         ]);
 
+        AuditService::log('archived', 'Incident', sprintf('Incident %s (ID %d) archived.', $incident->incident_number, $incident->id));
+
         return back()->with('success', $incident->incident_number . ' has been archived. The record and attachments remain searchable.');
     }
 
@@ -140,12 +166,19 @@ class IncidentController extends Controller
             'closed_at' => now(),
         ]);
 
+        AuditService::log('restored', 'Incident', sprintf('Incident %s (ID %d) restored.', $incident->incident_number, $incident->id));
+
         return back()->with('success', $incident->incident_number . ' has been restored from the archive.');
     }
 
     public function updateTimestamp(Request $request, Incident $incident, string $field)
     {
-        abort_unless(auth()->user()?->hasRole(['admin', 'super-admin']), 403, 'You are not authorized to update emergency timestamps.');
+        abort_unless(
+            auth()->user()?->hasRole('admin')
+                && ! auth()->user()?->hasAnyRole(['super-admin', 'superadmin']),
+            403,
+            'You are not authorized to update emergency timestamps.'
+        );
 
         $timestampMap = [
             'incident-reported' => ['target' => 'incident', 'column' => 'created_at', 'label' => 'Incident Reported'],
@@ -343,9 +376,30 @@ class IncidentController extends Controller
     public function downloadAttachment(Incident $incident, IncidentAttachment $attachment)
     {
         abort_unless($attachment->incident_id === $incident->id, 404);
-        abort_unless(Storage::disk($attachment->disk)->exists($attachment->path), 404);
 
-        return Storage::disk($attachment->disk)->download($attachment->path, $attachment->original_name);
+        $attachmentPath = str_replace('\\', '/', (string) $attachment->path);
+        $expectedDirectory = 'incident-attachments/' . $incident->id . '/';
+        $relativePath = str_starts_with($attachmentPath, $expectedDirectory)
+            ? substr($attachmentPath, strlen($expectedDirectory))
+            : '';
+
+        abort_unless(
+            $attachment->disk === 'local'
+                && $relativePath !== ''
+                && $relativePath !== '.'
+                && $relativePath !== '..'
+                && !str_contains($relativePath, '/'),
+            404
+        );
+
+        $disk = Storage::disk('local');
+        abort_unless($disk->exists($attachmentPath), 404);
+
+        $downloadName = basename(str_replace('\\', '/', (string) $attachment->original_name));
+        $downloadName = preg_replace('/[^\pL\pN._ ()-]/u', '_', $downloadName) ?: 'attachment';
+        $downloadName = trim($downloadName, ' .') ?: 'attachment';
+
+        return $disk->download($attachmentPath, $downloadName);
     }
 
     public function dispatchForm(Incident $incident)
@@ -462,7 +516,7 @@ class IncidentController extends Controller
         return redirect()->route('admin.incidents.index')->with('success', 'Driver dispatched successfully.');
     }
 
-    protected function validateIncident(Request $request): array
+    protected function validateIncident(Request $request, bool $allowAttachments = true): array
     {
         $data = $request->validate([
             'reporter_name' => 'required|string|max:255',
@@ -479,8 +533,7 @@ class IncidentController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
             'priority' => ['required', Rule::in(Incident::VALID_PRIORITIES)],
             'status' => ['nullable', Rule::in(Incident::VALID_STATUSES)],
-            'attachments' => 'nullable|array|max:10',
-            'attachments.*' => 'file|max:10240|mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx',
+            ...($allowAttachments ? $this->attachmentService->validationRules() : []),
         ]);
 
         unset($data['attachments'], $data['status']);
@@ -515,26 +568,6 @@ class IncidentController extends Controller
 
     protected function storeAttachments(Request $request, Incident $incident): void
     {
-        if (!$request->hasFile('attachments')) {
-            return;
-        }
-
-        foreach ($request->file('attachments', []) as $file) {
-            if (!$file->isValid()) {
-                continue;
-            }
-
-            $path = $file->store('incident-attachments/' . $incident->id, 'local');
-
-            IncidentAttachment::create([
-                'incident_id' => $incident->id,
-                'uploaded_by' => auth()->id(),
-                'disk' => 'local',
-                'path' => $path,
-                'original_name' => $file->getClientOriginalName(),
-                'mime_type' => $file->getMimeType(),
-                'size' => $file->getSize() ?: 0,
-            ]);
-        }
+        $this->attachmentService->store($request->file('attachments', []), $incident, auth()->id());
     }
 }

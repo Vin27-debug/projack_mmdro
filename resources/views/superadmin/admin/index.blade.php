@@ -82,7 +82,7 @@
                                 <a href="{{ route('admins.show', $admin) }}" class="btn btn-sm btn-outline-secondary">View</a>
                                 @unless($isSuspended)
                                 <a href="{{ route('admins.edit', $admin) }}" class="btn btn-sm btn-outline-primary">Edit</a>
-                                <form method="POST" action="{{ route('admins.suspend', $admin) }}">@csrf<button class="btn btn-sm btn-dark">Suspend</button></form>
+                                <form method="POST" action="{{ route('admins.suspend', $admin) }}" onsubmit="return confirm('Suspend this administrator account?');">@csrf<button class="btn btn-sm btn-dark">Suspend</button></form>
                                 @endunless
                             </div>
                         </td>

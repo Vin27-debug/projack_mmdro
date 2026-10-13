@@ -111,18 +111,18 @@
                     <td>
                         <div class="d-flex flex-wrap gap-1">
                             @if($archived)
-                            <form method="POST" action="{{ route('superadmin.drivers.restore', $driver) }}">
+                            <form method="POST" action="{{ route('superadmin.drivers.restore', $driver) }}" onsubmit="return confirm('Restore this driver account?');">
                                 @csrf
                                 <button class="btn btn-sm btn-outline-success">Restore</button>
                             </form>
                             @else
                                 @if($driver->user)
-                                <form method="POST" action="{{ route('superadmin.drivers.status', $driver) }}">
+                                <form method="POST" action="{{ route('superadmin.drivers.status', $driver) }}" onsubmit="return confirm('Activate this driver account?');">
                                     @csrf
                                     <input type="hidden" name="status" value="active">
                                     <button class="btn btn-sm {{ $driver->management_status === 'active' ? 'btn-success' : 'btn-outline-success' }}" {{ $driver->management_status === 'active' ? 'disabled' : '' }}>Active</button>
                                 </form>
-                                <form method="POST" action="{{ route('superadmin.drivers.status', $driver) }}">
+                                <form method="POST" action="{{ route('superadmin.drivers.status', $driver) }}" onsubmit="return confirm('Suspend this driver account?');">
                                     @csrf
                                     <input type="hidden" name="status" value="suspended">
                                     <button class="btn btn-sm {{ $driver->management_status === 'suspended' ? 'btn-secondary' : 'btn-outline-secondary' }}" {{ $driver->management_status === 'suspended' ? 'disabled' : '' }}>Suspended</button>

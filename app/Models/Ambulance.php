@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Ambulance extends Model
 {
+    public const VALID_TYPES = ['ambulance', 'rescue_van', 'fire_truck'];
+
     public const STATUS_AVAILABLE = 'available';
     public const STATUS_ON_DUTY = 'on_duty';
     public const STATUS_MAINTENANCE = 'maintenance';
