@@ -74,6 +74,13 @@ use Illuminate\Support\Facades\Route;
             box-shadow: none;
         }
 
+        .gov-seal img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
         .gov-header .titles {
             line-height: 1.25;
         }
@@ -150,7 +157,7 @@ use Illuminate\Support\Facades\Route;
 
         .field label {
             display: block;
-            font-size: 0.78rem;
+            font-size: 0.9rem;
             font-weight: 600;
             color: var(--ink);
             margin-bottom: 0.32rem;
@@ -159,8 +166,9 @@ use Illuminate\Support\Facades\Route;
         .field input {
             width: 100%;
             box-sizing: border-box;
-            padding: 0.6rem 0.7rem;
-            font-size: 0.9rem;
+            min-height: 2.75rem;
+            padding: 0.65rem 0.75rem;
+            font-size: 1rem;
             border: 1px solid #263e59;
             border-radius: 4px;
             background: #071426;
@@ -168,7 +176,7 @@ use Illuminate\Support\Facades\Route;
         }
 
         .field input::placeholder {
-            color: #9aa1a8;
+            color: #b8c8dd;
         }
 
         .field input:focus {
@@ -199,7 +207,7 @@ use Illuminate\Support\Facades\Route;
         }
 
         .row-between a {
-            color: #014cfd;
+            color: #7db6ff;
             text-decoration: none;
         }
 
@@ -265,6 +273,9 @@ use Illuminate\Support\Facades\Route;
     </div>
 
     <div class="gov-header">
+        <div class="gov-seal">
+            <img src="{{ asset('images/muniresq-logo.jpg') }}" alt="MuniResQ ambulance logo">
+        </div>
         <div class="titles">
             <div class="agency">Municipal Disaster Risk Reduction and Management Office</div>
             <div class="office">MuniResQ — Emergency Response System</div>

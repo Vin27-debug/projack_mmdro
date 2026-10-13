@@ -70,8 +70,10 @@
         ====================================================== */
 
         .driver-app-shell {
+            height: 100vh;
             min-height: 100vh;
             width: 100%;
+            overflow: hidden;
         }
 
 
@@ -80,9 +82,16 @@
         ====================================================== */
 
         .sidebar-driver {
+            position: fixed;
+            inset: 0 auto 0 0;
+            z-index: 1040;
+            display: flex;
             width: 280px;
             min-width: 280px;
-            min-height: 100vh;
+            height: 100vh;
+            min-height: 0;
+            flex-direction: column;
+            overflow: hidden;
 
             background:
                 linear-gradient(180deg,
@@ -103,8 +112,8 @@
         }
 
         .driver-brand-icon {
-            width: 44px;
-            height: 44px;
+            width: 52px;
+            height: 52px;
 
             border-radius: 50%;
 
@@ -116,6 +125,13 @@
             justify-content: center;
 
             flex-shrink: 0;
+        }
+
+        .driver-brand-image {
+            width: 100%;
+            height: 100%;
+            border-radius: inherit;
+            object-fit: contain;
         }
 
 
@@ -168,6 +184,10 @@
         ====================================================== */
 
         .sidebar-nav {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
             padding: 1rem;
         }
 
@@ -222,6 +242,8 @@
         ====================================================== */
 
         .driver-logout {
+            flex: 0 0 auto;
+            margin-top: auto;
             border-top:
                 1px solid rgba(255, 255, 255, .08);
         }
@@ -233,7 +255,11 @@
 
         .content-area {
             min-width: 0;
-            min-height: 100vh;
+            height: 100vh;
+            min-height: 0;
+            margin-left: 280px;
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
 
             overflow-x: hidden;
 
@@ -294,6 +320,8 @@
             max-width: 85vw;
 
             height: 100vh;
+            display: flex;
+            flex-direction: column;
 
             background:
                 linear-gradient(180deg,
@@ -304,7 +332,7 @@
 
             z-index: 3000;
 
-            overflow-y: auto;
+            overflow: hidden;
 
             transform: translateX(-110%);
 
@@ -460,7 +488,10 @@
         ====================================================== */
 
         .driver-mobile-nav {
-
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
             padding: 1rem;
         }
 
@@ -499,7 +530,8 @@
         ====================================================== */
 
         .driver-mobile-logout {
-
+            flex: 0 0 auto;
+            margin-top: auto;
             padding: 1rem;
         }
 
@@ -548,13 +580,13 @@
         .driver-layout .text-muted {
 
             color:
-                rgba(255, 255, 255, .68) !important;
+                #c1d0e3 !important;
         }
 
         .driver-layout .text-white-50 {
 
             color:
-                rgba(255, 255, 255, .65) !important;
+                #c1d0e3 !important;
         }
 
 
@@ -685,6 +717,10 @@
 
         @media (min-width: 992px) {
 
+            .content-area {
+                width: calc(100% - 280px);
+            }
+
             .sidebar-driver {
 
                 display: flex !important;
@@ -713,9 +749,23 @@
 
         @media (max-width: 991.98px) {
 
+            .driver-app-shell {
+                height: auto;
+                min-height: 100vh;
+                overflow: visible;
+            }
+
             .sidebar-driver {
 
                 display: none !important;
+            }
+
+            .content-area {
+                width: 100%;
+                height: auto;
+                min-height: 100vh;
+                margin-left: 0;
+                overflow-y: visible;
             }
         }
 
@@ -805,7 +855,7 @@
 
                 <div class="driver-brand-icon">
 
-                    <i class="bi bi-hospital text-white fs-4"></i>
+                    <img src="{{ asset('images/muniresq-logo.jpg') }}" alt="MuniResQ logo" width="44" height="44" class="driver-brand-image">
 
                 </div>
 

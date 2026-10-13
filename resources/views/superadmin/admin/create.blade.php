@@ -596,7 +596,7 @@
 
     .page-eyebrow {
         color: #5ca9ff;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 800;
         letter-spacing: 2px;
     }
@@ -610,7 +610,7 @@
     .page-header p {
         color: #91a6c4;
         margin: 0;
-        font-size: 14px;
+        font-size: 15px;
     }
 
     .back-btn {
@@ -695,7 +695,7 @@
     .form-header p {
         margin: 4px 0 0;
         color: #b9d2f5;
-        font-size: 12px;
+        font-size: 14px;
     }
 
 
@@ -715,14 +715,14 @@
 
     .section-title h3 {
         color: #d9e5f5;
-        font-size: 15px;
+        font-size: 18px;
         font-weight: 800;
         margin: 0;
     }
 
     .section-title p {
         color: #91a5c1;
-        font-size: 12px;
+        font-size: 14px;
         margin: 5px 0 0;
     }
 
@@ -755,7 +755,7 @@
 
     .form-group label {
         color: #cbd8eb;
-        font-size: 12px;
+        font-size: 15px;
         font-weight: 700;
         margin-bottom: 7px;
     }
@@ -812,7 +812,7 @@
 
     .form-group small {
         color: #91a5c1;
-        font-size: 11px;
+        font-size: 13px;
         margin-top: 6px;
     }
 
@@ -848,13 +848,13 @@
 
     .security strong {
         color: #d9e5f5;
-        font-size: 12px;
+        font-size: 14px;
     }
 
     .security p {
         margin: 2px 0 0;
         color: #91a5c1;
-        font-size: 11px;
+        font-size: 13px;
     }
 
     .buttons {
@@ -864,7 +864,7 @@
 
     .cancel-btn,
     .create-btn {
-        height: 40px;
+        min-height: 46px;
 
         padding: 0 18px;
 
@@ -877,7 +877,7 @@
 
         text-decoration: none;
 
-        font-size: 12px;
+        font-size: 15px;
         font-weight: 700;
 
         cursor: pointer;
@@ -950,7 +950,7 @@
 
     .info-card>p {
         color: #91a5c1;
-        font-size: 12px;
+        font-size: 14px;
         line-height: 1.6;
     }
 
@@ -961,7 +961,7 @@
     }
 
     .info-card h4 {
-        font-size: 11px;
+        font-size: 13px;
         text-transform: uppercase;
         color: #d9e5f5;
         margin-bottom: 13px;
@@ -974,7 +974,7 @@
 
         color: #9eb1cc;
 
-        font-size: 12px;
+        font-size: 14px;
 
         margin-bottom: 11px;
     }
@@ -993,7 +993,7 @@
         align-items: center;
         justify-content: center;
 
-        font-size: 10px;
+        font-size: 13px;
         font-weight: 900;
     }
 
@@ -1017,12 +1017,12 @@
 
     .warning strong {
         color: #d9e8ff;
-        font-size: 11px;
+        font-size: 13px;
     }
 
     .warning p {
         color: #8ea6c5;
-        font-size: 11px;
+        font-size: 13px;
         line-height: 1.5;
         margin: 5px 0 0;
     }

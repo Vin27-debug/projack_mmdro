@@ -20,7 +20,7 @@
             --mr-bg: #071a38;
             --mr-sidebar: #061633;
             --mr-surface: #0b2043;
-            --mr-border: rgba(255, 255, 255, 0.1);
+            --mr-border: rgba(148, 163, 184, 0.24);
             --mr-text: #eef4ff;
             --mr-muted: #b7c7dd;
             --mr-accent: #014cfd;
@@ -45,7 +45,9 @@
 
         .admin-layout {
             display: flex;
+            height: 100vh;
             min-height: 100vh;
+            overflow: hidden;
         }
 
         .admin-sidebar {
@@ -53,10 +55,12 @@
             inset: 0 auto 0 0;
             z-index: 1040;
             width: 68px;
+            height: 100vh;
+            min-height: 0;
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
-            overflow-y: auto;
+            overflow-y: hidden;
             background: var(--mr-sidebar);
             border-right: 1px solid var(--mr-border);
             transition: width 160ms ease;
@@ -79,12 +83,12 @@
         }
 
         .admin-brand-mark {
-            width: 40px;
-            height: 40px;
-            flex: 0 0 40px;
+            width: 48px;
+            height: 48px;
+            flex: 0 0 48px;
             display: grid;
             place-items: center;
-            padding: 0.3rem;
+            padding: 0.15rem;
             background: #0b2c68;
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 0.75rem;
@@ -183,11 +187,14 @@
         .admin-brand-subtitle {
             margin: 0;
             color: var(--mr-muted);
-            font-size: 0.68rem;
+            font-size: 0.8125rem;
         }
 
         .admin-nav {
-            flex: 1;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
             padding: 0.65rem 0.5rem;
         }
 
@@ -201,7 +208,7 @@
             height: 24px;
             padding: 0 0.6rem;
             overflow: hidden;
-            color: rgba(255, 255, 255, 0.64);
+            color: #c1d0e3;
             font-size: 0.75rem;
             font-weight: 600;
             letter-spacing: 0.07em;
@@ -277,7 +284,7 @@
         .admin-sidebar .nav-link i {
             width: 28px;
             min-width: 28px;
-            color: rgba(255, 255, 255, 0.68);
+            color: #c1d0e3;
             font-size: 1.05rem;
             text-align: center;
         }
@@ -307,6 +314,8 @@
         }
 
         .admin-sidebar-footer {
+            flex: 0 0 auto;
+            margin-top: auto;
             padding: 0.65rem 0.5rem 0.8rem;
             border-top: 1px solid var(--mr-border);
         }
@@ -336,7 +345,7 @@
 
         .admin-user-role {
             color: var(--mr-muted);
-            font-size: 0.75rem;
+            font-size: 0.8125rem;
         }
 
         .admin-control,
@@ -383,7 +392,10 @@
         .admin-content {
             width: calc(100% - 68px);
             min-width: 0;
+            height: 100vh;
             margin-left: 68px;
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
             transition: margin-left 160ms ease;
         }
 
@@ -639,6 +651,8 @@
         @media (max-width: 991.98px) {
             .admin-sidebar {
                 width: 240px;
+                height: 100vh;
+                overflow-y: hidden;
                 transform: translateX(-100%);
                 transition: transform 160ms ease;
             }
@@ -768,7 +782,7 @@ return Route::has($name) ? route($name) : '#';
 
             <div class="admin-brand">
                 <div class="admin-brand-mark">
-                    <img src="{{ asset('favicon.ico') }}" alt="MuniResQ logo">
+                    <img src="{{ asset('images/muniresq-logo.jpg') }}" alt="MuniResQ logo">
                 </div>
 
                 <div class="admin-brand-copy">

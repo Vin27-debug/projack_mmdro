@@ -2,6 +2,8 @@
 
 @section('content')
 
+@php($dashboardNow = now('Asia/Manila'))
+
 <div class="sa-dashboard">
 
     {{-- =====================================================
@@ -25,21 +27,9 @@
             </p>
         </div>
 
-        <div class="sa-header-right">
-
-            <div class="sa-system-status">
-                <span></span>
-                Operational data snapshot
-            </div>
-
-            <div class="sa-date">
-                {{ now()->format('l, F j, Y') }}
-            </div>
-
-            <div class="sa-time">
-                {{ now()->format('H:i') }}
-            </div>
-
+        <div class="sa-header-clock" data-server-time="{{ $dashboardNow->getTimestamp() * 1000 }}" aria-label="Current Philippine time">
+            <div class="sa-date" data-manila-date>{{ $dashboardNow->format('l, F j, Y') }}</div>
+            <time class="sa-time" data-manila-time datetime="{{ $dashboardNow->toIso8601String() }}">{{ $dashboardNow->format('H:i:s') }}</time>
         </div>
 
     </div>
@@ -568,6 +558,43 @@
 </div>
 
 
+<script>
+    (() => {
+        const clock = document.querySelector('.sa-header-clock');
+        const dateDisplay = clock?.querySelector('[data-manila-date]');
+        const timeDisplay = clock?.querySelector('[data-manila-time]');
+        const serverTime = Number(clock?.dataset.serverTime);
+
+        if (!clock || !dateDisplay || !timeDisplay || !Number.isFinite(serverTime)) return;
+
+        const renderedAt = performance.now();
+        const dateFormatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Manila',
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        });
+        const timeFormatter = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Manila',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hourCycle: 'h23'
+        });
+
+        const updateClock = () => {
+            const current = new Date(serverTime + performance.now() - renderedAt);
+            dateDisplay.textContent = dateFormatter.format(current);
+            timeDisplay.textContent = timeFormatter.format(current);
+            timeDisplay.dateTime = current.toISOString();
+        };
+
+        updateClock();
+        window.setInterval(updateClock, 1000);
+    })();
+</script>
+
 <style>
     /* =========================================================
    SUPER ADMIN DASHBOARD
@@ -575,9 +602,9 @@
 
     .sa-dashboard {
         width: 100%;
-        max-width: 1500px;
+        max-width: 1800px;
         margin: 0 auto;
-        padding: 8px 4px 40px;
+        padding: 16px 24px 48px;
     }
 
     .sa-dashboard-actions {
@@ -585,6 +612,12 @@
         flex-wrap: wrap;
         gap: .65rem;
         margin: 1rem 0 1.5rem;
+    }
+
+    .sa-dashboard-actions .btn {
+        min-height: 46px;
+        padding: 0.65rem 1rem;
+        font-size: 0.9375rem;
     }
 
 
@@ -595,11 +628,12 @@
     .sa-header {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
+        align-items: center;
+        gap: 1.5rem;
 
-        padding: 30px;
+        padding: 36px;
 
-        margin-bottom: 30px;
+        margin-bottom: 36px;
 
         border-radius: 22px;
 
@@ -619,7 +653,7 @@
 
         color: #6f91ff;
 
-        font-size: .7rem;
+        font-size: .8125rem;
         font-weight: 700;
 
         letter-spacing: .16em;
@@ -630,7 +664,7 @@
 
         color: #fff;
 
-        font-size: 2rem;
+        font-size: 2.125rem;
         font-weight: 750;
 
         letter-spacing: -.04em;
@@ -639,56 +673,28 @@
     .sa-header p {
         margin: 8px 0 0;
 
-        color: rgba(255, 255, 255, .58);
+        color: #c1d0e3;
 
         font-size: .9rem;
     }
 
-    .sa-header-right {
+    .sa-header-clock {
+        flex: 0 0 auto;
         text-align: right;
     }
 
-    .sa-system-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-
-        padding: 7px 11px;
-
-        border-radius: 30px;
-
-        background: rgba(39, 185, 112, .1);
-
-        color: #72dfa7;
-
-        font-size: .75rem;
-        font-weight: 600;
-    }
-
-    .sa-system-status span {
-        width: 7px;
-        height: 7px;
-
-        border-radius: 50%;
-
-        background: #43d98d;
-    }
-
     .sa-date {
-        margin-top: 13px;
-
-        color: rgba(255, 255, 255, .45);
-
-        font-size: .75rem;
+        color: #b8c8dd;
+        font-size: .8125rem;
     }
 
     .sa-time {
+        display: block;
         margin-top: 2px;
-
         color: #fff;
-
         font-size: 1.25rem;
         font-weight: 700;
+        font-variant-numeric: tabular-nums;
     }
 
 
@@ -709,16 +715,16 @@
 
         color: #fff;
 
-        font-size: 1.05rem;
+        font-size: 1.25rem;
         font-weight: 700;
     }
 
     .sa-section-heading p {
         margin: 4px 0 0;
 
-        color: rgba(255, 255, 255, .48);
+        color: #b8c8dd;
 
-        font-size: .78rem;
+        font-size: .875rem;
     }
 
 
@@ -730,21 +736,21 @@
         display: grid;
 
         grid-template-columns:
-            repeat(4, minmax(0, 1fr));
+            repeat(3, minmax(0, 1fr));
 
-        gap: 14px;
+        gap: 20px;
 
-        margin-bottom: 30px;
+        margin-bottom: 36px;
     }
 
     .sa-management-card {
         display: flex;
 
-        min-height: 155px;
+        min-height: 180px;
 
-        padding: 20px;
+        padding: 24px;
 
-        gap: 15px;
+        gap: 18px;
 
         text-decoration: none;
 
@@ -804,16 +810,16 @@
 
         color: #fff;
 
-        font-size: .92rem;
+        font-size: 1.0625rem;
         font-weight: 650;
     }
 
     .sa-management-content p {
         margin: 0;
 
-        color: rgba(255, 255, 255, .5);
+        color: #b8c8dd;
 
-        font-size: .76rem;
+        font-size: .875rem;
 
         line-height: 1.5;
     }
@@ -829,7 +835,7 @@
 
         color: #8da6ff;
 
-        font-size: .72rem;
+        font-size: .875rem;
         font-weight: 600;
     }
 
@@ -848,17 +854,17 @@
         grid-template-columns:
             repeat(6, minmax(0, 1fr));
 
-        gap: 12px;
+        gap: 16px;
 
-        margin-bottom: 30px;
+        margin-bottom: 36px;
     }
 
     .sa-fleet-grid { margin-bottom: 1.5rem; }
 
     .sa-stat-card {
-        padding: 17px;
+        padding: 20px;
 
-        min-height: 125px;
+        min-height: 145px;
 
         border-radius: 16px;
 
@@ -874,9 +880,9 @@
 
         align-items: center;
 
-        color: rgba(255, 255, 255, .48);
+        color: #b8c8dd;
 
-        font-size: .72rem;
+        font-size: .8125rem;
     }
 
     .sa-stat-top i {
@@ -901,9 +907,9 @@
 
         margin-top: 8px;
 
-        color: rgba(255, 255, 255, .35);
+        color: #b8c8dd;
 
-        font-size: .68rem;
+        font-size: .8125rem;
     }
 
 
@@ -962,15 +968,15 @@
 
         color: #fff;
 
-        font-size: .92rem;
+        font-size: 1.0625rem;
     }
 
     .sa-alert-title p {
         margin: 3px 0 0;
 
-        color: rgba(255, 255, 255, .45);
+        color: #b8c8dd;
 
-        font-size: .72rem;
+        font-size: .875rem;
     }
 
     .sa-critical {
@@ -982,7 +988,7 @@
 
         color: #ff8793;
 
-        font-size: .65rem;
+        font-size: .75rem;
         font-weight: 700;
     }
 
@@ -1009,15 +1015,15 @@
     .sa-alert-item strong {
         color: #fff;
 
-        font-size: .8rem;
+        font-size: .9375rem;
     }
 
     .sa-alert-item p {
         margin: 3px 0 0;
 
-        color: rgba(255, 255, 255, .42);
+        color: #b8c8dd;
 
-        font-size: .7rem;
+        font-size: .875rem;
     }
 
     .sa-alert-location {
@@ -1027,9 +1033,9 @@
     .sa-alert-location span {
         display: block;
 
-        color: rgba(255, 255, 255, .55);
+        color: #c1d0e3;
 
-        font-size: .7rem;
+        font-size: .875rem;
     }
 
     .sa-alert-location i {
@@ -1041,9 +1047,9 @@
 
         margin-top: 4px;
 
-        color: rgba(255, 255, 255, .32);
+        color: #b8c8dd;
 
-        font-size: .65rem;
+        font-size: .8125rem;
     }
 
 
@@ -1064,7 +1070,7 @@
 
         color: #7e9aff;
 
-        font-size: .75rem;
+        font-size: .875rem;
 
         text-decoration: none;
     }
@@ -1096,9 +1102,9 @@
 
         border-bottom: 1px solid rgba(255, 255, 255, .07);
 
-        color: rgba(255, 255, 255, .4);
+        color: #b8c8dd;
 
-        font-size: .67rem;
+        font-size: .8125rem;
         font-weight: 650;
 
         text-align: left;
@@ -1113,9 +1119,9 @@
 
         border-bottom: 1px solid rgba(255, 255, 255, .05);
 
-        color: rgba(255, 255, 255, .65);
+        color: #c1d0e3;
 
-        font-size: .76rem;
+        font-size: .9375rem;
     }
 
     .sa-table-card tbody tr {
@@ -1156,9 +1162,9 @@
 
         background: rgba(255, 255, 255, .07);
 
-        color: rgba(255, 255, 255, .65);
+        color: #c1d0e3;
 
-        font-size: .62rem;
+        font-size: .75rem;
         font-weight: 650;
     }
 
@@ -1173,7 +1179,7 @@
 
         margin-bottom: 8px;
 
-        color: rgba(255, 255, 255, .2);
+        color: rgba(193, 208, 227, .55);
 
         font-size: 2rem;
     }
@@ -1181,17 +1187,17 @@
     .sa-empty strong {
         display: block;
 
-        color: rgba(255, 255, 255, .65);
+        color: #c1d0e3;
 
-        font-size: .82rem;
+        font-size: 1rem;
     }
 
     .sa-empty p {
         margin: 5px 0 0;
 
-        color: rgba(255, 255, 255, .35);
+        color: #b8c8dd;
 
-        font-size: .7rem;
+        font-size: .875rem;
     }
 
 
@@ -1212,14 +1218,13 @@
     }
 
     @media (max-width: 768px) {
-
         .sa-header {
             flex-direction: column;
-            gap: 20px;
+            align-items: stretch;
         }
 
-        .sa-header-right {
-            text-align: left;
+        .sa-header-clock {
+            align-self: flex-end;
         }
 
         .sa-management-grid {

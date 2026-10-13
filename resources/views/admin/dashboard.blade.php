@@ -194,7 +194,7 @@ $readyPercent = $totalFleet > 0 ? round((($availableVehicles ?? 0) / $totalFleet
     <header class="eoc-card eoc-header p-3 p-lg-4 mb-4">
         <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-3">
-                <div class="eoc-seal"><img src="{{ asset('favicon.ico') }}" alt="MuniResQ logo"></div>
+                <div class="eoc-seal"><img src="{{ asset('images/muniresq-logo.jpg') }}" alt="MuniResQ logo"></div>
                 <div>
                     <div class="eoc-section-title mb-1">MuniResQ / Municipal Emergency Operations Center</div>
                     <h1 class="eoc-title mb-1">Emergency Operations Dashboard</h1>

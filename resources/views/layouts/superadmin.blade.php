@@ -13,7 +13,7 @@
             --mr-bg: #071a38;
             --mr-sidebar: #061633;
             --mr-surface: #0b2043;
-            --mr-border: rgba(255, 255, 255, 0.1);
+            --mr-border: rgba(148, 163, 184, 0.24);
             --mr-text: #eef4ff;
             --mr-muted: #b7c7dd;
             --mr-accent: #014cfd;
@@ -30,26 +30,31 @@
             --mr-bg: #08172f;
             --mr-surface: #0f2345;
             --mr-text: #f8fafc;
-            --mr-muted: #94a3b8;
+            --mr-muted: #c1d0e3;
             display: flex;
             align-items: stretch;
+            height: 100vh;
             min-height: 100vh;
             width: 100%;
+            overflow: hidden;
             background: var(--mr-bg);
             color: var(--mr-text);
         }
 
         .super-sidebar {
-            position: sticky;
+            position: fixed;
             top: 0;
+            bottom: 0;
+            left: 0;
             z-index: 1040;
             display: flex;
+            height: 100vh;
             width: 68px;
             min-width: 68px;
-            min-height: 100vh;
+            min-height: 0;
             flex-direction: column;
             overflow-x: hidden;
-            overflow-y: auto;
+            overflow-y: hidden;
             background: var(--mr-sidebar);
             border-right: 1px solid var(--mr-border);
             transition: width 160ms ease;
@@ -63,8 +68,26 @@
         .super-content {
             flex: 1 1 auto;
             min-width: 0;
-            width: 100%;
+            width: calc(100% - 68px);
+            height: 100vh;
+            margin-left: 68px;
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
             background: var(--mr-bg);
+            transition: width 160ms ease, margin-left 160ms ease;
+        }
+
+        body.super-sidebar-expanded .super-content {
+            width: calc(100% - 240px);
+            margin-left: 240px;
+        }
+
+        @media (min-width: 992px) {
+            body:has(.super-sidebar:hover) .super-content,
+            body:has(.super-sidebar:focus-within) .super-content {
+                width: calc(100% - 240px);
+                margin-left: 240px;
+            }
         }
 
         .form-control::placeholder,
@@ -89,12 +112,17 @@
             color: #eef4ff;
         }
 
+        .super-brand-subtitle,
+        .super-user-role {
+            font-size: 0.8125rem;
+        }
+
         .text-white-50 {
-            color: rgba(255, 255, 255, 0.72) !important;
+            color: #c1d0e3 !important;
         }
 
         .text-muted {
-            color: rgba(255, 255, 255, 0.72) !important;
+            color: #c1d0e3 !important;
         }
 
         .super-brand {
@@ -108,12 +136,12 @@
         }
 
         .super-brand-mark {
-            width: 40px;
-            height: 40px;
-            flex: 0 0 40px;
+            width: 48px;
+            height: 48px;
+            flex: 0 0 48px;
             display: grid;
             place-items: center;
-            padding: 0.3rem;
+            padding: 0.15rem;
             background: #0b2c68;
             border: 1px solid rgba(255, 255, 255, 0.14);
         }
@@ -161,12 +189,15 @@
 
         .super-brand-subtitle {
             margin: 0;
-            font-size: 0.68rem;
+            font-size: 0.8125rem;
             color: var(--mr-muted);
         }
 
         .super-nav {
-            flex: 1;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
             padding: 0.65rem 0.5rem;
         }
 
@@ -180,7 +211,7 @@
             height: 24px;
             padding: 0 0.6rem;
             overflow: hidden;
-            color: rgba(255, 255, 255, 0.64);
+            color: #c1d0e3;
             font-size: 0.75rem;
             font-weight: 600;
             letter-spacing: 0.07em;
@@ -260,7 +291,7 @@
         .superadmin-nav-icon {
             width: 28px;
             min-width: 28px;
-            color: rgba(255, 255, 255, 0.68);
+            color: #c1d0e3;
             font-size: 1.05rem;
             text-align: center;
         }
@@ -455,6 +486,8 @@
         }
 
         .super-sidebar-footer {
+            flex: 0 0 auto;
+            margin-top: auto;
             padding: 0.65rem 0.5rem 0.8rem;
             border-top: 1px solid var(--mr-border);
         }
@@ -484,7 +517,7 @@
 
         .super-user-role {
             color: var(--mr-muted);
-            font-size: 0.68rem;
+            font-size: 0.8125rem;
         }
 
         .super-control,
@@ -537,6 +570,7 @@
                 width: 240px;
                 min-width: 240px;
                 height: 100vh;
+                overflow-y: hidden;
                 transform: translateX(-100%);
                 transition: transform 160ms ease;
             }
@@ -560,6 +594,7 @@
 
             .super-content,
             body.super-sidebar-expanded .super-content {
+                width: 100%;
                 margin-left: 0;
             }
 
@@ -616,11 +651,11 @@
         }
 
         .super-sidebar .nav-link {
-            font-size: 0.95rem;
+            font-size: 1rem;
         }
 
         .super-nav-group summary {
-            font-size: 0.8125rem;
+            font-size: 0.875rem;
         }
 
         .super-content .form-label {
@@ -653,7 +688,7 @@
         <aside class="super-sidebar" id="superSidebar" aria-label="Super admin sidebar">
             <div class="super-brand">
                 <div class="super-brand-mark">
-                    <img src="{{ asset('favicon.ico') }}" alt="MuniResQ logo">
+                    <img src="{{ asset('images/muniresq-logo.jpg') }}" alt="MuniResQ logo">
                 </div>
                 <div class="super-brand-copy">
                     <h1 class="super-brand-title">MuniResQ</h1>
