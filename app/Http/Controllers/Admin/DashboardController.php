@@ -298,14 +298,14 @@ class DashboardController extends Controller
                 $driver?->status
             );
             $gpsMetadata = $gpsFreshness->metadata($location);
-            $hasValidGpsTimestamp = $gpsMetadata['gps_status'] !== 'invalid';
+            $hasCurrentGps = in_array($gpsMetadata['gps_status'], ['fresh', 'delayed'], true);
 
             return [
                 'id' => $ambulance->id,
                 'name' => $ambulance->vehicle_name ?? 'Ambulance',
                 'plate_number' => $ambulance->plate_number,
-                'latitude' => $hasValidGpsTimestamp && $location?->latitude !== null ? (float) $location->latitude : null,
-                'longitude' => $hasValidGpsTimestamp && $location?->longitude !== null ? (float) $location->longitude : null,
+                'latitude' => $hasCurrentGps && $location?->latitude !== null ? (float) $location->latitude : null,
+                'longitude' => $hasCurrentGps && $location?->longitude !== null ? (float) $location->longitude : null,
                 'status' => $ambulance->status ?? 'available',
                 'status_key' => $mapStatus,
                 'driver_name' => $driver?->user?->name ?? 'Unassigned',
@@ -345,21 +345,21 @@ class DashboardController extends Controller
             $assignment = $driver?->activeVehicleAssignment()->first();
             $ambulance = $assignment?->ambulance;
 
-            if (!$driver || !$location?->latitude || !$location?->longitude) {
+            if (!$driver || !$location) {
                 return null;
             }
 
             $driverStatus = strtolower((string) ($driver->status ?? 'available'));
             $mapStatus = $this->resolveMapStatus($driverStatus, $driverStatus);
             $gpsMetadata = $gpsFreshness->metadata($location);
-            $hasValidGpsTimestamp = $gpsMetadata['gps_status'] !== 'invalid';
+            $hasCurrentGps = in_array($gpsMetadata['gps_status'], ['fresh', 'delayed'], true);
 
             return [
                 'id' => $driver->id,
                 'driver_name' => $driver->user?->name ?? 'Driver',
                 'ambulance_unit' => $ambulance?->vehicle_name ?? 'Unassigned',
-                'latitude' => $hasValidGpsTimestamp ? (float) $location->latitude : null,
-                'longitude' => $hasValidGpsTimestamp ? (float) $location->longitude : null,
+                'latitude' => $hasCurrentGps ? (float) $location->latitude : null,
+                'longitude' => $hasCurrentGps ? (float) $location->longitude : null,
                 'status' => $driver->status ?? 'available',
                 'status_key' => $mapStatus,
                 'speed_kmh' => $location->speed_kmh,
@@ -456,9 +456,25 @@ class DashboardController extends Controller
     /**
      * Get fleet readiness data
      */
-    public function fleetReadiness()
+    public function fleetReadiness(GpsFreshnessService $gpsFreshness)
     {
-        $onlineDrivers = Driver::dispatchEligible()->count();
+        $latestEligibleLocations = GpsLocation::query()
+            ->whereHas('driver', fn($query) => $query->dispatchEligible())
+            ->whereIn('id', function ($query) {
+                $query->selectRaw('MAX(candidate.id)')
+                    ->from('gps_locations as candidate')
+                    ->whereNotNull('candidate.recorded_at')
+                    ->whereRaw('candidate.recorded_at = (SELECT MAX(latest.recorded_at) FROM gps_locations AS latest WHERE latest.driver_id = candidate.driver_id)')
+                    ->groupBy('candidate.driver_id');
+            })
+            ->get();
+        $onlineDrivers = $latestEligibleLocations
+            ->filter(fn(GpsLocation $location) => in_array(
+                $gpsFreshness->metadata($location)['gps_status'],
+                ['fresh', 'delayed'],
+                true
+            ))
+            ->count();
         $activeAmbulances = Ambulance::notArchived()->whereIn('status', ['available', 'in_use'])->count();
         $underMaintenance = Ambulance::notArchived()->where('status', 'maintenance')->count();
         $totalAmbulances = Ambulance::notArchived()->count();

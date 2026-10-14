@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/routes.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../widgets/custom_buttons.dart';
@@ -38,14 +39,14 @@ class EmergencyActionsScreen extends StatelessWidget {
                   subtitle: 'Send full emergency notification.',
                   icon: Icons.warning_amber,
                   color: AppColors.danger,
-                  onTap: () {},
+                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.panicAlert),
                 ),
                 EmergencyActionCard(
                   title: 'Incident Report',
                   subtitle: 'Submit an incident summary.',
                   icon: Icons.report,
                   color: AppColors.secondary,
-                  onTap: () {},
+                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.incidentReport),
                 ),
                 EmergencyActionCard(
                   title: 'Medical Support',
@@ -57,7 +58,13 @@ class EmergencyActionsScreen extends StatelessWidget {
               ],
             ),
             const Spacer(),
-            SecondaryButton(label: 'Return to dashboard', onPressed: () {}),
+            SecondaryButton(
+              label: 'Return to dashboard',
+              onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
+                AppRoutes.dashboard,
+                (route) => false,
+              ),
+            ),
           ],
         ),
       ),

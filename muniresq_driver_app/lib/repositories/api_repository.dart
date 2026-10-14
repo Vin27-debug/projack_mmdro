@@ -9,16 +9,16 @@ import '../services/api_service.dart';
 class ApiRepository {
   final Dio _dio = ApiService.dio;
 
-  Future<AuthResponse> login(String driverId, String pin) async {
-    final response = await _dio.post('/api/login', data: {
+  Future<AuthResponse> login(String driverId, String password) async {
+    final response = await _dio.post('/api/mobile/login', data: {
       'driver_id': driverId,
-      'pin': pin,
+      'password': password,
     });
     return AuthResponse.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<void> logout() async {
-    await _dio.post('/api/logout');
+    await _dio.post('/api/mobile/logout');
   }
 
   Future<DriverProfile> fetchDriverProfile() async {
@@ -26,10 +26,17 @@ class ApiRepository {
     return DriverProfile.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<void> submitLocation(double latitude, double longitude) async {
-    await _dio.post('/api/driver/location', data: {
+  Future<void> submitLocation({
+    required double latitude,
+    required double longitude,
+    required DateTime recordedAt,
+    double? accuracy,
+  }) async {
+    await _dio.post('/api/mobile/driver/gps/update', data: {
       'latitude': latitude,
       'longitude': longitude,
+      'recorded_at': recordedAt.toUtc().toIso8601String(),
+      if (accuracy != null) 'accuracy': accuracy,
     });
   }
 

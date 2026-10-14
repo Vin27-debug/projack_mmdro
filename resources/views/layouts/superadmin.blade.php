@@ -242,6 +242,32 @@
             .super-sidebar:not(:hover):not(:focus-within) .super-nav-group:not([open])>.nav {
                 display: flex;
             }
+
+            /* Keep the recovery entry identifiable in the compact sidebar. */
+            body:not(.super-sidebar-expanded) .super-sidebar:not(:hover):not(:focus-within) .backup-nav-link {
+                min-height: 3.65rem;
+                justify-content: center;
+                padding: 0.25rem;
+            }
+
+            body:not(.super-sidebar-expanded) .super-sidebar:not(:hover):not(:focus-within) .backup-nav-link i {
+                align-self: flex-start;
+            }
+
+            body:not(.super-sidebar-expanded) .super-sidebar:not(:hover):not(:focus-within) .backup-nav-link .nav-label {
+                position: absolute;
+                top: 1.85rem;
+                left: 0.1rem;
+                right: 0.1rem;
+                display: block;
+                visibility: visible;
+                opacity: 1;
+                color: var(--mr-muted);
+                font-size: 0.56rem;
+                line-height: 1.05;
+                text-align: center;
+                white-space: normal;
+            }
         }
 
         .super-sidebar .nav-link,
@@ -720,11 +746,11 @@
                         <a href="{{ route('admins.index') }}" class="superadmin-nav-link {{ request()->routeIs('admins.*') ? 'active' : '' }}"><i class="bi bi-person-plus superadmin-nav-icon"></i><span class="nav-label">Admins</span></a>
                     </nav>
                 </details>
-                <details class="super-nav-group" {{ request()->routeIs('superadmin.settings') || request()->routeIs('backups.*') ? 'open' : '' }}>
+                <details class="super-nav-group" open>
                     <summary><span>System</span></summary>
                     <nav class="nav flex-column">
                         <a href="{{ route('superadmin.settings') }}" class="nav-link {{ request()->routeIs('superadmin.settings') ? 'active' : '' }}"><i class="bi bi-sliders"></i><span class="nav-label">Settings</span></a>
-                        <a href="{{ route('backups.index') }}" class="nav-link {{ request()->routeIs('backups.*') ? 'active' : '' }}"><i class="bi bi-database-up"></i><span class="nav-label">Backup &amp; Restore</span></a>
+                        <a href="{{ route('backups.index') }}" class="nav-link backup-nav-link {{ request()->routeIs('backups.*') ? 'active' : '' }}" title="Backup &amp; Restore"><i class="bi bi-database-up"></i><span class="nav-label">Backup &amp; Restore</span></a>
                     </nav>
                 </details>
             </nav>

@@ -8,7 +8,6 @@ use App\Models\GpsLocation;
 use App\Services\IncidentGeofenceService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
@@ -30,7 +29,7 @@ class GpsController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $user = Auth::user();
+        $user = $request->user();
 
         if (!$user) {
             return response()->json([
@@ -109,8 +108,17 @@ class GpsController extends Controller
             ? (float) $validated['accuracy']
             : null;
         $recordedAt = isset($validated['recorded_at'])
-            ? CarbonImmutable::parse($validated['recorded_at'])
+            ? CarbonImmutable::parse($validated['recorded_at'], config('app.timezone'))
             : CarbonImmutable::now();
+        if ($recordedAt->isAfter(now())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'GPS timestamp cannot be in the future.',
+                'errors' => [
+                    'recorded_at' => ['The recorded at field must not be in the future.'],
+                ],
+            ], 422);
+        }
         $speedKmh = array_key_exists('speed_kmh', $validated) && $validated['speed_kmh'] !== null
             ? (float) $validated['speed_kmh']
             : null;
@@ -127,7 +135,7 @@ class GpsController extends Controller
             'driver_id' => $driver->id,
             'latitude' => $latitude,
             'longitude' => $longitude,
-            'recorded_at' => now(),
+            'recorded_at' => $recordedAt,
             'speed_kmh' => $speedKmh,
             'speed_status' => $speedStatus,
             'speed_limit_kmh' => $speedLimitKmh,

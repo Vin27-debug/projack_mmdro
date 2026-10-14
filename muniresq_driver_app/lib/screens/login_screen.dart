@@ -15,26 +15,32 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _driverIdController = TextEditingController();
-  final TextEditingController _pinController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
     _driverIdController.dispose();
-    _pinController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _handleLogin() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     try {
       final authProvider = context.read<AuthProvider>();
       final success = await authProvider.login(
         _driverIdController.text.trim(),
-        _pinController.text.trim(),
+        _passwordController.text,
       );
       if (success && mounted) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.approvalPending);
+        Navigator.of(context).pushReplacementNamed(AppRoutes.dashboard);
+      } else if (mounted) {
+        setState(() => _errorMessage = authProvider.errorMessage);
       }
     } finally {
       if (mounted) {
@@ -76,11 +82,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 18),
                     TextField(
-                      controller: _pinController,
+                      controller: _passwordController,
                       obscureText: true,
                       decoration: const InputDecoration(
-                        labelText: 'PIN',
-                        hintText: '••••••',
+                        labelText: 'Account password',
+                        hintText: 'Enter your password',
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -91,6 +97,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                     const SizedBox(height: 18),
+                    if (_errorMessage != null) ...[
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: AppColors.danger),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     PrimaryButton(
                       label: _isLoading ? 'Signing In...' : 'Sign In',
                       onPressed: _isLoading ? null : _handleLogin,

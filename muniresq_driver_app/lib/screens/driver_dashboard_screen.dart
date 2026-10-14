@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../core/routes.dart';
 import '../providers/dispatch_provider.dart';
+import '../providers/location_provider.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../widgets/custom_buttons.dart';
 import '../widgets/custom_cards.dart';
 import '../widgets/notification_tile.dart';
 import '../widgets/emergency_action_card.dart';
+import '../widgets/driver_navigation_bar.dart';
 
 class DriverDashboardScreen extends StatefulWidget {
   const DriverDashboardScreen({super.key});
@@ -21,6 +24,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DispatchProvider>().loadCurrentDispatch();
+      context.read<LocationProvider>().startTracking();
     });
   }
 
@@ -34,7 +38,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       appBar: AppBar(
         title: const Text('Driver Dashboard'),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none, color: AppColors.textPrimary)),
+          IconButton(
+            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.notifications),
+            icon: const Icon(Icons.notifications_none, color: AppColors.textPrimary),
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -42,14 +49,36 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Unit 07 • On Duty', style: AppTypography.headline3),
+            Text('Driver status unavailable', style: AppTypography.headline3),
             const SizedBox(height: 10),
             Row(
               children: const [
-                Chip(label: Text('Ready for dispatch'), backgroundColor: Color(0xFFE3F9F0)),
-                SizedBox(width: 8),
-                StatusChip(label: 'GPS Active', color: AppColors.success),
+                StatusChip(label: 'GPS status unavailable', color: AppColors.textSecondary),
               ],
+            ),
+            const SizedBox(height: 8),
+            Consumer<LocationProvider>(
+              builder: (context, locationProvider, _) => Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      locationProvider.statusMessage,
+                      style: AppTypography.bodySmall,
+                    ),
+                  ),
+                  if (!locationProvider.isTracking)
+                    TextButton(
+                      onPressed: locationProvider.permissionPermanentlyDenied
+                          ? locationProvider.openAppSettings
+                          : locationProvider.startTracking,
+                      child: Text(
+                        locationProvider.permissionPermanentlyDenied
+                            ? 'Open settings'
+                            : 'Retry GPS',
+                      ),
+                    ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
             AppCard(
@@ -67,7 +96,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   ] else ...[
                     Text('No active dispatches', style: AppTypography.headline3),
                     const SizedBox(height: 12),
-                    Text('Your unit is ready for new assignments from the command center.', style: AppTypography.bodyMedium),
+                    Text('Assignment details will appear when dispatch data is available.', style: AppTypography.bodyMedium),
                   ],
                 ],
               ),
@@ -103,7 +132,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               children: const [
                 Expanded(child: MetricCard(title: 'Response time', value: '06:12', icon: Icons.timer, color: AppColors.secondary)),
                 SizedBox(width: 12),
-                Expanded(child: MetricCard(title: 'Status', value: 'Ready', icon: Icons.radio_button_checked, color: AppColors.success)),
+                Expanded(child: MetricCard(title: 'Driver status', value: 'Unknown', icon: Icons.help_outline, color: AppColors.textSecondary)),
               ],
             ),
             const SizedBox(height: 24),
@@ -111,15 +140,30 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(child: PrimaryButton(label: 'Panic', onPressed: () {})),
+                Expanded(
+                  child: PrimaryButton(
+                    label: 'Panic',
+                    onPressed: () => Navigator.of(context).pushNamed(AppRoutes.panicAlert),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(child: SecondaryButton(label: 'Report Incident', onPressed: () {})),
+                Expanded(
+                  child: SecondaryButton(
+                    label: 'Report Incident',
+                    onPressed: () => Navigator.of(context).pushNamed(AppRoutes.incidentReport),
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: SecondaryButton(label: 'Navigation', onPressed: () {})),
+                Expanded(
+                  child: SecondaryButton(
+                    label: 'Navigation',
+                    onPressed: () => Navigator.of(context).pushNamed(AppRoutes.liveNavigation),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -155,27 +199,28 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   subtitle: 'Notify command center immediately.',
                   icon: Icons.warning_amber_rounded,
                   color: AppColors.danger,
-                  onTap: () {},
+                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.panicAlert),
                 ),
                 EmergencyActionCard(
                   title: 'Incident Report',
                   subtitle: 'Submit event details to ops.',
                   icon: Icons.report,
                   color: AppColors.secondary,
-                  onTap: () {},
+                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.incidentReport),
                 ),
                 EmergencyActionCard(
                   title: 'Settings',
                   subtitle: 'Adjust your driver preferences.',
                   icon: Icons.settings,
                   color: AppColors.secondary,
-                  onTap: () {},
+                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.settings),
                 ),
               ],
             ),
           ],
         ),
       ),
+      bottomNavigationBar: const DriverNavigationBar(currentIndex: 0),
     );
   }
 }

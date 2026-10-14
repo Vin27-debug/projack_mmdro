@@ -108,7 +108,7 @@
 
         const UPDATE_INTERVAL = 5000;
         const GPS_FRESH_SECONDS = @json((int) config('services.muniresq.location_fresh_seconds', 60));
-        const GPS_STALE_LIMIT_SECONDS = 180;
+        const GPS_STALE_LIMIT_SECONDS = 300;
 
         const DEFAULT_LAT = 15.421486;
 
@@ -207,7 +207,7 @@
             const minutes = Math.floor(ageSeconds / 60);
             const hours = Math.floor(ageSeconds / 3600);
             const relative = ageSeconds < 10 ? 'Last updated just now' : ageSeconds < 60 ? `Last updated ${ageSeconds} seconds ago` : ageSeconds < 3600 ? `Last updated ${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago` : `Last updated ${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
-            const status = ageSeconds < GPS_FRESH_SECONDS ? 'fresh' : ageSeconds <= GPS_STALE_LIMIT_SECONDS ? 'delayed' : 'stale';
+            const status = ageSeconds > GPS_STALE_LIMIT_SECONDS ? 'stale' : ageSeconds < Math.min(GPS_FRESH_SECONDS, GPS_STALE_LIMIT_SECONDS) ? 'fresh' : 'delayed';
             const badgeClass = status === 'fresh' ? 'bg-success' : status === 'delayed' ? 'bg-warning text-dark' : 'bg-warning text-dark';
             const badgeLabel = status === 'fresh' ? 'GPS ACTIVE' : status === 'delayed' ? 'DELAYED' : '';
             const outdated = status === 'stale' ? '<span class="badge bg-warning text-dark d-inline-block text-start text-wrap mt-1" role="status"><i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>GPS LOCATION STALE — Tracking may be outdated.</span>' : '';

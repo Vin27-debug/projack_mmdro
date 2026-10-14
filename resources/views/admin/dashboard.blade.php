@@ -474,7 +474,7 @@ $readyPercent = $totalFleet > 0 ? round((($availableVehicles ?? 0) / $totalFleet
     let mapRequest = null;
     let mapHasFitted = false;
     const GPS_FRESH_SECONDS = @json((int) config('services.muniresq.location_fresh_seconds', 60));
-    const GPS_STALE_LIMIT_SECONDS = 180;
+    const GPS_STALE_LIMIT_SECONDS = 300;
     let serverClockOffsetMs = 0;
 
     document.addEventListener('DOMContentLoaded', initializeLiveCommandMap);

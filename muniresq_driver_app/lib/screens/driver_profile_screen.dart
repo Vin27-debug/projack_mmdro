@@ -3,6 +3,7 @@ import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../widgets/custom_buttons.dart';
 import '../widgets/custom_cards.dart';
+import '../widgets/driver_navigation_bar.dart';
 
 class DriverProfileScreen extends StatelessWidget {
   const DriverProfileScreen({super.key});
@@ -85,6 +86,7 @@ class DriverProfileScreen extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: const DriverNavigationBar(currentIndex: 3),
     );
   }
 }

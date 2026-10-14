@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../widgets/custom_cards.dart';
+import '../widgets/driver_navigation_bar.dart';
 
 class DispatchHistoryScreen extends StatelessWidget {
   const DispatchHistoryScreen({super.key});
@@ -80,6 +81,7 @@ class DispatchHistoryScreen extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: const DriverNavigationBar(currentIndex: 1),
     );
   }
 }

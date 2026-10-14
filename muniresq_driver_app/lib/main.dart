@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:muniresq_driver_app/core/routes.dart';
+import 'package:muniresq_driver_app/core/app_navigator.dart';
 import 'package:muniresq_driver_app/providers/auth_provider.dart';
 import 'package:muniresq_driver_app/providers/dispatch_provider.dart';
 import 'package:muniresq_driver_app/providers/driver_profile_provider.dart';
@@ -33,17 +34,20 @@ void main() {
     MultiProvider(
       providers: [
         Provider<ApiRepository>(create: (_) => ApiRepository()),
+        ChangeNotifierProvider<LocationProvider>(
+          create: (context) => LocationProvider(repository: context.read<ApiRepository>()),
+        ),
         ChangeNotifierProvider<AuthProvider>(
-          create: (context) => AuthProvider(repository: context.read<ApiRepository>()),
+          create: (context) => AuthProvider(
+            repository: context.read<ApiRepository>(),
+            locationProvider: context.read<LocationProvider>(),
+          ),
         ),
         ChangeNotifierProvider<DispatchProvider>(
           create: (context) => DispatchProvider(repository: context.read<ApiRepository>()),
         ),
         ChangeNotifierProvider<DriverProfileProvider>(
           create: (context) => DriverProfileProvider(repository: context.read<ApiRepository>()),
-        ),
-        ChangeNotifierProvider<LocationProvider>(
-          create: (context) => LocationProvider(repository: context.read<ApiRepository>()),
         ),
         ChangeNotifierProvider<NotificationProvider>(
           create: (context) => NotificationProvider(repository: context.read<ApiRepository>()),
@@ -61,6 +65,7 @@ class MuniResQDriverApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      navigatorKey: appNavigatorKey,
       title: 'MuniResQ Driver',
       theme: AppTheme.lightTheme,
       initialRoute: AppRoutes.splash,

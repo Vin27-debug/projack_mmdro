@@ -128,7 +128,7 @@ Open **Dashboard** to review the operational summary and dashboard information, 
    | Low | Green — Minor/Minimal |
    | Medium | Yellow — Delayed |
    | High | Red — Immediate/Critical |
-   | Critical | Black — Critical |
+   | Critical | Black — Disease-Related Incident |
 
 4. Select the province, municipality/city, and barangay as prompted.
 5. Enter the house number and street, purok, or landmark when available.

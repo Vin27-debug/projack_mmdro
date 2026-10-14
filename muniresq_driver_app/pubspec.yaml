@@ -3,12 +3,14 @@ description: A government-grade emergency response driver mobile application for
 publish_to: "none"
 version: 1.0.0+1
 environment:
-  sdk: ">=2.18.0 <4.0.0"
+  sdk: ">=3.5.0 <4.0.0"
 dependencies:
   flutter:
     sdk: flutter
   provider: ^6.1.4
   dio: ^5.1.2
+  flutter_secure_storage: ^9.2.4
+  geolocator: ^14.1.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

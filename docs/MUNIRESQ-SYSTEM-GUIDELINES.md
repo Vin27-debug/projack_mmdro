@@ -112,7 +112,7 @@ The stored priority values and current user-facing labels are:
 | Low | Green — Minor/Minimal |
 | Medium | Yellow — Delayed |
 | High | Red — Immediate/Critical |
-| Critical | Black — Critical |
+| Critical | Black — Disease-Related Incident |
 
 ### 4.4 Incident statuses
 

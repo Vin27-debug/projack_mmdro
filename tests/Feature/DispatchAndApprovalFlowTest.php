@@ -105,7 +105,7 @@ class DispatchAndApprovalFlowTest extends TestCase
         $this->get(route('admin.incidents.show', $incident))
             ->assertOk()
             ->assertSee('123, Main Street, Barangay One, Test City, Test Province')
-            ->assertSee('Black — Critical');
+            ->assertSee('Black — Disease-Related Incident');
     }
 
     public function test_admin_incident_creation_redirects_to_existing_list_and_can_continue_to_dispatch(): void

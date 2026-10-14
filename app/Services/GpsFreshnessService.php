@@ -8,7 +8,7 @@ use Carbon\Exceptions\InvalidFormatException;
 
 class GpsFreshnessService
 {
-    private const STALE_AFTER_SECONDS = 180;
+    private const STALE_AFTER_SECONDS = 300;
 
     public function metadata(?GpsLocation $location): array
     {

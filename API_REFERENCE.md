@@ -1,5 +1,78 @@
 # MuniResQ Dashboard API Reference
 
+## Mobile Driver API
+
+The Flutter driver app uses bearer-token authentication; it does not use a web
+session or CSRF cookie. Laravel Sanctum tokens expire after seven days and are
+stored hashed in `personal_access_tokens`.
+
+### Sign in
+
+**Route**: `/api/mobile/login`
+**Method**: POST
+**Authentication**: None (rate limited)
+
+```json
+{
+    "driver_id": "AMB-REG-123",
+    "password": "the driver's account password"
+}
+```
+
+`driver_id` is the driver's badge ID. Sign-in is allowed only for an approved,
+active, non-archived driver account with the `driver` role. The response
+contains a `Bearer` access token scoped to GPS updates.
+
+### Update driver GPS
+
+**Route**: `/api/mobile/driver/gps/update`
+**Method**: POST
+**Authentication**: `Authorization: Bearer <access_token>`
+
+```json
+{
+    "latitude": 15.4866,
+    "longitude": 120.9675,
+    "accuracy": 8.5,
+    "recorded_at": "2026-10-15T04:00:00.000Z"
+}
+```
+
+The timestamp must not be in the future. Valid records are associated with
+the authenticated user's driver profile. Admin/EOC monitoring treats GPS as
+current for up to 300 seconds and does not plot older or future-dated fixes.
+
+### Sign out
+
+**Route**: `/api/mobile/logout`
+**Method**: POST
+**Authentication**: `Authorization: Bearer <access_token>`
+
+Sign-out revokes the current access token.
+
+### Android location setup
+
+This checkout does not currently include an `android/` platform directory.
+From `muniresq_driver_app`, generate the Android scaffold with
+`flutter create --platforms=android .`, then declare `INTERNET`,
+`ACCESS_COARSE_LOCATION`, and `ACCESS_FINE_LOCATION` in
+`android/app/src/main/AndroidManifest.xml`. The app requests foreground
+location permission at runtime; no background location permission is
+requested.
+
+For local physical-device testing, run the Laravel server on an address
+reachable from the device, allow the port through the development firewall,
+and pass its LAN URL, for example:
+
+```shell
+flutter run --dart-define=MUNIRESQ_API_BASE_URL=http://192.168.1.10:8000
+```
+
+HTTP cleartext traffic should be allowed only in the Android debug manifest.
+Release builds require an HTTPS API URL.
+
+## Admin Dashboard API
+
 ## Base URL
 
 ```

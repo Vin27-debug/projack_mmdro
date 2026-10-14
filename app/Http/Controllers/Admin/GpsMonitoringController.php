@@ -68,6 +68,7 @@ class GpsMonitoringController extends Controller
                 $driver->id
             )
                 ->latest('recorded_at')
+                ->orderByDesc('id')
                 ->first();
 
             if ($location) {
@@ -127,6 +128,7 @@ class GpsMonitoringController extends Controller
                 : 'no_mission';
 
             $gpsMetadata = $gpsFreshness->metadata($location);
+            $hasCurrentGps = in_array($gpsMetadata['gps_status'], ['fresh', 'delayed'], true);
 
             /*
             |--------------------------------------------------------------------------
@@ -220,11 +222,11 @@ class GpsMonitoringController extends Controller
                 |--------------------------------------------------------------------------
                 */
 
-                'latitude' => $location?->latitude !== null
+                'latitude' => $hasCurrentGps && $location?->latitude !== null
                     ? (float) $location->latitude
                     : null,
 
-                'longitude' => $location?->longitude !== null
+                'longitude' => $hasCurrentGps && $location?->longitude !== null
                     ? (float) $location->longitude
                     : null,
 

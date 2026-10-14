@@ -77,6 +77,117 @@ class GpsLocationFreshnessTest extends TestCase
         $this->assertSame(15.5, $response->json('drivers.0.latitude'));
     }
 
+    public function test_driver_gps_update_stores_the_reported_time_and_rejects_invalid_or_future_times(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-02 12:00:00'));
+        $driverUser = User::factory()->create(['status' => 'approved']);
+        $driverUser->assignRole(Role::firstOrCreate(['name' => 'driver', 'guard_name' => 'web']));
+        $driver = Driver::create([
+            'user_id' => $driverUser->id,
+            'badge_id' => 'GPS-TIMESTAMP-' . $driverUser->id,
+            'contact_number' => '09123456789',
+            'license_number' => 'GPS-TIMESTAMP-LICENSE-' . $driverUser->id,
+            'license_expiry' => '2030-01-01',
+            'status' => Driver::STATUS_AVAILABLE,
+        ]);
+        $timestamp = now()->subSeconds(45);
+        $payload = [
+            'latitude' => 15.5,
+            'longitude' => 120.9,
+            'recorded_at' => $timestamp->toISOString(),
+        ];
+
+        $this->actingAs($driverUser)
+            ->postJson(route('driver.gps.update'), $payload)
+            ->assertOk();
+
+        $location = $driver->gpsLocations()->latest('id')->firstOrFail();
+        $this->assertTrue($location->recorded_at->equalTo($timestamp));
+
+        $this->postJson(route('driver.gps.update'), [
+            ...$payload,
+            'recorded_at' => 'not-a-date',
+        ])->assertUnprocessable();
+
+        $this->postJson(route('driver.gps.update'), [
+            ...$payload,
+            'recorded_at' => now()->addSecond()->toISOString(),
+        ])->assertUnprocessable();
+
+        $staleTimestamp = now()->subMinutes(6);
+        $this->postJson(route('driver.gps.update'), [
+            ...$payload,
+            'recorded_at' => $staleTimestamp->toISOString(),
+        ])->assertOk();
+
+        $staleLocation = $driver->gpsLocations()->latest('id')->firstOrFail();
+        $this->assertTrue($staleLocation->recorded_at->equalTo($staleTimestamp));
+        $this->assertSame(
+            'stale',
+            app(\App\Services\GpsFreshnessService::class)->metadata($staleLocation)['gps_status']
+        );
+        $this->assertSame(2, $driver->gpsLocations()->count());
+    }
+
+    public function test_driver_gps_update_defaults_a_missing_timestamp_to_server_time(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-02 12:00:00'));
+        $driverUser = User::factory()->create(['status' => 'approved']);
+        $driverUser->assignRole(Role::firstOrCreate(['name' => 'driver', 'guard_name' => 'web']));
+        $driver = Driver::create([
+            'user_id' => $driverUser->id,
+            'badge_id' => 'GPS-MISSING-TIMESTAMP-' . $driverUser->id,
+            'contact_number' => '09123456789',
+            'license_number' => 'GPS-MISSING-TIMESTAMP-LICENSE-' . $driverUser->id,
+            'license_expiry' => '2030-01-01',
+            'status' => Driver::STATUS_AVAILABLE,
+        ]);
+
+        $this->actingAs($driverUser)
+            ->postJson(route('driver.gps.update'), [
+                'latitude' => 15.5,
+                'longitude' => 120.9,
+            ])
+            ->assertOk();
+
+        $this->assertTrue(
+            $driver->gpsLocations()->latest('id')->firstOrFail()->recorded_at->equalTo(now())
+        );
+    }
+
+    public function test_fleet_readiness_counts_only_dispatch_eligible_drivers_with_current_gps(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-02 12:00:00'));
+        $admin = User::factory()->create(['status' => 'approved']);
+        $admin->assignRole(Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']));
+
+        foreach (['Fresh' => 300, 'Stale' => 301, 'Missing' => null] as $label => $ageSeconds) {
+            $driverUser = User::factory()->create(['status' => 'approved']);
+            $driver = Driver::create([
+                'user_id' => $driverUser->id,
+                'badge_id' => "GPS-ONLINE-{$label}-{$driverUser->id}",
+                'contact_number' => '09123456789',
+                'license_number' => "GPS-ONLINE-LICENSE-{$label}-{$driverUser->id}",
+                'license_expiry' => '2030-01-01',
+                'status' => Driver::STATUS_AVAILABLE,
+            ]);
+
+            if ($ageSeconds !== null) {
+                GpsLocation::create([
+                    'driver_id' => $driver->id,
+                    'latitude' => 15.5,
+                    'longitude' => 120.9,
+                    'recorded_at' => now()->subSeconds($ageSeconds),
+                ]);
+            }
+        }
+
+        $this->actingAs($admin)
+            ->getJson(route('admin.dashboard.fleet-readiness'))
+            ->assertOk()
+            ->assertJsonPath('drivers_online', 1);
+    }
+
     public function test_live_map_does_not_return_future_gps_coordinates_for_markers(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-10-02 12:00:00'));
@@ -178,6 +289,11 @@ class GpsLocationFreshnessTest extends TestCase
         $this->assertSame('fresh', $unit['gps_status']);
         $this->assertSame((float) $expectedLatestRow->latitude, $unit['latitude']);
         $this->assertSame((float) $expectedLatestRow->longitude, $unit['longitude']);
+
+        $monitoringLocation = collect($this->getJson(route('admin.gps.locations'))->json())
+            ->firstWhere('driver_id', $driver->id);
+        $this->assertSame((float) $expectedLatestRow->latitude, $monitoringLocation['latitude']);
+        $this->assertSame((float) $expectedLatestRow->longitude, $monitoringLocation['longitude']);
     }
 
     public function test_live_map_returns_timestamp_and_gps_freshness_for_each_vehicle(): void
@@ -196,8 +312,8 @@ class GpsLocationFreshnessTest extends TestCase
         $ages = [
             'Fresh Unit' => 30,
             'Delayed Unit' => 120,
-            'Boundary Unit' => 180,
-            'Stale Unit' => 181,
+            'Boundary Unit' => 300,
+            'Stale Unit' => 301,
             'Missing Unit' => null,
             'Future Unit' => -60,
         ];
@@ -253,20 +369,23 @@ class GpsLocationFreshnessTest extends TestCase
         $this->assertSame('invalid', $vehicles['Future Unit']['gps_status']);
         $this->assertNull($vehicles['Future Unit']['latitude']);
         $this->assertNull($vehicles['Future Unit']['longitude']);
-        $this->assertSame(15.4866, $vehicles['Stale Unit']['latitude']);
+        $this->assertNull($vehicles['Stale Unit']['latitude']);
+        $this->assertNull($vehicles['Stale Unit']['longitude']);
 
         $monitoringVehicles = collect($this->getJson(route('admin.gps.locations'))->json())
             ->keyBy('vehicle_name');
         $this->assertSame('delayed', $monitoringVehicles['Delayed Unit']['gps_status']);
         $this->assertSame('delayed', $monitoringVehicles['Boundary Unit']['gps_status']);
         $this->assertSame('stale', $monitoringVehicles['Stale Unit']['gps_status']);
+        $this->assertNull($monitoringVehicles['Stale Unit']['latitude']);
+        $this->assertNull($monitoringVehicles['Stale Unit']['longitude']);
         $this->assertSame('missing', $monitoringVehicles['Missing Unit']['gps_status']);
         $this->assertSame('invalid', $monitoringVehicles['Future Unit']['gps_status']);
 
         $this->get(route('admin.gps.monitoring'))
             ->assertOk()
             ->assertSee('GPS Monitoring')
-            ->assertSee('GPS_STALE_LIMIT_SECONDS = 180', false)
+            ->assertSee('GPS_STALE_LIMIT_SECONDS = 300', false)
             ->assertSee('GPS LOCATION STALE — Tracking may be outdated.', false);
 
         $this->get(route('admin.dashboard'))

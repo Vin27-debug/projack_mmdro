@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../theme/typography.dart';
 import '../widgets/notification_tile.dart';
+import '../widgets/driver_navigation_bar.dart';
 
 class NotificationCenterScreen extends StatelessWidget {
   const NotificationCenterScreen({super.key});
@@ -54,6 +55,7 @@ class NotificationCenterScreen extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: const DriverNavigationBar(currentIndex: 2),
     );
   }
 }
